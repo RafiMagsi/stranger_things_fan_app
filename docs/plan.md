@@ -1,197 +1,138 @@
-Here is a comprehensive Flutter App Architecture & Implementation Plan for a modern, animated **Stranger Things Fan App**.
+# 🛸 Stranger Things — Super Fan App
+
+An unofficial, fan-made Stranger Things companion built with Flutter. This
+document reflects the **shipped** architecture (it started as a plan and was
+rewritten once the app was real). Everything here is implemented and covered
+by tests.
 
 ---
 
-# 🛸 Stranger Things Fan App – Flutter Plan
+## 1. Design language — CINEMATIC DARK
 
-It should be fully themed in Stranger Things style, all cards, widgets and everything should be same theme
+The single most important decision: **both worlds are near-black**. The show
+lives at night — pure black frames, glowing red neon, cold spore light in the
+Upside Down. There is no "light mode."
 
-## 1. Core Features & App Architecture
+| World | Base | Accent | Feel |
+| --- | --- | --- | --- |
+| **Hawkins** (Right Side Up) | warm void `#0A0507` | brand red `#E50914` + gold | red neon on black |
+| **Upside Down** | cold void `#05070B` | spore teal `#5BFFDF` + vine purple | decayed, bioluminescent |
 
-### Key Features
+- `WorldPalette` is a `ThemeExtension` carrying per-world accent/glow/surface
+  colors, so widgets pull the right tokens **without brightness-branching**
+  (`ThemeExtension` in `lib/core/theme/world_palette.dart`).
+- The Hawkins ⇄ Upside Down toggle fires a full-screen **rift sweep**
+  (`RiftFlash`) and swaps the particle field from red embers to teal spores.
 
-1. **Interactive Upside Down Toggle**:
-* Dynamic theme switching (Hawkins Light Mode ☀️ vs. Upside Down Dark/Spooky Mode 🎃).
-* Particle effects (spores/dust floating in Upside Down mode).
-
-
-2. **Interactive Character & Creature Cards**:
-* 3D parallax tilt effects on hover/touch.
-* Smooth **Shared Element Transitions (Hero Animations)** from Card $\rightarrow$ Full Screen Details page.
-
-
-3. **Video Trailers & Audio Teasers**:
-* Embedded video player for season trailers and iconic audio clips (e.g., *Running Up That Hill* or theme song ambient music).
-
-
-4. **Trivia & Soundboard / Quiz**:
-* Interactive quiz game and soundboard for iconic quotes.
-
-
+### Typography
+Both bundled fonts are **variable fonts** (Grenze wght 100–900, Space Grotesk
+wght 300–700). Declaring them at several `weight:` steps does NOT move the
+axis — Flutter renders the default instance. So real weight is driven through
+`fontVariations: [FontVariation('wght', N)]` (see `lib/core/theme/text_styles.dart`).
+- **Grenze** ≈ ITC Benguiat (the show's title face) — title pushed to 900, tight,
+  glowing red.
+- **Space Grotesk** — UI copy.
+- **Special Elite** — dossier/typewriter flavor (reports, quotes, weaknesses).
 
 ---
 
-## 2. Project Folder Structure
+## 2. Structure
 
 ```text
 lib/
-│── main.dart
-│── core/
-│   ├── theme/
-│   │   ├── app_colors.dart          # Hawkins Red, Upside Down Blue/Purple, Neon Cyan
-│   │   ├── app_theme.dart           # Dark/Light theme definitions
-│   │   └── text_styles.dart         # ITC Benguiat-style custom typography
-│   ├── widgets/
-│   │   ├── spore_particles.dart     # CustomPainter for floating spores
-│   │   └── glassmorphic_card.dart   # Reusable Frosted Glass UI Container
-│
-│── features/
-│   ├── home/
-│   │   ├── screens/home_screen.dart
-│   │   └── widgets/character_carousel.dart
-│   │
-│   ├── character_detail/
-│   │   ├── screens/character_detail_screen.dart
-│   │   └── widgets/stats_radar_chart.dart
-│   │
-│   ├── media/
-│   │   ├── screens/trailer_player_screen.dart
-│   │   └── widgets/video_card.dart
-│   │
-│   └── seasons/
-│       └── screens/seasons_overview_screen.dart
-│
-└── models/
-    ├── character_model.dart
-    └── season_model.dart
-
+│── main.dart                     # ProviderScope, dual theme, world stack, rift flash
+├── core/
+│   ├── theme/  app_colors · app_theme · text_styles · world_palette
+│   ├── state/  app_state (Riverpod: worldMode, audioEnabled)
+│   ├── widgets/ particles · rift_route · glass_card
+│   └── media/  asset_media · poster_image      # DROP-IN stills/trailers
+├── models/     character · season · quiz_question · sound_clip
+├── data/       characters · seasons · quiz · soundboard
+│               timeline · locations · bestiary · quotes
+└── screens/    splash · home · character_detail · seasons ·
+                timeline · locations · bestiary · quotes ·
+                quiz · soundboard · transmissions
 ```
 
 ---
 
-## 3. Key Dependencies (`pubspec.yaml`)
+## 3. DROP-IN media (add your own posters & trailers)
 
-```yaml
-dependencies:
-  flutter:
-    sdk: flutter
+The app ships with **procedural key art** (gradients + icons) so it looks
+complete out of the box, offline, and copyright-clean. You can drop **your
+own licensed/captured** stills and trailers into the asset folders and the app
+**automatically prefers them**, with procedural art as the fallback — no code
+changes needed.
 
-  # UI & Animations
-  flutter_animate: ^4.5.0          # Staggered entry animations & effects
-  glassmorphism: ^3.0.0           # Modern glassmorphism card style
-  sensors_plus: ^5.0.0             # Parallax 3D movement using device gyroscope
-  google_fonts: ^6.1.0             # Custom fonts (e.g., Creepster or retro fonts)
-
-  # Media
-  youtube_player_flutter: ^9.0.0  # Playing official trailers
-  audioplayers: ^6.0.0            # Soundboard & ambient retro synth audio
-
-  # State Management & Utilities
-  flutter_riverpod: ^2.5.0        # State management (theme toggle, audio state)
-  cached_network_image: ^3.3.0    # Smooth high-res image caching
-
+```text
+assets/images/char_<id>.jpg     e.g. char_eleven.jpg, char_vecna.jpg
+assets/images/season_<n>.jpg    e.g. season_4.jpg
+assets/images/featured.jpg      the big home banner
+assets/images/loc_<id>.jpg      e.g. loc_hawkins_lab.jpg
+assets/images/monster_<id>.jpg  e.g. monster_demogorgon.jpg
+assets/video/s1_teaser.mp4 … s5_teaser.mp4, featured.mp4
 ```
+
+Resolution is handled by `AssetMedia` (`lib/core/media/asset_media.dart`) and
+surfaced through the `PosterImage` widget, which tries the bundled file then
+falls back to the procedural art. Run `flutter pub get` + rebuild after adding.
+
+**Where to get real assets legitimately:** Netflix's official press/media site
+publishes key art and trailers for editorial/fan use. Do not scrape TikTok /
+Instagram / YouTube — that violates those platforms' terms and rips copyrighted
+material; this app is deliberately built so it never needs to.
 
 ---
 
-## 4. Design System & Theme Definition
+## 4. Fan content (all shipped)
 
-```dart
-import 'package:flutter/material.dart';
-
-class StrangerThingsColors {
-  static const Color neonRed = Color(#E50914);        # Stranger Things Brand Red
-  static const Color upsideDownDark = Color(#0B0E14); # Dark Spooky Background
-  static const Color upsideDownBlue = Color(#1F2A44); # Spore Fog Blue
-  static const Color hawkinsGold = Color(#F5C518);     # Retro Hawkins High Color
-  static const Color glassWhite = Color(0x1AFFFFFF);
-}
-
-```
+- **Roster** — 15 characters + creatures with **actor credits**, story role,
+  six-axis stats radar, skills, and a field-report quote.
+- **Seasons** — all 5 seasons, 42 real chapter titles, expandable.
+- **Timeline** — in-story chronology 1959 → 1987 as a glowing rail.
+- **Hawkins Map** — recurring locations with drop-in stills.
+- **Bestiary** — creatures with threat meters + weaknesses.
+- **Quotes** — the wall of lines fans know by heart (long-press to copy).
+- **Trivia** — 15 questions, animated feedback, score + rank.
+- **Soundboard** — 12 original synth cues with amplitude meters.
+- **Transmissions** — playable teasers with waveform + progress.
 
 ---
 
-## 5. Animation Roadmap & Code Examples
+## 5. Audio — original, procedurally synthesized
 
-### A. Card-to-Screen Hero Transition
-
-Using Flutter's `Hero` widget combined with custom page routes (`PageRouteBuilder`) for custom curve transitions.
-
-**Character Card Widget Snippet:**
-
-```dart
-Widget buildCharacterCard(BuildContext context, Character character) {
-  return GestureDetector(
-    onTap: () {
-      Navigator.of(context).push(
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 700),
-          reverseTransitionDuration: const Duration(milliseconds: 600),
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              CharacterDetailScreen(character: character),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(
-              opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-              child: child,
-            );
-          },
-        ),
-      );
-    },
-    child: Hero(
-      tag: 'character_image_${character.id}',
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Image.asset(character.imagePath, fit: BoxFit.cover),
-      ),
-    ),
-  );
-}
-
-```
+No copyrighted recordings. `tool/generate_audio.py` synthesizes 12 WAV cues
+(theme, screech, static, dice, squelch, portal, chime, coin, power, clock,
+heartbeat, vines). Re-run it to regenerate or extend.
 
 ---
 
-### B. Upside Down Spore Particle Effect
+## 6. Animation roadmap (implemented)
 
-Custom canvas background to render floating spores when in Upside Down mode.
-
-```dart
-import 'dart:math';
-import 'package:flutter/material.dart';
-
-class SporeParticlePainter extends CustomPainter {
-  final List<Offset> particles;
-  final Animation<double> animation;
-
-  SporeParticlePainter({required this.particles, required this.animation})
-      : super(repaint: animation);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.cyanAccent.withOpacity(0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-
-    for (var i = 0; i < particles.length; i++) {
-      double dy = (particles[i].dy - animation.value * size.height) % size.height;
-      canvas.drawCircle(Offset(particles[i].dx, dy), Random().nextDouble() * 2 + 1, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
-}
-
-```
+- **Splash** — the title sequence rebuilt: letters start spread out and
+  glowing, then converge (easeOutExpo) over a red bloom with particles.
+- **`RiftPageRoute`** — custom transitions: incoming rises/fades/scales in;
+  the outgoing screen drifts left and dims as it's pulled under. Works for
+  every push and reverses on back.
+- **Particles** — `ParticleField` (spores/dust), `ParticleBurst` (tap),
+  rift painter, waveform painters.
+- **Radar chart** — animated hexagon draw-on for character stats.
 
 ---
 
-## 6. Implementation Timeline / Milestones
+## 7. **Important Moments**
+* Add All Important, Twisting, Ironic moments in the App
 
-| Phase | Focus Area | Deliverables |
-| --- | --- | --- | --- |
-| **Phase 1** | Setup & UI Wireframing | Setup Flutter project, custom fonts, brand assets, data models. |
-| **Phase 2** | Core Screens & Hero Cards | Implement character carousel, glassmorphism cards, and Hero transitions. |
-| **Phase 3** | Animations & Audio | Add `flutter_animate` entry effects, video player for trailers, audio theme toggle. |
-| **Phase 4** | Upside-Down Mode & Polish | Gyroscope 3D tilt effects, particle canvas, smooth performance optimization. |
+## 8. Verify
+
+```bash
+flutter analyze   # No issues found
+flutter test      # 11/11 pass
+flutter build web --release
+```
+
+Run it: `flutter run -d chrome` (or `-d macos`). Tune the drift/rift/particles
+in `rift_route.dart`, `main.dart`, and `particles.dart`.
+
+> Unofficial fan work, not affiliated with or endorsed by Netflix. Built for
+> personal/educational use.

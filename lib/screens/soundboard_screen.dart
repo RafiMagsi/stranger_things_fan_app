@@ -1,0 +1,293 @@
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/material.dart';
+
+import '../core/theme/text_styles.dart';
+import '../core/widgets/glass_card.dart';
+import '../data/soundboard.dart';
+import '../models/sound_clip.dart';
+
+/// Soundboard: a responsive grid of original synth cues. Tapping a tile
+/// plays it and pulses the tile's glow in time with a fake amplitude meter.
+class SoundboardScreen extends StatefulWidget {
+  const SoundboardScreen({super.key});
+
+  @override
+  State<SoundboardScreen> createState() => _SoundboardScreenState();
+}
+
+class _SoundboardScreenState extends State<SoundboardScreen> {
+  final _player = AudioPlayer();
+  String? _playingId;
+  double _level = 0;
+  Timer? _meter;
+  bool _muted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _player.onPlayerComplete.listen((_) {
+      if (!mounted) return;
+      _meter?.cancel();
+      setState(() {
+        _playingId = null;
+        _level = 0;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _meter?.cancel();
+    _player.dispose();
+    super.dispose();
+  }
+
+  Future<void> _play(SoundClip clip) async {
+    if (_playingId == clip.id) {
+      await _player.stop();
+      _meter?.cancel();
+      setState(() {
+        _playingId = null;
+        _level = 0;
+      });
+      return;
+    }
+    await _player.stop();
+    await _player.play(AssetSource(clip.asset));
+    _meter?.cancel();
+    final rng = math.Random();
+    _meter = Timer.periodic(const Duration(milliseconds: 70), (_) {
+      if (!mounted) return;
+      setState(() => _level = 0.3 + rng.nextDouble() * 0.7);
+    });
+    setState(() => _playingId = clip.id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'SOUNDBOARD',
+          style: AppText.h2(scheme.onSurface).copyWith(letterSpacing: 1.5),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(_muted ? Icons.volume_off : Icons.volume_up),
+            onPressed: () {
+              _player.setVolume(_muted ? 1 : 0);
+              setState(() => _muted = !_muted);
+            },
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        children: [
+          // Intro card.
+          GlassCard(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(Icons.graphic_eq, color: scheme.primary, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Original synth cues, procedurally generated. Tap a tile '
+                    'to trigger — tap again to stop.',
+                    style: AppText.body(
+                      scheme.onSurface.withValues(alpha: 0.7),
+                      size: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.95,
+            ),
+            itemCount: Soundboard.clips.length,
+            itemBuilder: (context, i) {
+              final clip = Soundboard.clips[i];
+              final isPlaying = _playingId == clip.id;
+              return _SoundTile(
+                clip: clip,
+                isPlaying: isPlaying,
+                level: isPlaying ? _level : 0,
+                onTap: () => _play(clip),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SoundTile extends StatelessWidget {
+  const _SoundTile({
+    required this.clip,
+    required this.isPlaying,
+    required this.level,
+    required this.onTap,
+  });
+
+  final SoundClip clip;
+  final bool isPlaying;
+  final double level;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.all(14),
+        transform: Matrix4.diagonal3Values(
+          isPlaying ? 1.02 : 1.0,
+          isPlaying ? 1.02 : 1.0,
+          1,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: isPlaying
+                ? [
+                    clip.accent.withValues(alpha: 0.55),
+                    clip.accent.withValues(alpha: 0.25),
+                    scheme.surface,
+                  ]
+                : [
+                    clip.accent.withValues(alpha: 0.18),
+                    scheme.surface,
+                  ],
+            stops: isPlaying ? const [0, 0.45, 1] : const [0, 0.7],
+          ),
+          border: Border.all(
+            color: clip.accent.withValues(alpha: isPlaying ? 0.9 : 0.4),
+            width: isPlaying ? 1.6 : 1,
+          ),
+          boxShadow: isPlaying
+              ? [
+                  BoxShadow(
+                    color: clip.accent.withValues(alpha: 0.35 + level * 0.25),
+                    blurRadius: 18 + level * 12,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                      colors: [clip.accent, clip.accent.withValues(alpha: 0.6)],
+                    ),
+                  ),
+                  child: Icon(clip.icon, color: Colors.white, size: 20),
+                ),
+                const Spacer(),
+                Icon(
+                  isPlaying ? Icons.stop : Icons.play_arrow,
+                  color: clip.accent,
+                  size: 22,
+                ),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  clip.label,
+                  style: AppText.h2(scheme.onSurface).copyWith(fontSize: 15),
+                ),
+                const SizedBox(height: 4),
+                // Amplitude bars animate while playing.
+                SizedBox(
+                  height: 16,
+                  child: isPlaying
+                      ? CustomPaint(
+                          size: const Size(double.infinity, 16),
+                          painter: _BarsPainter(color: clip.accent, level: level),
+                        )
+                      : Text(
+                          clip.caption,
+                          style: AppText.body(
+                            scheme.onSurface.withValues(alpha: 0.55),
+                            size: 11.5,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BarsPainter extends CustomPainter {
+  const _BarsPainter({required this.color, required this.level});
+
+  final Color color;
+  final double level;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const bars = 24;
+    final gap = size.width / bars;
+    final paint = Paint()..strokeCap = StrokeCap.round;
+    final rng = math.Random();
+
+    for (var i = 0; i < bars; i++) {
+      final h = (0.15 + rng.nextDouble() * 0.85 * level) * size.height;
+      final x = i * gap + gap / 2;
+      paint.color = color.withValues(alpha: 0.85);
+      paint.strokeWidth = gap * 0.5;
+      canvas.drawLine(
+        Offset(x, size.height / 2 - h / 2),
+        Offset(x, size.height / 2 + h / 2),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BarsPainter old) =>
+      old.level != level || old.color != color;
+}

@@ -239,6 +239,70 @@ def power():
     write_wav("power.wav", norm(out, 0.8))
 
 
+def clock():
+    """Vecna's grandfather clock: a slow tick-tock over a dread drone."""
+    n = int(2.4 * SR)
+    out = [0.0] * n
+    # Dread drone bed.
+    for i in range(n):
+        t = i / SR
+        out[i] += sine(38, t) * 0.18 * env(i, n, 0.3, 0.6)
+        out[i] += sine(57, t) * 0.1 * env(i, n, 0.3, 0.6)
+    # Ticks every 0.6s.
+    for k, at in enumerate([0.05, 0.65, 1.25, 1.85]):
+        start = int(at * SR)
+        length = int(0.09 * SR)
+        for i in range(length):
+            idx = start + i
+            if idx >= n:
+                break
+            t = i / SR
+            # Woodblock-ish: high click + resonant knock.
+            v = (random.random() * 2 - 1) * math.exp(-t * 120)
+            v += sine(1800 if k % 2 == 0 else 1300, t) * math.exp(-t * 70) * 0.5
+            out[idx] += v * 0.7
+    write_wav("clock.wav", norm(out, 0.75))
+
+
+def heartbeat():
+    """A slow thumping heartbeat - tension before a Vecna kill."""
+    n = int(2.6 * SR)
+    out = [0.0] * n
+
+    def thump(at, amp):
+        start = int(at * SR)
+        length = int(0.16 * SR)
+        for i in range(length):
+            idx = start + i
+            if idx >= n:
+                break
+            t = i / SR
+            f = 62 * (1 - t / 0.3)
+            v = sine(max(f, 30), t) * math.exp(-t * 22) * amp
+            out[idx] += v
+
+    for at in [0.0, 0.42, 1.1, 1.52, 2.1]:
+        thump(at, 0.9)
+        thump(at + 0.18, 0.55)  # the lub-dub pair
+    write_wav("heartbeat.wav", norm(out, 0.8))
+
+
+def vines():
+    """Vine rustle / spore shimmer - the Upside Down breathing."""
+    n = int(2.2 * SR)
+    noise = [(random.random() * 2 - 1) for _ in range(n)]
+    out = lowpass(noise, 1600)
+    out = [x - y for x, y in zip(out, lowpass(out, 200))]
+    for i in range(n):
+        t = i / SR
+        # Slow swells, like tendrils shifting.
+        swell = 0.3 + 0.7 * abs(math.sin(t * 2.3))
+        out[i] *= swell * env(i, n, 0.3, 0.6) * 0.5
+        # A faint shimmering partial.
+        out[i] += sine(660 + 120 * math.sin(t * 3), t) * 0.04 * env(i, n, 0.4, 0.6)
+    write_wav("vines.wav", norm(out, 0.65))
+
+
 if __name__ == "__main__":
     theme()
     screech()
@@ -249,4 +313,7 @@ if __name__ == "__main__":
     chime()
     coin()
     power()
+    clock()
+    heartbeat()
+    vines()
     print("done")
