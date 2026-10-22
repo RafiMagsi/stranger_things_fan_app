@@ -135,14 +135,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Transform.scale(
-                        scale: scale,
-                        child: Opacity(
-                          opacity: (0.25 + 0.75 * converge).clamp(0.0, 1.0),
-                          child: STLogo(
-                            size: 46,
-                            spread: 1 - converge,
-                            glow: glow,
+                      // Never wider than the screen: narrow phones and large
+                      // accessibility text scale the logo down instead.
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Transform.scale(
+                            scale: scale,
+                            child: Opacity(
+                              opacity: (0.25 + 0.75 * converge).clamp(0.0, 1.0),
+                              child: STLogo(
+                                size: 46,
+                                spread: 1 - converge,
+                                glow: glow,
+                              ),
+                            ),
                           ),
                         ),
                       ),

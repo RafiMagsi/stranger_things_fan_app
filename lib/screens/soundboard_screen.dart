@@ -155,6 +155,7 @@ class _SoundTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
+    final accent = world.tint(clip.accent);
 
     return Semantics(
       button: true,
@@ -177,23 +178,23 @@ class _SoundTile extends StatelessWidget {
               end: Alignment.bottomLeft,
               colors: isPlaying
                   ? [
-                      clip.accent.withValues(alpha: 0.5),
-                      clip.accent.withValues(alpha: 0.2),
+                      accent.withValues(alpha: 0.5),
+                      accent.withValues(alpha: 0.2),
                       world.card,
                     ]
                   : [
-                      clip.accent.withValues(alpha: 0.16),
+                      accent.withValues(alpha: 0.16),
                       world.card,
                     ],
               stops: isPlaying ? const [0, 0.45, 1] : const [0, 0.7],
             ),
             border: Border.all(
-              color: clip.accent.withValues(alpha: isPlaying ? 0.9 : 0.35),
+              color: accent.withValues(alpha: isPlaying ? 0.9 : 0.35),
               width: isPlaying ? 1.6 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: clip.accent.withValues(alpha: isPlaying ? 0.35 + level * 0.25 : 0.1),
+                color: accent.withValues(alpha: isPlaying ? 0.35 + level * 0.25 : 0.1),
                 blurRadius: isPlaying ? 18 + level * 12 : 16,
                 spreadRadius: isPlaying ? 1 : 0,
               ),
@@ -210,16 +211,16 @@ class _SoundTile extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: clip.accent.withValues(alpha: 0.15),
-                      border: Border.all(color: clip.accent.withValues(alpha: 0.8)),
-                      boxShadow: [BoxShadow(color: clip.accent.withValues(alpha: 0.5), blurRadius: 10)],
+                      color: accent.withValues(alpha: 0.15),
+                      border: Border.all(color: accent.withValues(alpha: 0.8)),
+                      boxShadow: [BoxShadow(color: accent.withValues(alpha: 0.5), blurRadius: 10)],
                     ),
-                    child: Icon(clip.icon, color: clip.accent, size: 20),
+                    child: Icon(clip.icon, color: accent, size: 20),
                   ),
                   const Spacer(),
                   Icon(
                     isPlaying ? Icons.stop : Icons.play_arrow,
-                    color: clip.accent,
+                    color: accent,
                     size: 22,
                   ),
                 ],
@@ -235,7 +236,7 @@ class _SoundTile extends StatelessWidget {
                     child: isPlaying
                         ? CustomPaint(
                             size: const Size(double.infinity, 30),
-                            painter: _BarsPainter(color: clip.accent, level: level),
+                            painter: _BarsPainter(color: accent, level: level),
                           )
                         : Text(
                             clip.caption,

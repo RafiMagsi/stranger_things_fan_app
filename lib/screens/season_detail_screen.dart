@@ -11,7 +11,12 @@ import '../core/widgets/neon_card.dart';
 import '../core/widgets/rift_route.dart';
 import '../core/widgets/st_effects.dart';
 import '../core/widgets/st_scaffold.dart';
+import '../core/widgets/world_fx.dart';
 import '../core/widgets/world_toggle.dart';
+import '../data/moments.dart';
+import '../data/seasons.dart';
+import '../data/timeline.dart';
+import '../models/moment.dart';
 import '../models/season.dart';
 import 'trailer_player_screen.dart';
 
@@ -92,7 +97,7 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      widget.heroTag == null ? art : Hero(tag: widget.heroTag!, child: art),
+                      widget.heroTag == null ? art : STHero(tag: widget.heroTag!, radius: 22, child: art),
                       const DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -110,9 +115,12 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'SEASON ${numberWord(s.number)}',
-                              style: AppText.neon(size: 34, color: s.accent),
+                            NeonIgnite(
+                              delay: const Duration(milliseconds: 300),
+                              builder: (context, glow) => Text(
+                                'SEASON ${numberWord(s.number)}',
+                                style: AppText.neon(size: 34, color: world.tint(s.accent), glow: glow),
+                              ),
                             ),
                             const SizedBox(height: 10),
                             Text(
@@ -157,7 +165,7 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
                               child: LinearProgressIndicator(
                                 value: done / keys.length,
                                 minHeight: 4,
-                                color: s.accent,
+                                color: world.tint(s.accent),
                                 backgroundColor: world.ink.withValues(alpha: 0.1),
                               ),
                             ),
@@ -246,6 +254,20 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
 
 /// One chapter, styled like the show's own title card.
 class _ChapterCard extends StatelessWidget {
+  void _showExtras(BuildContext context, List<Moment> moments, List<TimelineEvent> beats) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ChapterExtrasSheet(
+        season: season,
+        episode: episode,
+        moments: moments,
+        beats: beats,
+      ),
+    );
+  }
+
   const _ChapterCard({
     required this.season,
     required this.episode,
@@ -263,9 +285,17 @@ class _ChapterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
-    final accent = season.accent;
+    final accent = world.tint(season.accent);
+    // Everything else the app knows about this chapter.
+    final moments = Moments.all
+        .where((m) => m.season == season.number && m.episode == episode.number)
+        .toList();
+    final beats = STTimeline.events
+        .where((e) => e.season == season.number && e.episode == episode.number)
+        .toList();
     return NeonCard(
-      glow: focused ? AppColors.hawkinsGold : accent,
+      // NeonCard tints its own glow; pass the raw colour.
+      glow: focused ? AppColors.hawkinsGold : season.accent,
       padding: const EdgeInsets.fromLTRB(16, 16, 10, 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,6 +329,29 @@ class _ChapterCard extends StatelessWidget {
                   episode.synopsis,
                   style: AppText.body(world.ink.withValues(alpha: 0.72), size: 13),
                 ),
+                if (moments.isNotEmpty || beats.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      if (moments.isNotEmpty)
+                        _LinkChip(
+                          icon: Icons.local_fire_department,
+                          label: '${moments.length} ${moments.length == 1 ? 'moment' : 'moments'}',
+                          color: accent,
+                          onTap: () => _showExtras(context, moments, beats),
+                        ),
+                      if (beats.isNotEmpty)
+                        _LinkChip(
+                          icon: Icons.timeline,
+                          label: '${beats.length} timeline ${beats.length == 1 ? 'beat' : 'beats'}',
+                          color: accent,
+                          onTap: () => _showExtras(context, moments, beats),
+                        ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -335,6 +388,160 @@ class _ChapterCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _LinkChip extends StatelessWidget {
+  const _LinkChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: color.withValues(alpha: 0.1),
+            border: Border.all(color: color.withValues(alpha: 0.45)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 6),
+              Text(label.toUpperCase(), style: AppText.label(color).copyWith(fontSize: 10.5, letterSpacing: 1.2)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// What else happens in one chapter: its moments (setup only - reveals
+/// stay on the Moments screen) and the timeline beats it reveals. Respects
+/// the spoiler shield like everywhere else.
+class _ChapterExtrasSheet extends ConsumerWidget {
+  const _ChapterExtrasSheet({
+    required this.season,
+    required this.episode,
+    required this.moments,
+    required this.beats,
+  });
+
+  final Season season;
+  final Episode episode;
+  final List<Moment> moments;
+  final List<TimelineEvent> beats;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final world = WorldPalette.of(context);
+    final shielded = ref.watch(settingsProvider).spoilerShield &&
+        Seasons.isAhead(season.number, episode.number, ref.watch(watchProgressProvider));
+    final height = MediaQuery.sizeOf(context).height * 0.7;
+
+    Widget item({
+      required String? photo,
+      required Color accent,
+      required String kicker,
+      required String title,
+      required String body,
+    }) {
+      final titleStyle = AppText.h2(world.ink).copyWith(fontSize: 16);
+      final bodyStyle = AppText.body(world.ink.withValues(alpha: 0.72), size: 12.5);
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: NeonCard(
+          glow: accent,
+          padding: EdgeInsets.zero,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(width: 88, height: 104, child: EventArt(photo: photo, accent: accent)),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(kicker, style: AppText.chapter(world.tint(accent), size: 10)),
+                      const SizedBox(height: 4),
+                      shielded
+                          ? RedactedText(title, style: titleStyle, maxLines: 1)
+                          : Text(title, style: titleStyle),
+                      const SizedBox(height: 4),
+                      shielded
+                          ? RedactedText(body, style: bodyStyle, maxLines: 2)
+                          : Text(body, style: bodyStyle, maxLines: 4, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: height),
+          child: NeonCard(
+            glow: season.accent,
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
+            child: ListView(
+              shrinkWrap: true,
+              children: [
+                Text(
+                  'S${season.number} · ${episode.chapterLabel}',
+                  style: AppText.chapter(world.tint(season.accent), size: 11),
+                ),
+                const SizedBox(height: 4),
+                Text(episode.title, style: AppText.h1(world.ink).copyWith(fontSize: 22)),
+                if (shielded) ...[
+                  const SizedBox(height: 10),
+                  ClassifiedBanner(unlock: 'S${season.number} · E${episode.number}'),
+                ],
+                const SizedBox(height: 14),
+                for (final m in moments)
+                  item(
+                    photo: m.photo,
+                    accent: m.accent,
+                    kicker: m.kind.label.toUpperCase(),
+                    title: m.title,
+                    body: m.setup,
+                  ),
+                for (final e in beats)
+                  item(
+                    photo: e.photo,
+                    accent: e.accent,
+                    kicker: 'TIMELINE · ${e.year.toUpperCase()}',
+                    title: e.title,
+                    body: e.detail,
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

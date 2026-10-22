@@ -5,6 +5,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/app_state.dart';
 import '../theme/app_colors.dart';
 
+/// Lets the app shell own the world flip, so the toggle can ask for the
+/// full portal animation (screen turns over, lightning, shake). Without a
+/// shell - a screen pumped on its own - the toggle just switches worlds.
+class WorldFlipScope extends InheritedWidget {
+  const WorldFlipScope({super.key, required this.onFlip, required super.child});
+
+  final VoidCallback onFlip;
+
+  static WorldFlipScope? maybeOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<WorldFlipScope>();
+
+  @override
+  bool updateShouldNotify(WorldFlipScope oldWidget) => false;
+}
+
 /// Hawkins ⇄ Upside Down switch. In Hawkins the knob is a warm porch light;
 /// flip it and the knob literally turns upside down into a cold spore.
 class WorldToggle extends ConsumerWidget {
@@ -31,8 +46,13 @@ class WorldToggle extends ConsumerWidget {
         child: GestureDetector(
           key: const ValueKey('world-toggle'),
           onTap: () {
-            HapticFeedback.heavyImpact();
-            ref.read(worldModeProvider.notifier).toggle();
+            final shell = WorldFlipScope.maybeOf(context);
+            if (shell != null) {
+              shell.onFlip();
+            } else {
+              HapticFeedback.heavyImpact();
+              ref.read(worldModeProvider.notifier).toggle();
+            }
           },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 420),

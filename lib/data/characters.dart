@@ -61,7 +61,7 @@ class Cast {
   static const Character mike = Character(
     id: 'mike',
     name: 'Mike Wheeler',
-    alias: ' Dungeon Master',
+    alias: 'Dungeon Master',
     tagline: 'Leader of the Party',
     bio:
         'Keeper of the campaign and the first to find Eleven in the woods. '
@@ -88,7 +88,7 @@ class Cast {
   static const Character dustin = Character(
     id: 'dustin',
     name: 'Dustin Henderson',
-    alias: ' D',
+    alias: 'Dusty-bun',
     tagline: 'The heart of the Party',
     bio:
         'Gap-toothed conspiracy theorist with a ham radio and a scientist\'s '
@@ -115,7 +115,7 @@ class Cast {
   static const Character lucas = Character(
     id: 'lucas',
     name: 'Lucas Sinclair',
-    alias: ' Sling King',
+    alias: 'Sling King',
     tagline: 'The protector',
     bio:
         'The Party\'s realist and its sharpest shot. Lucas was the first to '
@@ -142,7 +142,7 @@ class Cast {
   static const Character will = Character(
     id: 'will',
     name: 'Will Byers',
-    alias: ' Will the Wise',
+    alias: 'Will the Wise',
     tagline: 'The boy who saw the Upside Down',
     bio:
         'Taken through the gate in 1983 and used as a spy for the Mind '
@@ -169,7 +169,7 @@ class Cast {
   static const Character max = Character(
     id: 'max',
     name: 'Max Mayfield',
-    alias: ' MADMAX',
+    alias: 'MADMAX',
     tagline: 'The girl who outran Vecna',
     bio:
         'Skateboarder, arcade record-holder, and the only one to walk away '

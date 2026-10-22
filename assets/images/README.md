@@ -4,8 +4,10 @@
 
     cast/<character_id>.jpg      actor portraits from Wikimedia Commons
     filming/<location_id>.jpg    real filming locations from Wikimedia Commons
+    events/<key>.jpg             real objects/places behind each event
+                                 (referenced by `photo:` in the data files)
 
-Every file here is CC0 / CC BY / CC BY-SA. Its author, licence and source are
+Every file here is CC0, CC BY, CC BY-SA or public domain. Its author, licence and source are
 listed in `lib/data/credits.dart` and shown on the in-app Credits screen - keep
 them in sync if you add or replace a file.
 

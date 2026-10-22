@@ -37,6 +37,7 @@ class _QuoteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
+    final accent = world.tint(q.accent);
     return NeonCard(
       glow: q.accent,
       padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
@@ -51,7 +52,7 @@ class _QuoteCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ExcludeSemantics(
-            child: Text('“', style: AppText.neon(size: 44, color: q.accent, glow: 0.8).copyWith(height: 0.9)),
+            child: Text('“', style: AppText.neon(size: 44, color: accent, glow: 0.8).copyWith(height: 0.9)),
           ),
           Text(q.text, style: AppText.dossier(world.ink.withValues(alpha: 0.92), size: 17)),
           const SizedBox(height: 14),
@@ -61,13 +62,13 @@ class _QuoteCard extends StatelessWidget {
                 width: 22,
                 height: 2,
                 decoration: BoxDecoration(
-                  color: q.accent,
+                  color: accent,
                   borderRadius: BorderRadius.circular(2),
-                  boxShadow: [BoxShadow(color: q.accent, blurRadius: 6)],
+                  boxShadow: [BoxShadow(color: accent, blurRadius: 6)],
                 ),
               ),
               const SizedBox(width: 8),
-              Text(q.speaker.toUpperCase(), style: AppText.label(q.accent)),
+              Text(q.speaker.toUpperCase(), style: AppText.label(accent)),
               const Spacer(),
               GlowBadge(text: 'S${q.season}', color: world.muted),
             ],

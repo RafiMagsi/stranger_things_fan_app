@@ -2,7 +2,7 @@
     <!-- Official trailers stream from YouTube. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="stranger_things_fan_app"
+        android:label="Stranger Things Fan App"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

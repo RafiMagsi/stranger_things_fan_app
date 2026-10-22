@@ -9,6 +9,7 @@ import '../core/widgets/neon_card.dart';
 import '../core/widgets/rift_route.dart';
 import '../core/widgets/st_effects.dart';
 import '../core/widgets/st_scaffold.dart';
+import '../core/widgets/world_fx.dart';
 import '../data/seasons.dart';
 import '../models/trailer.dart';
 
@@ -59,6 +60,7 @@ class _TrailerPlayerScreenState extends State<TrailerPlayerScreen> {
     final world = WorldPalette.of(context);
     final t = widget.trailer;
     final season = Seasons.all[t.season - 1];
+    final accent = world.tint(season.accent);
     final others = [
       for (final s in Seasons.all) ...s.trailers.where((o) => o.youtubeId != t.youtubeId),
     ];
@@ -70,13 +72,13 @@ class _TrailerPlayerScreenState extends State<TrailerPlayerScreen> {
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
         children: [
           _VcrFrame(
-            accent: season.accent,
+            accent: accent,
             child: YoutubePlayer(controller: _controller, aspectRatio: 16 / 9),
           ),
           const SizedBox(height: 18),
           Text(
             'STRANGER THINGS ${t.season}',
-            style: AppText.chapter(season.accent, size: 12),
+            style: AppText.chapter(accent, size: 12),
           ),
           const SizedBox(height: 6),
           Text(t.title, style: AppText.h1(world.ink).copyWith(fontSize: 26)),
@@ -185,6 +187,7 @@ class TrailerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final season = Seasons.all[trailer.season - 1];
+    final accent = WorldPalette.of(context).tint(season.accent);
     return NeonCard(
       onTap: onTap,
       glow: season.accent,
@@ -192,10 +195,13 @@ class TrailerCard extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.network(
-            trailer.thumbnailUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => KeyArt(accent: season.accent, icon: Icons.videocam, iconSize: 70),
+          // The official thumbnail, graded into the world's light.
+          WorldGrade(
+            child: Image.network(
+              trailer.thumbnailUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => KeyArt(accent: season.accent, icon: Icons.videocam, iconSize: 70),
+            ),
           ),
           const CrtOverlay(opacity: 0.18, animate: false),
           const DecoratedBox(
@@ -214,8 +220,8 @@ class TrailerCard extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.black.withValues(alpha: 0.4),
-                border: Border.all(color: season.accent, width: 2),
-                boxShadow: [BoxShadow(color: season.accent.withValues(alpha: 0.7), blurRadius: 16)],
+                border: Border.all(color: accent, width: 2),
+                boxShadow: [BoxShadow(color: accent.withValues(alpha: 0.7), blurRadius: 16)],
               ),
               child: const Icon(Icons.play_arrow, color: Colors.white, size: 28),
             ),
@@ -227,7 +233,7 @@ class TrailerCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('SEASON ${trailer.season}', style: AppText.chapter(season.accent, size: 10)),
+                Text('SEASON ${trailer.season}', style: AppText.chapter(accent, size: 10)),
                 const SizedBox(height: 2),
                 Text(
                   trailer.title,

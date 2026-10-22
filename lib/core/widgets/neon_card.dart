@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../theme/app_colors.dart';
 import '../theme/text_styles.dart';
 import '../theme/world_palette.dart';
+import 'world_fx.dart';
 
 /// The app's card: a near-black panel lit by a neon tube along its top
 /// edge, echoing the bars that frame the show's logotype. The accent tints
 /// the tube, border and halo; pressing sinks the card and flares the neon.
+///
+/// Every card follows the world: in the Upside Down its accent decays into
+/// storm blue or lightning red, the tube dims like dying glass, cold fog
+/// gathers on the panel, and vines creep across it - all scaled by
+/// [WorldPalette.depth], so they grow in while the world flips.
 class NeonCard extends StatefulWidget {
   const NeonCard({
     super.key,
@@ -17,6 +24,7 @@ class NeonCard extends StatefulWidget {
     this.onTap,
     this.onLongPress,
     this.tube = true,
+    this.vineSeed,
   });
 
   final Widget child;
@@ -28,6 +36,10 @@ class NeonCard extends StatefulWidget {
 
   /// Whether to draw the neon tube along the top edge.
   final bool tube;
+
+  /// Shapes this card's Upside Down vines; defaults to one derived from the
+  /// accent so a given card always grows the same way.
+  final int? vineSeed;
 
   @override
   State<NeonCard> createState() => _NeonCardState();
@@ -45,8 +57,13 @@ class _NeonCardState extends State<NeonCard> {
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
-    final accent = widget.glow ?? world.accent;
+    final accent = world.tint(widget.glow ?? world.accent);
     final radius = BorderRadius.circular(widget.borderRadius);
+    final depth = world.depth;
+    final fullBleed = widget.padding == EdgeInsets.zero;
+    // Seed from the raw colour: the tinted one changes every frame while
+    // the world flips, which would reshuffle the vines as they grow.
+    final vineSeed = widget.vineSeed ?? (widget.glow?.toARGB32() ?? 0) ^ 0x5A17;
 
     final card = AnimatedContainer(
       duration: const Duration(milliseconds: 160),
@@ -64,7 +81,7 @@ class _NeonCardState extends State<NeonCard> {
           stops: const [0, 0.45, 1],
         ),
         border: Border.all(
-          color: accent.withValues(alpha: _pressed ? 0.65 : 0.26),
+          color: accent.withValues(alpha: _pressed ? 0.65 : 0.26 - 0.06 * depth),
         ),
         boxShadow: [
           BoxShadow(
@@ -83,7 +100,31 @@ class _NeonCardState extends State<NeonCard> {
         borderRadius: BorderRadius.circular(widget.borderRadius - 1),
         child: Stack(
           children: [
+            // On text cards vines grow on the panel itself, beneath the
+            // content, so they never cover words.
+            if (!fullBleed) Positioned.fill(child: CardVines(seed: vineSeed)),
             Padding(padding: widget.padding, child: widget.child),
+            // Cold fog pooling at the bottom of the panel.
+            if (depth > 0.01)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          AppColors.udFogHi.withValues(alpha: 0.35 * depth),
+                          AppColors.udFogHi.withValues(alpha: 0),
+                        ],
+                        stops: const [0, 0.55],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            if (fullBleed)
+              Positioned.fill(child: CardVines(seed: vineSeed, overArt: true)),
             if (widget.tube)
               Positioned(
                 top: 0,
@@ -91,7 +132,8 @@ class _NeonCardState extends State<NeonCard> {
                 right: 0,
                 child: NeonTube(
                   color: accent,
-                  intensity: _pressed ? 1.0 : 0.7,
+                  // Upside Down glass is dying.
+                  intensity: _pressed ? 1.0 : 0.7 - 0.25 * depth,
                 ),
               ),
           ],
@@ -222,6 +264,7 @@ class GlowBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = WorldPalette.of(context).tint(this.color);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -339,6 +382,8 @@ class _FlickerInState extends State<FlickerIn>
     _checked = true;
     final route = ModalRoute.of(context)?.animation;
     if (route == null || route.status == AnimationStatus.completed) return;
+    // Flicker is exactly what reduced effects is for.
+    if (MediaQuery.disableAnimationsOf(context)) return;
 
     final delay = _step * widget.index.clamp(0, 8);
     final total = delay + _run;

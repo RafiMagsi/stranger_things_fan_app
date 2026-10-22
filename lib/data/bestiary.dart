@@ -13,6 +13,7 @@ class Monster {
     required this.icon,
     required this.accent,
     required this.threat,
+    this.photo,
   });
 
   final String id;
@@ -28,6 +29,10 @@ class Monster {
 
   /// Threat rating 1..5.
   final int threat;
+
+  /// A real-world look-alike (see `MediaCredits.photo`) - a Venus flytrap
+  /// for the petal-faced Demogorgon, a supercell for the Mind Flayer.
+  final String? photo;
 }
 
 /// Field guide to the things that crawl out of the Upside Down.
@@ -45,6 +50,7 @@ class Bestiary {
 
   static const Monster demogorgon = Monster(
     id: 'demogorgon',
+    photo: 'events/flytrap',
     name: 'Demogorgon',
     alias: 'The Petal-Faced',
     detail:
@@ -74,6 +80,7 @@ class Bestiary {
 
   static const Monster mindFlayer = Monster(
     id: 'mind_flayer',
+    photo: 'events/storm',
     name: 'Mind Flayer',
     alias: 'The Shadow',
     detail:
@@ -89,6 +96,7 @@ class Bestiary {
 
   static const Monster vecna = Monster(
     id: 'vecna',
+    photo: 'events/clock',
     name: 'Vecna',
     alias: 'Henry Creel · One',
     detail:
@@ -118,6 +126,7 @@ class Bestiary {
 
   static const Monster theFlyed = Monster(
     id: 'the_flayed',
+    photo: 'events/slime',
     name: 'The Flayed',
     alias: 'Hawkins\' missing',
     detail:

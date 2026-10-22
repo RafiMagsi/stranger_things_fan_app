@@ -6,15 +6,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:stranger_things_fan_app/core/state/app_state.dart';
+import 'package:stranger_things_fan_app/core/theme/app_colors.dart';
 import 'package:stranger_things_fan_app/core/theme/app_theme.dart';
+import 'package:stranger_things_fan_app/core/theme/world_palette.dart';
+import 'package:stranger_things_fan_app/core/widgets/neon_card.dart';
 import 'package:stranger_things_fan_app/core/widgets/rift_route.dart';
 import 'package:stranger_things_fan_app/core/widgets/st_logo.dart';
+import 'package:stranger_things_fan_app/core/widgets/world_fx.dart';
 import 'package:stranger_things_fan_app/data/characters.dart' as cast_data;
 import 'package:stranger_things_fan_app/data/credits.dart';
 import 'package:stranger_things_fan_app/data/moments.dart';
 import 'package:stranger_things_fan_app/data/quiz.dart';
 import 'package:stranger_things_fan_app/data/seasons.dart';
 import 'package:stranger_things_fan_app/data/timeline.dart';
+import 'package:stranger_things_fan_app/main.dart';
 import 'package:stranger_things_fan_app/models/quiz_question.dart';
 import 'package:stranger_things_fan_app/screens/bestiary_screen.dart';
 import 'package:stranger_things_fan_app/screens/character_detail_screen.dart';
@@ -348,6 +353,190 @@ void main() {
     expect(container.read(worldModeProvider), isFalse);
   });
 
+  testWidgets('In the app shell the world flips over and switches at the midpoint',
+      (tester) async {
+    usePhoneSize(tester);
+    SharedPreferences.setMockInitialValues({'sound_effects': false});
+    await tester.pumpWidget(const ProviderScope(child: StrangerThingsApp()));
+    // Splash, then the Gate opens onto Home.
+    await tester.pump(const Duration(milliseconds: 4700));
+    await tester.pump(const Duration(milliseconds: 800));
+    expect(find.byType(HomeScreen), findsOneWidget);
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(HomeScreen)),
+      listen: false,
+    );
+    await tester.tap(find.byKey(const ValueKey('world-toggle')));
+    await tester.pump(); // the flip's ticker starts on this frame
+    await tester.pump(const Duration(milliseconds: 250));
+    // Still Hawkins while the screen is turning away...
+    expect(container.read(worldModeProvider), isFalse);
+    await tester.pump(const Duration(milliseconds: 400));
+    // ...the Upside Down once it has passed edge-on.
+    expect(container.read(worldModeProvider), isTrue);
+    await tester.pump(const Duration(milliseconds: 1500));
+    expect(find.text('You are in the Upside Down'), findsOneWidget);
+  });
+
+  testWidgets('Cards grow vines only in the Upside Down', (tester) async {
+    Future<void> pumpIn(ThemeData theme) async {
+      await tester.pumpWidget(MaterialApp(
+        theme: theme,
+        home: const Scaffold(
+          body: Center(
+            child: SizedBox(width: 200, height: 120, child: NeonCard(child: SizedBox.expand())),
+          ),
+        ),
+      ));
+    }
+
+    CustomPaint? vines() => tester
+        .widgetList<CustomPaint>(find.descendant(of: find.byType(CardVines), matching: find.byType(CustomPaint)))
+        .firstOrNull;
+
+    await pumpIn(AppTheme.hawkins);
+    expect(vines(), isNull);
+    await pumpIn(AppTheme.upsideDown);
+    // MaterialApp tweens between themes; let the vines grow in.
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(vines(), isNotNull);
+  });
+
+  test('World tint: Hawkins keeps colours, the Upside Down turns them red or blue', () {
+    final hawkins = WorldPalette.hawkins();
+    final ud = WorldPalette.upsideDown();
+    const pink = Color(0xFFF09CB8); // Eleven
+    const green = Color(0xFF34C759); // a Christmas bulb
+
+    expect(hawkins.tint(pink), pink);
+    double distance(Color a, Color b) =>
+        (a.r - b.r).abs() + (a.g - b.g).abs() + (a.b - b.b).abs();
+    // Warm hues decay toward the lightning, everything else toward the storm.
+    expect(distance(ud.tint(pink), AppColors.udLightning), lessThan(distance(pink, AppColors.udLightning)));
+    expect(distance(ud.tint(green), AppColors.udGlow), lessThan(distance(green, AppColors.udGlow)));
+    // Halfway through the flip, halfway there.
+    expect(hawkins.lerp(ud, 0.5).depth, closeTo(0.5, 1e-9));
+  });
+
+  testWidgets('Typewriter text is always the full string on screen', (tester) async {
+    const line = 'Friends don\'t lie.';
+    await tester.pumpWidget(const MaterialApp(
+      home: TypewriterText(line, style: TextStyle(fontSize: 14)),
+    ));
+    await tester.pump(const Duration(milliseconds: 300)); // mid-typing
+    expect(find.text(line), findsOneWidget);
+    await tester.pump(const Duration(seconds: 1)); // done
+    expect(find.text(line), findsOneWidget);
+  });
+
+  testWidgets('Reduced effects: the world switches at once, no lightning',
+      (tester) async {
+    usePhoneSize(tester);
+    SharedPreferences.setMockInitialValues({'sound_effects': false, 'reduce_effects': true});
+    await tester.pumpWidget(const ProviderScope(child: StrangerThingsApp()));
+    await tester.pump(const Duration(milliseconds: 4700));
+    await tester.pump(const Duration(milliseconds: 800));
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(HomeScreen)),
+      listen: false,
+    );
+    await tester.tap(find.byKey(const ValueKey('world-toggle')));
+    await tester.pump();
+    expect(container.read(worldModeProvider), isTrue);
+    // No storm is drawn.
+    expect(
+      find.descendant(of: find.byType(RiftFlash), matching: find.byType(CustomPaint)),
+      findsNothing,
+    );
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets('The world you left in is remembered', (tester) async {
+    SharedPreferences.setMockInitialValues({'upside_down': true});
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    expect(container.read(worldModeProvider), isFalse); // until prefs load
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    expect(container.read(worldModeProvider), isTrue);
+  });
+
+  testWidgets('Spoiler shield redacts unwatched beats until declassified',
+      (tester) async {
+    usePhoneSize(tester);
+    SharedPreferences.setMockInitialValues({'spoiler_shield': true});
+    await tester.pumpWidget(_wrap(child: const TimelineScreen()));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Nothing watched: the first beat (revealed in S4 · E7) is classified.
+    expect(find.textContaining('CLASSIFIED'), findsWidgets);
+    expect(find.byType(RedactedText), findsWidgets);
+    final before = tester.widgetList(find.byType(RedactedText)).length;
+
+    await tester.tap(find.textContaining('CLASSIFIED').first);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.widgetList(find.byType(RedactedText)).length, before - 2);
+  });
+
+  testWidgets('Spoiler shield lets watched chapters through', (tester) async {
+    usePhoneSize(tester);
+    SharedPreferences.setMockInitialValues({
+      'spoiler_shield': true,
+      'watched_episodes': ['S1E2'],
+    });
+    await tester.pumpWidget(_wrap(child: const MomentsScreen()));
+    await tester.pump(const Duration(milliseconds: 300));
+    // Barb (S1 · E2) has been watched; the S1 · E3 moment has not.
+    expect(find.text('Justice for Barb'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(RedactedText), matching: find.text('Justice for Barb')),
+      findsNothing,
+    );
+    // Its title is still laid out (so the card keeps its shape) but redacted.
+    expect(
+      find.descendant(of: find.byType(RedactedText), matching: find.text('Right Here')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Settings sheet toggles the spoiler shield', (tester) async {
+    usePhoneSize(tester);
+    await tester.pumpWidget(_wrap(child: const HomeScreen()));
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.byKey(const ValueKey('open-settings')));
+    await tester.pump(); // the sheet's entrance starts on this frame
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('CONTROL PANEL'), findsOneWidget);
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(HomeScreen)),
+      listen: false,
+    );
+    expect(container.read(settingsProvider).spoilerShield, isFalse);
+    await tester.tap(find.descendant(
+      of: find.byKey(const ValueKey('setting-spoiler-shield')),
+      matching: find.byType(Switch),
+    ));
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(container.read(settingsProvider).spoilerShield, isTrue);
+  });
+
+  testWidgets('Chapters link to their moments and timeline beats', (tester) async {
+    usePhoneSize(tester);
+    await tester.pumpWidget(_wrap(child: const SeasonDetailScreen(season: Seasons.s1)));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    // Chapter Two is where Barb is taken: one moment, one timeline beat.
+    await _scrollTo(tester, find.text('1 MOMENT').first);
+    await tester.tap(find.text('1 MOMENT').first);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('Justice for Barb'), findsOneWidget);
+    expect(find.text('Barb is taken'), findsOneWidget);
+  });
+
   group('Series data', () {
     test('every chapter of all five seasons is in the watch guide', () {
       expect(Seasons.all.map((s) => s.episodes.length), [8, 9, 8, 9, 8]);
@@ -382,6 +571,26 @@ void main() {
       expect(Moments.all.map((m) => m.id).toSet().length, Moments.all.length);
     });
 
+    test('every event photo is bundled and credited', () {
+      final keys = <String?>[
+        for (final e in STTimeline.events) e.photo,
+        for (final m in Moments.all) m.photo,
+      ].whereType<String>();
+      expect(keys, isNotEmpty);
+      for (final k in keys) {
+        expect(MediaCredits.photo(k), isNotNull, reason: k);
+      }
+      // Every timeline beat has one; most moments do.
+      expect(STTimeline.events.every((e) => e.photo != null), isTrue);
+    });
+
+    test('every character has a real, trimmed alias', () {
+      for (final c in cast_data.Cast.all) {
+        expect(c.alias, c.alias.trim(), reason: c.id);
+        expect(c.alias.length, greaterThanOrEqualTo(3), reason: c.id);
+      }
+    });
+
     test('timeline spans the whole story', () {
       expect(STTimeline.events.first.year, '1959');
       expect(STTimeline.events.last.year, 'Spring 1989');
@@ -393,6 +602,12 @@ void main() {
         expect(File(c.asset).existsSync(), isTrue, reason: c.asset);
         expect(c.license, isNotEmpty);
         expect(c.source, startsWith('https://commons.wikimedia.org/'));
+        // ...and is listed in one of the Credits screen's sections.
+        expect(
+          ['/cast/', '/filming/', '/events/'].any(c.asset.contains),
+          isTrue,
+          reason: '${c.asset} would be uncredited on screen',
+        );
       }
       final ids = cast_data.Cast.all.map((c) => c.id).toSet();
       for (final c in MediaCredits.all.where((c) => c.asset.contains('/cast/'))) {

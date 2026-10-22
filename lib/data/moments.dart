@@ -13,6 +13,7 @@ class Moments {
     // ---------------- Season 1 · November 1983 ----------------
     Moment(
       id: 'barb',
+      photo: 'events/pool',
       kind: MomentKind.irony,
       title: 'Justice for Barb',
       setup:
@@ -32,6 +33,7 @@ class Moments {
     ),
     Moment(
       id: 'lights',
+      photo: 'events/lights',
       kind: MomentKind.reveal,
       title: 'Right Here',
       setup:
@@ -50,6 +52,7 @@ class Moments {
     ),
     Moment(
       id: 'fake_body',
+      photo: 'events/quarry',
       kind: MomentKind.twist,
       title: 'The Body in the Quarry',
       setup:
@@ -69,6 +72,7 @@ class Moments {
     ),
     Moment(
       id: 'hopper_deal',
+      photo: 'events/hazmat',
       kind: MomentKind.betrayal,
       title: 'Hopper\'s Bargain',
       setup:
@@ -87,6 +91,7 @@ class Moments {
     ),
     Moment(
       id: 'el_vanishes',
+      photo: 'events/waffle',
       kind: MomentKind.sacrifice,
       title: 'The Girl Who Disappeared',
       setup:
@@ -105,6 +110,7 @@ class Moments {
     ),
     Moment(
       id: 'slug',
+      photo: 'events/slime',
       kind: MomentKind.twist,
       title: 'Christmas Slug',
       setup:
@@ -124,6 +130,7 @@ class Moments {
     // ---------------- Season 2 · October 1984 ----------------
     Moment(
       id: 'dart',
+      photo: 'events/pumpkin',
       kind: MomentKind.irony,
       title: 'D\'Artagnan',
       setup:
@@ -142,6 +149,7 @@ class Moments {
     ),
     Moment(
       id: 'will_spy',
+      photo: 'events/storm',
       kind: MomentKind.twist,
       title: 'The Boy Who Came Back Wrong',
       setup:
@@ -160,6 +168,7 @@ class Moments {
     ),
     Moment(
       id: 'kali',
+      photo: 'events/chicago',
       kind: MomentKind.reveal,
       title: 'Subject 008',
       setup:
@@ -178,6 +187,7 @@ class Moments {
     ),
     Moment(
       id: 'hopper_hid',
+      photo: 'events/blazer',
       kind: MomentKind.betrayal,
       title: '353 Days',
       setup:
@@ -196,6 +206,7 @@ class Moments {
     ),
     Moment(
       id: 'bob',
+      photo: 'events/trs80',
       kind: MomentKind.sacrifice,
       title: 'Bob Newby, Superhero',
       setup:
@@ -217,6 +228,7 @@ class Moments {
     // ---------------- Season 3 · Summer 1985 ----------------
     Moment(
       id: 'robin_out',
+      photo: 'events/cinema',
       kind: MomentKind.reveal,
       title: 'The Bathroom Floor',
       setup:
@@ -236,6 +248,7 @@ class Moments {
     ),
     Moment(
       id: 'alexei',
+      photo: 'events/carnival',
       kind: MomentKind.irony,
       title: 'Cherry Slurpee',
       setup:
@@ -254,6 +267,7 @@ class Moments {
     ),
     Moment(
       id: 'billy',
+      photo: 'events/camaro',
       kind: MomentKind.sacrifice,
       title: 'The Bully Dies a Hero',
       setup:
@@ -273,6 +287,7 @@ class Moments {
     ),
     Moment(
       id: 'hopper_faked',
+      photo: 'events/volcano',
       kind: MomentKind.twist,
       title: 'The American',
       setup:
@@ -293,6 +308,7 @@ class Moments {
     // ---------------- Season 4 · March 1986 ----------------
     Moment(
       id: 'chrissy',
+      photo: 'events/trailer',
       kind: MomentKind.irony,
       title: 'Chrissy at the Trailer',
       setup:
@@ -310,6 +326,7 @@ class Moments {
     ),
     Moment(
       id: 'victor',
+      photo: 'events/pennhurst',
       kind: MomentKind.reveal,
       title: 'The Man in Pennhurst',
       setup:
@@ -327,6 +344,7 @@ class Moments {
     ),
     Moment(
       id: 'dear_billy',
+      photo: 'events/cassette',
       kind: MomentKind.sacrifice,
       title: 'Running Up That Hill',
       setup:
@@ -344,6 +362,7 @@ class Moments {
     ),
     Moment(
       id: 'vecna_identity',
+      photo: 'events/rainbow',
       kind: MomentKind.twist,
       title: 'The Monster Has a Name',
       setup:
@@ -362,6 +381,7 @@ class Moments {
     ),
     Moment(
       id: 'van_speech',
+      photo: 'events/polaroid',
       kind: MomentKind.irony,
       title: 'The Painting',
       setup:
@@ -379,6 +399,7 @@ class Moments {
     ),
     Moment(
       id: 'papa',
+      photo: 'events/desert',
       kind: MomentKind.irony,
       title: 'Goodbye, Papa',
       setup:
@@ -396,6 +417,7 @@ class Moments {
     ),
     Moment(
       id: 'eddie',
+      photo: 'events/guitar',
       kind: MomentKind.sacrifice,
       title: 'The Freak Plays On',
       setup:
@@ -413,6 +435,7 @@ class Moments {
     ),
     Moment(
       id: 'max_dies',
+      photo: 'events/clock',
       kind: MomentKind.sacrifice,
       title: 'Vecna Wins',
       setup:
@@ -433,6 +456,7 @@ class Moments {
     // ---------------- Season 5 · November 1987 ----------------
     Moment(
       id: 'will_1983',
+      photo: 'events/fog',
       kind: MomentKind.reveal,
       title: 'What Happened to Will',
       setup:
@@ -451,6 +475,7 @@ class Moments {
     ),
     Moment(
       id: 'holly',
+      photo: 'events/teddy',
       kind: MomentKind.twist,
       title: 'The Vanishing of Holly Wheeler',
       setup:
@@ -469,6 +494,7 @@ class Moments {
     ),
     Moment(
       id: 'sorcerer',
+      photo: 'events/dice',
       kind: MomentKind.reveal,
       title: 'Will the Wise',
       setup:
@@ -486,6 +512,7 @@ class Moments {
     ),
     Moment(
       id: 'kali_returns',
+      photo: 'events/humvee',
       kind: MomentKind.reveal,
       title: 'The Lost Sister Returns',
       setup:
@@ -519,6 +546,7 @@ class Moments {
     ),
     Moment(
       id: 'wormhole',
+      photo: 'events/wormhole',
       kind: MomentKind.reveal,
       title: 'The Upside Down Is a Bridge',
       setup:
@@ -537,6 +565,7 @@ class Moments {
     ),
     Moment(
       id: 'will_out',
+      photo: 'events/walkie',
       kind: MomentKind.reveal,
       title: 'Will Tells Them',
       setup:
@@ -554,6 +583,7 @@ class Moments {
     ),
     Moment(
       id: 'kali_dies',
+      photo: 'events/lightning',
       kind: MomentKind.sacrifice,
       title: 'Eight',
       setup:
@@ -570,6 +600,7 @@ class Moments {
     ),
     Moment(
       id: 'joyce_ends',
+      photo: 'events/storm',
       kind: MomentKind.irony,
       title: 'Joyce Finishes It',
       setup:
@@ -588,6 +619,7 @@ class Moments {
     ),
     Moment(
       id: 'el_stays',
+      photo: 'events/fog',
       kind: MomentKind.sacrifice,
       title: 'Eleven Stays Behind',
       setup:
@@ -605,6 +637,7 @@ class Moments {
     ),
     Moment(
       id: 'last_campaign',
+      photo: 'events/dice',
       kind: MomentKind.irony,
       title: 'The Last Campaign',
       setup:

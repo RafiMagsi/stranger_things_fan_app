@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/world_palette.dart';
 
 /// Where the last finger came down, in global coordinates. The app shell
 /// records every pointer-down, so a pushed page can tear open from the card
@@ -15,8 +16,10 @@ class TapOrigin {
 
 /// The signature page transition: the incoming screen tears open through a
 /// writhing, red-rimmed Gate that grows out of the tapped card, the way the
-/// portal under Hawkins Lab splits the wall. The page behind dims and sinks
-/// as it's pulled under. Back navigation closes the tear again.
+/// portal under Hawkins Lab splits the wall. Strands of goo stretch across
+/// the edge and it throws off embers; in the Upside Down the rim crackles
+/// with red lightning in cold haze and throws off ash instead. The page
+/// behind dims and sinks as it's pulled under. Back closes the tear.
 class RiftPageRoute<T> extends PageRouteBuilder<T> {
   RiftPageRoute({
     required this.page,
@@ -86,6 +89,10 @@ class _GateTransition extends StatelessWidget {
       child: child,
       builder: (context, child) {
         final size = MediaQuery.sizeOf(context);
+        final depth = WorldPalette.of(context).depth;
+        // Reduced effects: no tear, no rim, no particles - just a fade. The
+        // widget tree stays the same shape either way.
+        final reduce = MediaQuery.disableAnimationsOf(context);
         final t = animation.value;
         final open = Curves.easeInOutCubic.transform(t);
         final cover = Curves.easeInOutCubic.transform(secondaryAnimation.value);
@@ -93,10 +100,10 @@ class _GateTransition extends StatelessWidget {
         // Oversized so the edge's inward wobble (up to -14%) still clears
         // the farthest corner as the tear finishes opening.
         final maxR = _farthestCorner(center, size) * 1.25;
-        final opening = t < 1;
+        final opening = t < 1 && !reduce;
 
         return Opacity(
-          opacity: 1 - 0.55 * cover,
+          opacity: (1 - 0.55 * cover) * (reduce ? Curves.easeOut.transform(t) : 1),
           child: Transform.scale(
             scale: 1 - 0.05 * cover,
             child: Stack(
@@ -117,6 +124,7 @@ class _GateTransition extends StatelessWidget {
                       radius: maxR * open,
                       seed: seed,
                       t: opening ? t : 1,
+                      depth: depth,
                     ),
                   ),
                 ),
@@ -138,15 +146,19 @@ class _GateTransition extends StatelessWidget {
 
 /// A ring whose radius writhes with layered sine noise — an organic tear,
 /// not a geometric circle. The noise drifts with [t] so the edge squirms.
-Path _gatePath(Offset center, double radius, double seed, double t) {
-  const n = 96;
+/// [crackle] adds per-frame jitter on top: electricity along the rim.
+Path _gatePath(Offset center, double radius, double seed, double t,
+    {double crackle = 0}) {
+  const n = 128;
   final path = Path();
+  final jitter = crackle > 0 ? math.Random((t * 90).floor() + seed.floor()) : null;
   for (var i = 0; i <= n; i++) {
     final a = i / n * math.pi * 2;
     final wobble = 1 +
         0.07 * math.sin(7 * a + seed + t * 3) +
         0.045 * math.sin(13 * a + seed * 2 - t * 5) +
-        0.025 * math.sin(23 * a + seed * 3 + t * 8);
+        0.025 * math.sin(23 * a + seed * 3 + t * 8) +
+        (jitter == null || i == n ? 0 : (jitter.nextDouble() - 0.5) * crackle);
     final p = center + Offset(math.cos(a), math.sin(a)) * radius * wobble;
     if (i == 0) {
       path.moveTo(p.dx, p.dy);
@@ -183,6 +195,7 @@ class _GateRimPainter extends CustomPainter {
     required this.radius,
     required this.seed,
     required this.t,
+    required this.depth,
   });
 
   final Offset center;
@@ -190,39 +203,88 @@ class _GateRimPainter extends CustomPainter {
   final double seed;
   final double t;
 
+  /// 0 = Hawkins (fleshy red tear, embers), 1 = Upside Down (lightning rim
+  /// in cold haze, ash).
+  final double depth;
+
   @override
   void paint(Canvas canvas, Size size) {
     if (t >= 1 || radius <= 0) return;
     final fade = 1 - Curves.easeIn.transform(t);
     final rim = _gatePath(center, radius, seed, t);
+    final haze = Color.lerp(AppColors.stRed, AppColors.udGlow, depth)!;
+    final edge = Color.lerp(AppColors.stRedGlow, AppColors.udLightning, depth)!;
+    final core = Color.lerp(const Color(0xFFFFD6C9), const Color(0xFFE8F1FF), depth)!;
 
+    // Wide halo of the world's light.
     canvas.drawPath(
       rim,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 34 * fade + 6
-        ..color = AppColors.stRed.withValues(alpha: 0.55 * fade)
+        ..color = haze.withValues(alpha: 0.5 * fade)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
     );
+
+    // Goo strands stretched across the edge, thinning as the tear widens.
+    final rng = math.Random(seed.floor());
+    final strands = Path();
+    for (var i = 0; i < 9; i++) {
+      final a = rng.nextDouble() * math.pi * 2;
+      final dir = Offset(math.cos(a), math.sin(a));
+      final inner = center + dir * radius * (0.82 + rng.nextDouble() * 0.08);
+      final outer = center + dir * radius * (1.08 + rng.nextDouble() * 0.1);
+      final sag = Offset(-dir.dy, dir.dx) * radius * 0.06 * (rng.nextDouble() - 0.5);
+      final mid = Offset.lerp(inner, outer, 0.5)! + sag;
+      strands
+        ..moveTo(inner.dx, inner.dy)
+        ..quadraticBezierTo(mid.dx, mid.dy, outer.dx, outer.dy);
+    }
     canvas.drawPath(
-      rim,
+      strands,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 2.4 * fade
+        ..color = edge.withValues(alpha: 0.55 * fade * (1 - depth * 0.5)),
+    );
+
+    // The rim itself - in the Upside Down it crackles like lightning.
+    final hot = depth > 0.01
+        ? _gatePath(center, radius, seed, t, crackle: 0.035 * depth)
+        : rim;
+    canvas.drawPath(
+      hot,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 7 * fade + 1
-        ..color = AppColors.stRedGlow.withValues(alpha: 0.9 * fade),
+        ..strokeJoin = StrokeJoin.round
+        ..color = edge.withValues(alpha: 0.9 * fade),
     );
     canvas.drawPath(
-      rim,
+      hot,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.4
-        ..color = const Color(0xFFFFD6C9).withValues(alpha: fade),
+        ..color = core.withValues(alpha: fade),
     );
+
+    // Embers (Hawkins) or ash (Upside Down) thrown off the edge.
+    final speck = Color.lerp(const Color(0xFFFFB36B), AppColors.udSpore, depth)!;
+    final burst = Paint();
+    for (var i = 0; i < 48; i++) {
+      final a = rng.nextDouble() * math.pi * 2;
+      final speed = 0.5 + rng.nextDouble();
+      final dist = radius * (0.97 + 0.05 * rng.nextDouble()) + 90 * speed * t;
+      final p = center + Offset(math.cos(a), math.sin(a)) * dist;
+      burst.color = speck.withValues(alpha: 0.85 * fade * (0.4 + 0.6 * rng.nextDouble()));
+      canvas.drawCircle(p, (1 + 1.6 * rng.nextDouble()) * fade + 0.4, burst);
+    }
   }
 
   @override
   bool shouldRepaint(covariant _GateRimPainter old) =>
-      old.radius != radius || old.t != t || old.center != center;
+      old.radius != radius || old.t != t || old.center != center || old.depth != depth;
 }
 
 /// The world-flip storm: fired each time Hawkins ⇄ the Upside Down is
@@ -349,25 +411,28 @@ class _StormPainter extends CustomPainter {
       }
     }
 
-    // Shock ring rolling out from the centre: red, with a cold blue echo.
+    // A soft pressure wave rolling out with the thunder: blurred, starting
+    // wide, red with a cold blue echo - felt more than seen.
     final center = size.center(Offset.zero);
-    final r = size.longestSide * 0.9 * Curves.easeOutExpo.transform(progress);
+    final r = size.longestSide * (0.25 + 0.75 * Curves.easeOutCubic.transform(progress));
     final fade = 1 - progress;
     canvas.drawCircle(
       center,
       r,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 26 * fade + 3
-        ..color = AppColors.stRed.withValues(alpha: 0.7 * fade),
+        ..strokeWidth = 40 * fade + 6
+        ..color = AppColors.stRed.withValues(alpha: 0.35 * fade)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 22),
     );
     canvas.drawCircle(
       center,
-      r * 0.82,
+      r * 0.86,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 10 * fade + 2
-        ..color = AppColors.udGlow.withValues(alpha: 0.5 * fade),
+        ..strokeWidth = 16 * fade + 3
+        ..color = AppColors.udGlow.withValues(alpha: 0.25 * fade)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
     );
   }
 

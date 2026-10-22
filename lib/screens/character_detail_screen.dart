@@ -12,6 +12,7 @@ import '../core/widgets/neon_card.dart';
 import '../core/widgets/particles.dart';
 import '../core/widgets/st_effects.dart';
 import '../core/widgets/st_scaffold.dart';
+import '../core/widgets/world_fx.dart';
 import '../core/widgets/world_toggle.dart';
 import '../data/credits.dart';
 import '../models/character.dart';
@@ -57,6 +58,8 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
     final photo = MediaCredits.castPhoto(c.id);
     final credit = photo == null ? null : MediaCredits.forAsset(photo);
     final art = CharacterArt(character: c, iconSize: 220);
+    // The character's colour, as it looks in the current world.
+    final accent = world.tint(c.accent);
 
     return Scaffold(
       body: Stack(
@@ -82,7 +85,7 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      widget.heroTag == null ? art : Hero(tag: widget.heroTag!, child: art),
+                      widget.heroTag == null ? art : STHero(tag: widget.heroTag!, radius: 24, child: art),
                       // Scrim so the name stays legible over any still.
                       const DecoratedBox(
                         decoration: BoxDecoration(
@@ -123,7 +126,7 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                               style: AppText.h1(Colors.white, heavy: true).copyWith(
                                 fontSize: 40,
                                 letterSpacing: 1.2,
-                                shadows: [Shadow(color: c.accent, blurRadius: 22)],
+                                shadows: [Shadow(color: accent, blurRadius: 22)],
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -166,7 +169,7 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                         children: [
                           Text(
                             c.role == null ? 'SUBJECT FILE' : 'SUBJECT FILE · ${c.role!.toUpperCase()}',
-                            style: AppText.chapter(c.accent, size: 11),
+                            style: AppText.chapter(accent, size: 11),
                           ),
                           const SizedBox(height: 10),
                           Text(c.tagline, style: AppText.h2(world.ink).copyWith(fontSize: 20)),
@@ -196,7 +199,7 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                             builder: (context, _) => _StatsRadar(
                               stats: c.stats,
                               progress: Curves.easeOutCubic.transform(_controller.value),
-                              color: c.accent,
+                              color: accent,
                             ),
                           ),
                         ),
@@ -219,9 +222,9 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
-                            color: c.accent.withValues(alpha: 0.12),
-                            border: Border.all(color: c.accent.withValues(alpha: 0.5)),
-                            boxShadow: [BoxShadow(color: c.accent.withValues(alpha: 0.18), blurRadius: 10)],
+                            color: accent.withValues(alpha: 0.12),
+                            border: Border.all(color: accent.withValues(alpha: 0.5)),
+                            boxShadow: [BoxShadow(color: accent.withValues(alpha: 0.18), blurRadius: 10)],
                           ),
                           child: Text(s, style: AppText.body(world.ink, size: 13)),
                         ),
@@ -249,15 +252,16 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                               width: 3,
                               height: 44,
                               decoration: BoxDecoration(
-                                color: c.accent,
+                                color: accent,
                                 borderRadius: BorderRadius.circular(3),
-                                boxShadow: [BoxShadow(color: c.accent, blurRadius: 8)],
+                                boxShadow: [BoxShadow(color: accent, blurRadius: 8)],
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: Text(
+                              child: TypewriterText(
                                 '"${c.line}"',
+                                delay: const Duration(milliseconds: 700),
                                 style: AppText.dossier(world.ink.withValues(alpha: 0.9), size: 16),
                               ),
                             ),

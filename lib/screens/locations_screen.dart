@@ -39,6 +39,7 @@ class _LocationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
+    final accent = world.tint(loc.accent);
     final photo = MediaCredits.filmingPhoto(loc.id);
     final credit = photo == null ? null : MediaCredits.forAsset(photo);
 
@@ -83,7 +84,7 @@ class _LocationCard extends StatelessWidget {
                   Positioned(
                     right: 14,
                     bottom: 10,
-                    child: Icon(loc.icon, color: loc.accent, size: 26, shadows: [Shadow(color: loc.accent, blurRadius: 12)]),
+                    child: Icon(loc.icon, color: accent, size: 26, shadows: [Shadow(color: accent, blurRadius: 12)]),
                   ),
               ],
             ),
@@ -95,7 +96,7 @@ class _LocationCard extends StatelessWidget {
               children: [
                 Text(loc.name, style: AppText.h2(world.ink).copyWith(fontSize: 19)),
                 const SizedBox(height: 4),
-                Text(loc.note, style: AppText.dossier(loc.accent, size: 13)),
+                Text(loc.note, style: AppText.dossier(accent, size: 13)),
                 const SizedBox(height: 10),
                 Text(
                   loc.detail,

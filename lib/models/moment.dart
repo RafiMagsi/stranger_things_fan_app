@@ -33,6 +33,7 @@ class Moment {
     required this.season,
     required this.episode,
     required this.accent,
+    this.photo,
   });
 
   final String id;
@@ -51,6 +52,10 @@ class Moment {
   final int season;
   final int episode;
   final Color accent;
+
+  /// A real-world photo of what the moment turns on (see
+  /// `MediaCredits.photo`), e.g. `'events/camaro'` for Billy.
+  final String? photo;
 
   String get chapterLabel => 'S$season · E$episode';
 }

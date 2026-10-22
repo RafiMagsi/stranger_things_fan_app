@@ -6,6 +6,7 @@ import '../../models/character.dart';
 import '../../models/season.dart';
 import '../theme/world_palette.dart';
 import '../widgets/st_effects.dart';
+import '../widgets/world_fx.dart';
 import 'poster_image.dart';
 
 /// Card and header art for a character. Resolution order:
@@ -26,7 +27,7 @@ class CharacterArt extends StatelessWidget {
         ? DuotonePhoto(
             asset: photo,
             // Mostly the world's light, with a hint of the character's own.
-            tint: Color.lerp(world.accent, character.accent, 0.35)!,
+            tint: Color.lerp(world.accent, world.tint(character.accent), 0.35)!,
           )
         : KeyArt(
             accent: character.accent,
@@ -92,9 +93,20 @@ class LocationArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final world = WorldPalette.of(context);
     final photo = MediaCredits.filmingPhoto(location.id);
     final fallback = photo != null
-        ? DuotonePhoto(asset: photo, tint: location.accent, grade: 0.5, alignment: Alignment.center)
+        // The real place, then its Upside Down double: same building, cold
+        // and drained.
+        ? WorldGrade(
+            strength: 0.75,
+            child: DuotonePhoto(
+              asset: photo,
+              tint: world.tint(location.accent),
+              grade: 0.5,
+              alignment: Alignment.center,
+            ),
+          )
         : KeyArt(
             accent: location.accent,
             icon: location.icon,
@@ -102,5 +114,85 @@ class LocationArt extends StatelessWidget {
             iconAlignment: const Alignment(0.85, 0.1),
           );
     return PosterImage(assetKey: 'loc_${location.id}', fallback: fallback);
+  }
+}
+
+/// A real-world photo behind an event or section - Joyce's Christmas
+/// lights, Hopper's Blazer, Vecna's clock - graded into the show's look:
+/// the item's own colour in Hawkins, the cold Upside Down grade over there.
+/// Falls back to procedural key art when [photo] isn't bundled.
+class EventArt extends StatelessWidget {
+  const EventArt({
+    super.key,
+    required this.photo,
+    required this.accent,
+    this.icon,
+    this.grade = 0.6,
+  });
+
+  /// Path under `assets/images/` without extension, e.g. `'events/lights'`.
+  final String? photo;
+  final Color accent;
+  final IconData? icon;
+  final double grade;
+
+  // Where the subject sits in a few tall or busy frames.
+  static const _framing = {
+    'events/clock': Alignment(0, -0.7),
+    'events/fireworks': Alignment(0, -0.8),
+    'events/guitar': Alignment(0, 0.35),
+    'events/teddy': Alignment(0, -0.3),
+    'events/mkultra': Alignment(0, -0.4),
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final asset = MediaCredits.photo(photo);
+    if (asset == null) {
+      return KeyArt(accent: accent, icon: icon, iconSize: 90, iconAlignment: const Alignment(0.8, 0));
+    }
+    final world = WorldPalette.of(context);
+    return WorldGrade(
+      strength: 0.7,
+      child: DuotonePhoto(
+        asset: asset,
+        tint: world.tint(accent),
+        grade: grade,
+        alignment: _framing[photo] ?? Alignment.center,
+      ),
+    );
+  }
+}
+
+/// Four Party portraits in a 2x2 grid - the cover of the cast file.
+class CastMosaic extends StatelessWidget {
+  const CastMosaic({super.key, required this.characters, required this.accent});
+
+  final List<Character> characters;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final world = WorldPalette.of(context);
+    Widget cell(Character c) {
+      final photo = MediaCredits.castPhoto(c.id);
+      return photo == null
+          ? KeyArt(accent: c.accent, icon: c.icon, iconSize: 48)
+          : DuotonePhoto(asset: photo, tint: world.tint(accent), grade: 0.75);
+    }
+
+    return Column(
+      children: [
+        for (var row = 0; row < 2; row++)
+          Expanded(
+            child: Row(
+              children: [
+                for (var col = 0; col < 2; col++)
+                  Expanded(child: cell(characters[(row * 2 + col) % characters.length])),
+              ],
+            ),
+          ),
+      ],
+    );
   }
 }

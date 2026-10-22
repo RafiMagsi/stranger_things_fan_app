@@ -27,6 +27,12 @@ class Seasons {
 
   static int get totalEpisodes => watchOrder.length;
 
+  /// Spoiler shield: is something revealed in [season] / [episode] still
+  /// ahead of you? Season-level reveals count from the season's first
+  /// chapter.
+  static bool isAhead(int season, int? episode, Set<String> watched) =>
+      !watched.contains('S${season}E${episode ?? 1}');
+
   static const Season s1 = Season(
     number: 1,
     year: '2016',

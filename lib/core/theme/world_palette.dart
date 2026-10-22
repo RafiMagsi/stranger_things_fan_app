@@ -7,10 +7,16 @@ import 'app_colors.dart';
 /// Both worlds are dark now, so `Brightness` alone can't distinguish them.
 /// Components read this extension to get the right accent/glow/surface for
 /// whichever world is active — no `isLight` branching sprinkled everywhere.
+///
+/// [depth] is how far into the Upside Down we are (0 = Hawkins, 1 = Upside
+/// Down). Unlike [upsideDown] it tweens smoothly with the theme, so effects
+/// that scale with it (vines, colour grading, fog) creep in as the world
+/// flips instead of snapping.
 @immutable
 class WorldPalette extends ThemeExtension<WorldPalette> {
   const WorldPalette({
     required this.upsideDown,
+    required this.depth,
     required this.accent,
     required this.accentGlow,
     required this.secondary,
@@ -24,6 +30,7 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
   });
 
   final bool upsideDown;
+  final double depth;
   final Color accent; // primary neon accent (logo red / storm blue)
   final Color accentGlow; // neon halo color
   final Color secondary; // supporting accent (amber / red lightning)
@@ -37,6 +44,7 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
 
   factory WorldPalette.hawkins() => const WorldPalette(
         upsideDown: false,
+        depth: 0,
         accent: AppColors.stRed,
         accentGlow: AppColors.stRedGlow,
         secondary: AppColors.hawkinsGold,
@@ -51,6 +59,7 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
 
   factory WorldPalette.upsideDown() => const WorldPalette(
         upsideDown: true,
+        depth: 1,
         accent: AppColors.udGlow,
         accentGlow: AppColors.udSpore,
         secondary: AppColors.udLightning,
@@ -63,6 +72,25 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
         line: AppColors.udFogHi,
       );
 
+  /// Pulls any content colour (a character's, a season's, a creature's) into
+  /// the active world's light. Hawkins leaves it alone. The Upside Down only
+  /// knows two colours - storm blue and lightning red - so warm hues decay
+  /// toward the lightning and everything else toward the storm, losing
+  /// some brightness on the way like everything over there does.
+  Color tint(Color c) {
+    if (depth <= 0) return c;
+    final hsl = HSLColor.fromColor(c);
+    // Greys and whites have no real hue (white reads as hue 0, "red"): they
+    // go to pale ash instead of lightning.
+    final target = hsl.saturation < 0.15
+        ? AppColors.udSpore
+        : (hsl.hue < 45 || hsl.hue > 300)
+            ? AppColors.udLightning
+            : AppColors.udGlow;
+    final decayed = Color.lerp(c, target, 0.68 * depth)!;
+    return Color.lerp(decayed, Colors.black, 0.12 * depth)!.withValues(alpha: c.a);
+  }
+
   /// Convenience lookup with a safe fallback.
   static WorldPalette of(BuildContext context) {
     final ext = Theme.of(context).extension<WorldPalette>();
@@ -72,6 +100,7 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
   @override
   WorldPalette copyWith({
     bool? upsideDown,
+    double? depth,
     Color? accent,
     Color? accentGlow,
     Color? secondary,
@@ -85,6 +114,7 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
   }) {
     return WorldPalette(
       upsideDown: upsideDown ?? this.upsideDown,
+      depth: depth ?? this.depth,
       accent: accent ?? this.accent,
       accentGlow: accentGlow ?? this.accentGlow,
       secondary: secondary ?? this.secondary,
@@ -103,6 +133,7 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
     if (other == null) return this;
     return WorldPalette(
       upsideDown: t < 0.5 ? upsideDown : other.upsideDown,
+      depth: depth + (other.depth - depth) * t,
       accent: Color.lerp(accent, other.accent, t)!,
       accentGlow: Color.lerp(accentGlow, other.accentGlow, t)!,
       secondary: Color.lerp(secondary, other.secondary, t)!,

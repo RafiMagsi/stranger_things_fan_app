@@ -33,8 +33,25 @@ Both worlds are near-black; the toggle swaps the light:
 | **Hawkins** (Right Side Up) | warm void `#070405` | logo red `#E50914` + amber | red title-sequence bloom, embers |
 | **Upside Down** | storm void `#03060C` | storm blue `#5AAEFF` + red lightning | ash spores, vines in the corners, cold haze |
 
-The logo stays red in both worlds (it's red in the show). Cast photos are
-**re-graded live** into the active world's light when you flip.
+The logo stays red in both worlds (it's red in the show). **Everything
+else follows the world** - every card, background, photo and piece of art:
+
+- `WorldPalette.depth` (0 = Hawkins, 1 = Upside Down) tweens with the theme,
+  so effects *grow in* as you cross over instead of snapping.
+- `WorldPalette.tint()` pulls any content colour into the world's light. The
+  Upside Down only knows storm blue and lightning red: warm hues decay toward
+  the lightning, cool ones toward the storm, greys to pale ash.
+- `NeonCard` (every card): tinted glow, dying neon tube, cold fog on the
+  panel, and vines that crawl across it (under the text on text cards; in
+  the top corners on photo cards).
+- `WorldGrade`: the show's Upside Down colour grade (drained, cold, crushed)
+  on all procedural art, filming-location photos and trailer thumbnails;
+  cast portraits re-grade live.
+- `WorldAtmosphere` (every screen): Hawkins breathes a red title-sequence
+  bloom; the Upside Down drifts storm fog, double-flickers distant red
+  lightning every few seconds, and grows vines in from the corners.
+- The shell keeps something in the air: embers in Hawkins, ash in the
+  Upside Down.
 
 - `WorldPalette` (`lib/core/theme/world_palette.dart`) is a `ThemeExtension`
   carrying accent / secondary / atmosphere / surface tokens per world, so
@@ -62,6 +79,7 @@ lib/
 │   ├── theme/   app_colors · app_theme · text_styles · world_palette
 │   ├── state/   app_state (worldMode, audioEnabled, watchProgress → shared_preferences)
 │   ├── widgets/ neon_card (NeonCard, NeonTube, GlowBadge, SectionHeader, FlickerIn)
+│   │            world_fx (WorldGrade, CardVines, NeonIgnite, TypewriterText, STHero)
 │   │            st_logo · st_scaffold (STScaffold, WorldAtmosphere, NeonBackButton)
 │   │            st_effects (CRT, ChristmasLights, KeyArt, DuotonePhoto, GateArt,
 │   │                        VineOverlay, AlphabetWall)
@@ -87,10 +105,18 @@ OK to re-host them inside an app. So the app uses three legitimate sources:
    player with an "Open in YouTube" fallback. Nothing is downloaded or
    re-hosted. Every id was verified with YouTube's oEmbed endpoint to confirm
    the uploader is an official Netflix channel.
-2. **Freely-licensed photos, bundled** — 13 cast portraits and 3 filming
+2. **Freely-licensed photos, bundled** — 13 cast portraits, 3 filming
    locations (Gwinnett Place Mall = Starcourt, Lukiškės Prison = the Kamchatka
    prison, Jackson GA = downtown Hawkins) from Wikimedia Commons under CC0 /
-   CC BY / CC BY-SA, in `assets/images/cast/` and `assets/images/filming/`.
+   CC BY / CC BY-SA, in `assets/images/cast/` and `assets/images/filming/`;
+   plus **44 event images** in `assets/images/events/` - the real objects and
+   places each event turns on: Joyce's Christmas lights, Hopper's '79 K5
+   Blazer, Billy's Camaro, Jonathan's Ford LTD and Polaroid, Vecna's
+   grandfather clock, the isolation tank, the quarry, Pennhurst, Kamchatka's
+   volcano, Eddie's guitar, D&D dice... Every timeline beat, 33 of 34
+   moments, four creatures and every Explore card carry one, graded into
+   the show's look. Never frames from the show; all licence-checked
+   (CC0 / CC BY / CC BY-SA / public domain only).
    Attribution lives in `lib/data/credits.dart`, on each dossier/location
    card, and on the **Credits** screen (required by the licences).
 3. **Procedural key art** — Gate, lightning, vines, the alphabet wall and
@@ -118,7 +144,12 @@ the app showed them on every card.
 - **Watch guide** — all 5 seasons, all 42 chapters, each with a spoiler-light
   synopsis, the in-story setting (Nov 1983 → Nov 1987), official trailers,
   and a "watched" mark. Progress persists on device; Home always shows
-  **Next up**.
+  **Next up**. Each chapter links to the moments and timeline beats that
+  happen in it.
+- **Spoiler shield** (Settings) — timeline beats and moments from chapters
+  you haven't watched are redacted like a declassified lab file: blurred
+  photo, blacked-out text, "Classified · watch S2 · E6 to unlock". Tap to
+  declassify one.
 - **Timeline** — 34 beats in story order, 1959 → the spring-1989 epilogue,
   grouped by era; each says which episode reveals it.
 - **Moments** — 34 twists, reveals, ironies, sacrifices and betrayals across
@@ -145,16 +176,33 @@ heartbeat, vines). Re-run it to regenerate or extend.
 
 ## 6. Animation & special effects (implemented)
 
+- **The world flip** — the toggle turns the whole screen over on its
+  horizontal axis: Hawkins rotates away, the world switches exactly when the
+  screen is edge-on, two forked red lightning bolts strike with a double
+  flash and a soft pressure wave, the frame shakes with the thunder, and the
+  Upside Down turns in from the other side as vines grow across every card.
+
 - **The Gate transition** (`RiftPageRoute`) — every card → screen push tears
   the new page open through a writhing, red-rimmed portal that grows from the
   exact point you tapped (`TapOrigin`), while the old page dims and sinks.
-  Back closes the tear. Hero animations fly cast portraits and season art
-  from the card into the page header on top of it.
+  Goo strands stretch across the edge and it throws off embers; in the
+  Upside Down the rim crackles with red lightning in cold haze and throws
+  off ash. Back closes the tear. `STHero` flies cast portraits and season
+  art into the page header, keeping the card's rounded corners in flight
+  with a burning neon edge.
 - **The storm** (`RiftFlash`) — flipping worlds cracks two forked red
   lightning bolts across the screen in a double strike, rolls a red-blue
   shockwave, and the theme eases over 600ms.
 - **Flicker-in** (`FlickerIn`) — cards stutter on like a Hawkins streetlight
   when something is near, staggered, only while a screen is arriving.
+- **Neon ignition** (`NeonIgnite`) — screen titles and the logo power on
+  like a neon sign: dull glass, a buzz, dark, a catch, then steady.
+- **Lab teletype** (`TypewriterText`) — field reports, spoiler reveals and
+  the quote of the day type themselves out, without reflowing the layout.
+- **Parallax** — Party portraits drift slower than their cards as the
+  carousel slides.
+- **Wrong-answer jolt** — Trivia's answer board shakes like a slammed lab
+  door; a right answer throws sparks.
 - **VHS tune-in** — spoiler reveals split into red/cyan ghosts that jitter and
   snap together, like a tape finding its tracking.
 - **Splash** — the title sequence: scattered hollow letters converge, the
@@ -164,17 +212,32 @@ heartbeat, vines). Re-run it to regenerate or extend.
 
 ---
 
-## 7. Important moments
+## 7. Settings, accessibility & platform polish
+
+- **Settings** (the dial on Home): spoiler shield, sound effects (a synth cue
+  as you cross worlds), reduce effects, watch-progress reset. All persisted,
+  as is the world you were in.
+- **Reduce effects / photosensitivity** — the system's Reduce Motion or the
+  in-app switch folds into `MediaQuery.disableAnimations` at the shell, and
+  every effect honours it: no lightning, sky flashes, flicker, VHS glitch or
+  typewriter; the Gate becomes a fade and the world flip a crossfade.
+- **Tablets** — content capped at a comfortable width (`kMaxContentWidth`),
+  Explore goes three-across.
+- **App identity** — an original neon "ST" icon (all platforms, Android
+  adaptive), black launch screens (no white flash before the splash), and a
+  real app name.
+
+## 8. Important moments
 All important, twisting and ironic moments of the series are in the
 **Moments** screen (see §4), one card per moment, in watch order.
 
 ---
 
-## 8. Verify
+## 9. Verify
 
 ```bash
 flutter analyze   # No issues found
-flutter test      # 20/20 pass (widgets + series-data integrity)
+flutter test      # 32/32 pass (widgets, world flip, shield, settings, data integrity)
 flutter build web --release
 flutter build ios --debug --no-codesign
 ```

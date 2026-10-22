@@ -6,6 +6,7 @@ import '../core/theme/text_styles.dart';
 import '../core/widgets/neon_card.dart';
 import '../core/widgets/rift_route.dart';
 import '../core/widgets/st_scaffold.dart';
+import '../core/widgets/world_fx.dart';
 import '../data/characters.dart' as cast_data;
 import '../models/character.dart';
 import 'character_detail_screen.dart';
@@ -78,7 +79,7 @@ class _DossierCard extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Hero(tag: heroTag, child: CharacterArt(character: c, iconSize: 110)),
+          STHero(tag: heroTag, radius: 18, child: CharacterArt(character: c, iconSize: 110)),
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(

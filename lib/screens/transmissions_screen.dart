@@ -263,6 +263,7 @@ class _NowPlayingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accent = WorldPalette.of(context).tint(t.accent);
     final pct = duration.inMilliseconds > 0
         ? (position.inMilliseconds / duration.inMilliseconds).clamp(0.0, 1.0)
         : 0.0;
@@ -276,7 +277,7 @@ class _NowPlayingCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topRight,
             end: Alignment.bottomLeft,
-            colors: [t.accent, t.accent.withValues(alpha: 0.6), Colors.black87],
+            colors: [accent, accent.withValues(alpha: 0.6), Colors.black87],
             stops: const [0, 0.5, 1],
           ),
           border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
@@ -286,7 +287,7 @@ class _NowPlayingCard extends StatelessWidget {
           children: [
             ParticleField(
               color: Colors.white,
-              glowColor: t.accent,
+              glowColor: accent,
               count: 22,
               baseRadius: 1.0,
               speed: 1.4,
@@ -319,7 +320,7 @@ class _NowPlayingCard extends StatelessWidget {
                 child: CustomPaint(
                   painter: _WaveformPainter(
                     level: level,
-                    color: t.accent,
+                    color: accent,
                     progress: pct,
                   ),
                 ),
@@ -411,6 +412,7 @@ class _TransmissionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
+    final accent = world.tint(t.accent);
     return NeonCard(
       onTap: onTap,
       glow: t.accent,
@@ -425,12 +427,12 @@ class _TransmissionTile extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topRight,
                 end: Alignment.bottomLeft,
-                colors: [t.accent, t.accent.withValues(alpha: 0.6)],
+                colors: [accent, accent.withValues(alpha: 0.6)],
               ),
               boxShadow: isPlaying
                   ? [
                       BoxShadow(
-                        color: t.accent.withValues(alpha: 0.5 + level * 0.3),
+                        color: accent.withValues(alpha: 0.5 + level * 0.3),
                         blurRadius: 14 + level * 10,
                       ),
                     ]
@@ -460,7 +462,7 @@ class _TransmissionTile extends StatelessWidget {
               width: 34,
               height: 24,
               child: CustomPaint(
-                painter: _MiniBars(color: t.accent, level: level),
+                painter: _MiniBars(color: accent, level: level),
               ),
             ),
         ],

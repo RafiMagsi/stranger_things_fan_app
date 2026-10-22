@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/text_styles.dart';
+import 'world_fx.dart';
 
 // Freezes the looping effects on a fixed frame. `flutter test` does not set
 // this on its own (FLUTTER_TEST is an OS env var, not a compile-time define);
@@ -15,11 +16,7 @@ const bool _kTest = bool.fromEnvironment('FLUTTER_TEST');
 /// CustomPainter, gated so tests don't spin an endless ticker. With
 /// [animate] off it is a static scanline layer that never repaints.
 class CrtOverlay extends StatefulWidget {
-  const CrtOverlay({
-    super.key,
-    this.opacity = 0.18,
-    this.animate = true,
-  });
+  const CrtOverlay({super.key, this.opacity = 0.18, this.animate = true});
 
   final double opacity;
   final bool animate;
@@ -52,7 +49,8 @@ class _CrtOverlayState extends State<CrtOverlay>
 
   @override
   Widget build(BuildContext context) {
-    final c = _c;
+    // Flickering static is off under reduced effects: show still scanlines.
+    final c = MediaQuery.disableAnimationsOf(context) ? null : _c;
     if (c == null) {
       return IgnorePointer(
         child: RepaintBoundary(
@@ -242,8 +240,14 @@ final Paint _wirePaint = Paint()
 
 /// One Christmas bulb: halo when lit, colored glass, a specular glint.
 /// [dim] is how much colour an unlit bulb's glass still shows.
-void _paintBulb(Canvas canvas, Offset c, Color color, double lit, double size,
-    {double dim = 0.28}) {
+void _paintBulb(
+  Canvas canvas,
+  Offset c,
+  Color color,
+  double lit,
+  double size, {
+  double dim = 0.28,
+}) {
   if (lit > 0.05) {
     canvas.drawCircle(
       c,
@@ -268,7 +272,8 @@ void _paintBulb(Canvas canvas, Offset c, Color color, double lit, double size,
 
 /// Procedural key art for any card or header without a photo: an
 /// accent-lit void, a big silhouette, the show's single hard key light from
-/// the top right, and tube-TV scanlines.
+/// the top right, and tube-TV scanlines. Graded into the Upside Down by
+/// [WorldGrade] when the world flips.
 class KeyArt extends StatelessWidget {
   const KeyArt({
     super.key,
@@ -287,45 +292,47 @@ class KeyArt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [
-                accent.withValues(alpha: 0.9),
-                deep ?? Color.lerp(accent, Colors.black, 0.72)!,
-                Colors.black,
-              ],
-              stops: const [0, 0.5, 1],
+    return WorldGrade(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [
+                  accent.withValues(alpha: 0.9),
+                  deep ?? Color.lerp(accent, Colors.black, 0.72)!,
+                  Colors.black,
+                ],
+                stops: const [0, 0.5, 1],
+              ),
             ),
           ),
-        ),
-        // Hard key light, top right.
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: RadialGradient(
-              center: Alignment(0.9, -1),
-              radius: 1.1,
-              colors: [Color(0x30FFFFFF), Color(0x00FFFFFF)],
+          // Hard key light, top right.
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment(0.9, -1),
+                radius: 1.1,
+                colors: [Color(0x30FFFFFF), Color(0x00FFFFFF)],
+              ),
             ),
           ),
-        ),
-        if (icon != null)
-          Align(
-            alignment: iconAlignment,
-            child: Icon(
-              icon,
-              size: iconSize,
-              color: Colors.white.withValues(alpha: 0.17),
-              shadows: [Shadow(color: accent, blurRadius: iconSize * 0.25)],
+          if (icon != null)
+            Align(
+              alignment: iconAlignment,
+              child: Icon(
+                icon,
+                size: iconSize,
+                color: Colors.white.withValues(alpha: 0.17),
+                shadows: [Shadow(color: accent, blurRadius: iconSize * 0.25)],
+              ),
             ),
-          ),
-        const CrtOverlay(opacity: 0.16, animate: false),
-      ],
+          const CrtOverlay(opacity: 0.16, animate: false),
+        ],
+      ),
     );
   }
 }
@@ -363,14 +370,20 @@ class DuotonePhoto extends StatelessWidget {
       ];
       // Blend the duotone row with the identity row for this channel.
       final identity = List<double>.filled(5, 0)..[channel] = 1.0;
-      return [for (var i = 0; i < 5; i++) duo[i] * grade + identity[i] * (1 - grade)];
+      return [
+        for (var i = 0; i < 5; i++) duo[i] * grade + identity[i] * (1 - grade),
+      ];
     }
 
     return [
       ...row(hi.r, lo.r, 0),
       ...row(hi.g, lo.g, 1),
       ...row(hi.b, lo.b, 2),
-      0, 0, 0, 1, 0,
+      0,
+      0,
+      0,
+      1,
+      0,
     ];
   }
 
@@ -415,9 +428,15 @@ class _GateArtState extends State<GateArt> with SingleTickerProviderStateMixin {
   );
 
   @override
-  void initState() {
-    super.initState();
-    if (widget.animate && !_kTest) _c.repeat(reverse: true);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // The Gate breathes, unless effects are reduced.
+    final still = !widget.animate || _kTest || MediaQuery.disableAnimationsOf(context);
+    if (still) {
+      _c.stop();
+    } else if (!_c.isAnimating) {
+      _c.repeat(reverse: true);
+    }
   }
 
   @override
@@ -486,7 +505,8 @@ class _GatePainter extends CustomPainter {
       final dir = from.dx < cx + drift ? -1.0 : 1.0;
       final len = w * (0.06 + rng.nextDouble() * 0.16);
       final end = from + Offset(dir * len, (rng.nextDouble() - 0.5) * len);
-      final ctrl = Offset.lerp(from, end, 0.5)! +
+      final ctrl =
+          Offset.lerp(from, end, 0.5)! +
           Offset(0, (rng.nextDouble() - 0.5) * len * 0.7);
       tendrils
         ..moveTo(from.dx, from.dy)
@@ -549,20 +569,28 @@ class _GatePainter extends CustomPainter {
       old.pulse != pulse || old.color != color || old.seed != seed;
 }
 
-/// Upside Down vines creeping in from the screen corners — static, seeded,
-/// drawn once and cached by a RepaintBoundary.
+/// Upside Down vines creeping in from the screen corners — seeded, and
+/// cached by a RepaintBoundary. [grow] (0..1) is how far they've crawled;
+/// branches only sprout once the vine has grown past them.
 class VineOverlay extends StatelessWidget {
-  const VineOverlay({super.key, this.color = AppColors.udVine, this.seed = 7});
+  const VineOverlay({
+    super.key,
+    this.color = AppColors.udVine,
+    this.seed = 7,
+    this.grow = 1,
+  });
 
   final Color color;
   final int seed;
+  final double grow;
 
   @override
   Widget build(BuildContext context) {
+    if (grow <= 0.01) return const SizedBox.shrink();
     return IgnorePointer(
       child: RepaintBoundary(
         child: CustomPaint(
-          painter: _VinePainter(color: color, seed: seed),
+          painter: _VinePainter(color: color, seed: seed, grow: grow),
           size: Size.infinite,
         ),
       ),
@@ -571,47 +599,83 @@ class VineOverlay extends StatelessWidget {
 }
 
 class _VinePainter extends CustomPainter {
-  const _VinePainter({required this.color, required this.seed});
+  const _VinePainter({
+    required this.color,
+    required this.seed,
+    required this.grow,
+  });
 
   final Color color;
   final int seed;
+  final double grow;
 
-  void _vine(Canvas canvas, math.Random rng, Offset start, double angle,
-      double length, double width, int depth) {
+  void _vine(
+    Canvas canvas,
+    math.Random rng,
+    Offset start,
+    double angle,
+    double length,
+    double width,
+    int depth, [
+    double progress = 1,
+  ]) {
     final path = Path()..moveTo(start.dx, start.dy);
     var p = start;
     var a = angle;
     const segments = 8;
     final seg = length / segments;
-    final branches = <(Offset, double)>[];
+    final branches = <(Offset, double, double)>[];
     for (var i = 0; i < segments; i++) {
       a += (rng.nextDouble() - 0.5) * 0.7;
       final next = p + Offset(math.cos(a), math.sin(a)) * seg;
-      final ctrl = Offset.lerp(p, next, 0.5)! +
+      final ctrl =
+          Offset.lerp(p, next, 0.5)! +
           Offset(math.cos(a + math.pi / 2), math.sin(a + math.pi / 2)) *
-              (rng.nextDouble() - 0.5) * seg;
+              (rng.nextDouble() - 0.5) *
+              seg;
       path.quadraticBezierTo(ctrl.dx, ctrl.dy, next.dx, next.dy);
-      if (depth > 0 && rng.nextDouble() < 0.35) branches.add((next, a));
+      if (depth > 0 && rng.nextDouble() < 0.35) {
+        branches.add((next, a, (i + 1) / segments));
+      }
       p = next;
     }
+    // Draw only the part that has grown so far.
+    if (progress <= 0) return;
+    final grown = Path();
+    for (final m in path.computeMetrics()) {
+      grown.addPath(m.extractPath(0, m.length * progress), Offset.zero);
+    }
     canvas.drawPath(
-      path,
+      grown,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeCap = StrokeCap.round
         ..strokeWidth = width
-        ..color = Color.lerp(color, Colors.black, 0.55)!.withValues(alpha: 0.85),
+        ..color = Color.lerp(
+          color,
+          Colors.black,
+          0.55,
+        )!.withValues(alpha: 0.85),
     );
     canvas.drawPath(
-      path,
+      grown,
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = width * 0.35
         ..color = color.withValues(alpha: 0.35),
     );
-    for (final (o, ang) in branches) {
-      _vine(canvas, rng, o, ang + (rng.nextBool() ? 0.8 : -0.8), length * 0.45,
-          width * 0.6, depth - 1);
+    for (final (o, ang, at) in branches) {
+      _vine(
+        canvas,
+        rng,
+        o,
+        ang + (rng.nextBool() ? 0.8 : -0.8),
+        length * 0.45,
+        width * 0.6,
+        depth - 1,
+        // A branch starts growing once the vine has passed it.
+        ((progress - at) / (1 - at)).clamp(0.0, 1.0),
+      );
     }
   }
 
@@ -622,19 +686,35 @@ class _VinePainter extends CustomPainter {
     final reach = size.shortestSide * 0.42;
     // Bottom-left corner, growing up and inward.
     for (var i = 0; i < 3; i++) {
-      _vine(canvas, rng, Offset(-4, size.height - rng.nextDouble() * 60),
-          -0.5 - rng.nextDouble() * 0.6, reach * (0.6 + rng.nextDouble() * 0.5), 5, 2);
+      _vine(
+        canvas,
+        rng,
+        Offset(-4, size.height - rng.nextDouble() * 60),
+        -0.5 - rng.nextDouble() * 0.6,
+        reach * (0.6 + rng.nextDouble() * 0.5),
+        5,
+        2,
+        grow,
+      );
     }
     // Top-right corner, hanging down.
     for (var i = 0; i < 2; i++) {
-      _vine(canvas, rng, Offset(size.width + 4, rng.nextDouble() * 80),
-          math.pi * 0.7 + rng.nextDouble() * 0.4, reach * (0.5 + rng.nextDouble() * 0.4), 4, 2);
+      _vine(
+        canvas,
+        rng,
+        Offset(size.width + 4, rng.nextDouble() * 80),
+        math.pi * 0.7 + rng.nextDouble() * 0.4,
+        reach * (0.5 + rng.nextDouble() * 0.4),
+        4,
+        2,
+        grow,
+      );
     }
   }
 
   @override
   bool shouldRepaint(covariant _VinePainter old) =>
-      old.color != color || old.seed != seed;
+      old.color != color || old.seed != seed || old.grow != grow;
 }
 
 /// Joyce Byers' living-room wall: the alphabet painted under a strand of
@@ -664,7 +744,8 @@ class _AlphabetWallState extends State<AlphabetWall>
 
   late final AnimationController _c = AnimationController(vsync: this);
 
-  String get _letters => widget.message.toUpperCase().replaceAll(RegExp('[^A-Z ]'), '');
+  String get _letters =>
+      widget.message.toUpperCase().replaceAll(RegExp('[^A-Z ]'), '');
 
   @override
   void initState() {
@@ -797,7 +878,14 @@ class _WallPainter extends CustomPainter {
         final isCurrent = ch == current && inLetter < 0.82;
         final lit = isCurrent ? 1.0 : (flicker ? 0.9 : 0.0);
         // On the wall you can always see the coloured glass, lit or not.
-        _paintBulb(canvas, Offset(x, y + 6), color, lit, spacing * 0.22, dim: 0.6);
+        _paintBulb(
+          canvas,
+          Offset(x, y + 6),
+          color,
+          lit,
+          spacing * 0.22,
+          dim: 0.6,
+        );
 
         // Hand-painted letter under the bulb, slightly crooked.
         final tp = TextPainter(

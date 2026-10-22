@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/media/art.dart';
 import '../core/media/poster_image.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
@@ -39,6 +40,7 @@ class _MonsterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
+    final accent = world.tint(m.accent);
     return NeonCard(
       glow: m.accent,
       padding: EdgeInsets.zero,
@@ -53,12 +55,16 @@ class _MonsterCard extends StatelessWidget {
               children: [
                 PosterImage(
                   assetKey: 'monster_${m.id}',
-                  fallback: KeyArt(
-                    accent: m.accent,
-                    icon: m.icon,
-                    iconSize: 110,
-                    iconAlignment: const Alignment(0.8, 0),
-                  ),
+                  // A real-world look-alike when there is one (a Venus
+                  // flytrap for the petal-faced Demogorgon), else key art.
+                  fallback: m.photo == null
+                      ? KeyArt(
+                          accent: m.accent,
+                          icon: m.icon,
+                          iconSize: 110,
+                          iconAlignment: const Alignment(0.8, 0),
+                        )
+                      : EventArt(photo: m.photo, accent: m.accent, icon: m.icon),
                 ),
                 DecoratedBox(
                   decoration: BoxDecoration(
@@ -85,7 +91,7 @@ class _MonsterCard extends StatelessWidget {
                   bottom: 8,
                   child: Text(
                     m.name.toUpperCase(),
-                    style: AppText.neon(size: 26, color: m.accent),
+                    style: AppText.neon(size: 26, color: accent),
                   ),
                 ),
               ],
@@ -96,7 +102,7 @@ class _MonsterCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(m.alias, style: AppText.dossier(m.accent, size: 13.5)),
+                Text(m.alias, style: AppText.dossier(accent, size: 13.5)),
                 const SizedBox(height: 10),
                 Text(
                   m.detail,
@@ -113,9 +119,9 @@ class _MonsterCard extends StatelessWidget {
                         margin: const EdgeInsets.only(right: 4),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(2),
-                          color: t <= m.threat ? m.accent : world.ink.withValues(alpha: 0.12),
+                          color: t <= m.threat ? accent : world.ink.withValues(alpha: 0.12),
                           boxShadow: t <= m.threat
-                              ? [BoxShadow(color: m.accent.withValues(alpha: 0.7), blurRadius: 8)]
+                              ? [BoxShadow(color: accent.withValues(alpha: 0.7), blurRadius: 8)]
                               : null,
                         ),
                       ),
@@ -128,13 +134,13 @@ class _MonsterCard extends StatelessWidget {
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
-                    color: m.accent.withValues(alpha: 0.08),
-                    border: Border.all(color: m.accent.withValues(alpha: 0.3)),
+                    color: accent.withValues(alpha: 0.08),
+                    border: Border.all(color: accent.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.gpp_maybe, size: 15, color: m.accent),
+                      Icon(Icons.gpp_maybe, size: 15, color: accent),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(

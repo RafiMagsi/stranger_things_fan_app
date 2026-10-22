@@ -23,8 +23,7 @@ class QuizScreen extends StatefulWidget {
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
-class _QuizScreenState extends State<QuizScreen>
-    with SingleTickerProviderStateMixin {
+class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   late List<QuizQuestion> _questions;
   int _index = 0;
   int _score = 0;
@@ -37,6 +36,11 @@ class _QuizScreenState extends State<QuizScreen>
     vsync: this,
     duration: const Duration(milliseconds: 700),
   );
+  // A wrong answer jolts the board, like the lab door slamming.
+  late final AnimationController _shake = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 480),
+  );
 
   @override
   void initState() {
@@ -47,6 +51,7 @@ class _QuizScreenState extends State<QuizScreen>
   @override
   void dispose() {
     _advance?.cancel();
+    _shake.dispose();
     _burst.dispose();
     _player.dispose();
     super.dispose();
@@ -63,6 +68,7 @@ class _QuizScreenState extends State<QuizScreen>
       _burst.forward(from: 0);
       HapticFeedback.lightImpact();
     } else {
+      if (!MediaQuery.disableAnimationsOf(context)) _shake.forward(from: 0);
       HapticFeedback.heavyImpact();
     }
 
@@ -80,7 +86,9 @@ class _QuizScreenState extends State<QuizScreen>
 
     try {
       await _player.stop();
-      await _player.play(AssetSource(correct ? 'audio/chime.wav' : 'audio/static.wav'));
+      await _player.play(
+        AssetSource(correct ? 'audio/chime.wav' : 'audio/static.wav'),
+      );
     } catch (_) {
       // Audio is a garnish; never let it break the game.
     }
@@ -114,12 +122,14 @@ class _QuizScreenState extends State<QuizScreen>
         duration: const Duration(milliseconds: 400),
         // The default layout centres children in a loose Stack, which
         // shrinks the scroll view and floats it mid-screen.
-        layoutBuilder: (current, previous) => Stack(
-          fit: StackFit.expand,
-          children: [...previous, ?current],
-        ),
+        layoutBuilder: (current, previous) =>
+            Stack(fit: StackFit.expand, children: [...previous, ?current]),
         child: _finished
-            ? _Results(score: _score, total: _questions.length, onRestart: _restart)
+            ? _Results(
+                score: _score,
+                total: _questions.length,
+                onRestart: _restart,
+              )
             : _buildQuiz(world),
       ),
     );
@@ -148,8 +158,8 @@ class _QuizScreenState extends State<QuizScreen>
                       color: i < _index
                           ? AppColors.bulbs[i % AppColors.bulbs.length]
                           : i == _index
-                              ? world.accent
-                              : world.ink.withValues(alpha: 0.1),
+                          ? world.accent
+                          : world.ink.withValues(alpha: 0.1),
                       boxShadow: i == _index
                           ? [BoxShadow(color: world.accent, blurRadius: 8)]
                           : null,
@@ -174,31 +184,49 @@ class _QuizScreenState extends State<QuizScreen>
                     style: AppText.chapter(world.accent, size: 12),
                   ),
                   const SizedBox(height: 12),
-                  Text(q.question, style: AppText.h2(world.ink).copyWith(fontSize: 21)),
+                  Text(
+                    q.question,
+                    style: AppText.h2(world.ink).copyWith(fontSize: 21),
+                  ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 18),
 
-          // Options, with a burst of sparks on a correct answer.
-          Stack(
-            children: [
-              Column(
-                children: [
-                  for (var i = 0; i < q.options.length; i++)
-                    _OptionTile(
-                      letter: String.fromCharCode(65 + i),
-                      text: q.options[i],
-                      state: _optionState(i, q),
-                      onTap: () => _answer(i),
-                    ),
-                ],
-              ),
-              Positioned.fill(
-                child: ParticleBurst(controller: _burst, color: AppColors.safeGreen, count: 22),
-              ),
-            ],
+          // Options, with a burst of sparks on a correct answer and a jolt
+          // on a wrong one.
+          AnimatedBuilder(
+            animation: _shake,
+            builder: (context, child) {
+              final t = _shake.value;
+              final dx = t == 0 || t == 1
+                  ? 0.0
+                  : math.sin(t * math.pi * 7) * 10 * (1 - t);
+              return Transform.translate(offset: Offset(dx, 0), child: child);
+            },
+            child: Stack(
+              children: [
+                Column(
+                  children: [
+                    for (var i = 0; i < q.options.length; i++)
+                      _OptionTile(
+                        letter: String.fromCharCode(65 + i),
+                        text: q.options[i],
+                        state: _optionState(i, q),
+                        onTap: () => _answer(i),
+                      ),
+                  ],
+                ),
+                Positioned.fill(
+                  child: ParticleBurst(
+                    controller: _burst,
+                    color: AppColors.safeGreen,
+                    count: 22,
+                  ),
+                ),
+              ],
+            ),
           ),
 
           // Evidence blurb after answering.
@@ -215,18 +243,28 @@ class _QuizScreenState extends State<QuizScreen>
                     children: [
                       Icon(
                         correct ? Icons.check_circle : Icons.cancel,
-                        color: correct ? AppColors.safeGreen : AppColors.dangerGlow,
+                        color: correct
+                            ? AppColors.safeGreen
+                            : AppColors.dangerGlow,
                         size: 18,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         correct ? 'CORRECT' : 'MISSED IT',
-                        style: AppText.label(correct ? AppColors.safeGreen : AppColors.dangerGlow),
+                        style: AppText.label(
+                          correct ? AppColors.safeGreen : AppColors.dangerGlow,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(q.fact, style: AppText.dossier(world.ink.withValues(alpha: 0.85), size: 13.5)),
+                  Text(
+                    q.fact,
+                    style: AppText.dossier(
+                      world.ink.withValues(alpha: 0.85),
+                      size: 13.5,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -287,7 +325,14 @@ class _OptionTile extends StatelessWidget {
               color: state == _OptionState.idle ? world.line : color,
               width: lit ? 1.6 : 1,
             ),
-            boxShadow: lit ? [BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 16)] : null,
+            boxShadow: lit
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.35),
+                      blurRadius: 16,
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             children: [
@@ -300,21 +345,32 @@ class _OptionTile extends StatelessWidget {
                   border: Border.all(color: color.withValues(alpha: 0.8)),
                   color: color.withValues(alpha: 0.12),
                 ),
-                child: Text(letter, style: AppText.neon(size: 17, color: color, glow: 0.7)),
+                child: Text(
+                  letter,
+                  style: AppText.neon(size: 17, color: color, glow: 0.7),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   text,
                   style: AppText.body(
-                    state == _OptionState.dimmed ? world.ink.withValues(alpha: 0.4) : world.ink,
+                    state == _OptionState.dimmed
+                        ? world.ink.withValues(alpha: 0.4)
+                        : world.ink,
                     size: 14.5,
                   ),
                 ),
               ),
               if (lit) ...[
                 const SizedBox(width: 8),
-                Icon(state == _OptionState.correct ? Icons.check_circle : Icons.cancel, color: color, size: 20),
+                Icon(
+                  state == _OptionState.correct
+                      ? Icons.check_circle
+                      : Icons.cancel,
+                  color: color,
+                  size: 20,
+                ),
               ],
             ],
           ),
@@ -375,12 +431,19 @@ class _Results extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Text('$score/$total', style: AppText.neon(size: 38, color: world.accent)),
+                    Text(
+                      '$score/$total',
+                      style: AppText.neon(size: 38, color: world.accent),
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 22),
-              GlowBadge(text: _rank, color: AppColors.hawkinsGold, icon: Icons.emoji_events),
+              GlowBadge(
+                text: _rank,
+                color: AppColors.hawkinsGold,
+                icon: Icons.emoji_events,
+              ),
               const SizedBox(height: 14),
               Text(
                 'You scored $score out of $total.',

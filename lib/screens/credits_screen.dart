@@ -21,6 +21,7 @@ class CreditsScreen extends StatelessWidget {
     final world = WorldPalette.of(context);
     final cast = MediaCredits.all.where((c) => c.asset.contains('/cast/')).toList();
     final places = MediaCredits.all.where((c) => c.asset.contains('/filming/')).toList();
+    final events = MediaCredits.all.where((c) => c.asset.contains('/events/')).toList();
 
     return STScaffold(
       title: 'CREDITS',
@@ -75,6 +76,14 @@ class CreditsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           for (final c in places) _CreditTile(credit: c, onTap: () => _open(c.source)),
+          const SectionHeader(title: 'Event imagery', padding: EdgeInsets.fromLTRB(0, 28, 0, 6)),
+          Text(
+            'Real-world objects and places behind each event - Joyce\'s lights, '
+            'Hopper\'s Blazer, Vecna\'s clock. Never frames from the show.',
+            style: AppText.dossier(world.muted, size: 12),
+          ),
+          const SizedBox(height: 12),
+          for (final c in events) _CreditTile(credit: c, onTap: () => _open(c.source)),
           const SizedBox(height: 12),
           Text(
             'All photos via Wikimedia Commons, resized for the app and colour-graded '

@@ -2,12 +2,17 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/media/art.dart';
+import '../core/state/app_state.dart';
 import '../core/theme/text_styles.dart';
 import '../core/theme/world_palette.dart';
 import '../core/widgets/neon_card.dart';
 import '../core/widgets/st_scaffold.dart';
+import '../core/widgets/world_fx.dart';
 import '../data/moments.dart';
+import '../data/seasons.dart';
 import '../models/moment.dart';
 
 /// The twists, reveals, sacrifices and ironies of the series, in watch
@@ -16,21 +21,25 @@ import '../models/moment.dart';
 /// Every moment is split into a safe setup and a veiled reveal. The reveal
 /// stays hidden behind a spoiler veil until the reader taps to uncover it -
 /// it then tunes in like a VHS tape catching tracking - so the screen is
-/// safe to hand to a first-time viewer.
-class MomentsScreen extends StatefulWidget {
+/// safe to hand to a first-time viewer. With the spoiler shield on, moments
+/// from chapters you haven't watched are redacted entirely - even the setup.
+class MomentsScreen extends ConsumerStatefulWidget {
   const MomentsScreen({super.key});
 
   @override
-  State<MomentsScreen> createState() => _MomentsScreenState();
+  ConsumerState<MomentsScreen> createState() => _MomentsScreenState();
 }
 
-class _MomentsScreenState extends State<MomentsScreen> {
+class _MomentsScreenState extends ConsumerState<MomentsScreen> {
   MomentKind? _filter;
   final Set<String> _revealed = {};
+  final Set<String> _declassified = {};
 
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
+    final shield = ref.watch(settingsProvider).spoilerShield;
+    final watched = ref.watch(watchProgressProvider);
     final moments = _filter == null
         ? Moments.all
         : Moments.all.where((m) => m.kind == _filter).toList();
@@ -57,11 +66,10 @@ class _MomentsScreenState extends State<MomentsScreen> {
                 for (final k in MomentKind.values)
                   _FilterChip(
                     label: k.label,
-                    color: k.color,
+                    color: world.tint(k.color),
                     selected: _filter == k,
-                    onTap: () => setState(
-                      () => _filter = _filter == k ? null : k,
-                    ),
+                    onTap: () =>
+                        setState(() => _filter = _filter == k ? null : k),
                   ),
               ],
             ),
@@ -81,6 +89,12 @@ class _MomentsScreenState extends State<MomentsScreen> {
                       moment: m,
                       revealed: _revealed.contains(m.id),
                       onReveal: () => setState(() => _revealed.add(m.id)),
+                      shielded:
+                          shield &&
+                          !_declassified.contains(m.id) &&
+                          Seasons.isAhead(m.season, m.episode, watched),
+                      onDeclassify: () =>
+                          setState(() => _declassified.add(m.id)),
                     ),
                   ),
                 );
@@ -125,12 +139,19 @@ class _FilterChip extends StatelessWidget {
               width: selected ? 1.6 : 1,
             ),
             boxShadow: selected
-                ? [BoxShadow(color: color.withValues(alpha: 0.45), blurRadius: 12)]
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.45),
+                      blurRadius: 12,
+                    ),
+                  ]
                 : null,
           ),
           child: Text(
             label.toUpperCase(),
-            style: AppText.label(selected ? color : color.withValues(alpha: 0.7)),
+            style: AppText.label(
+              selected ? color : color.withValues(alpha: 0.7),
+            ),
           ),
         ),
       ),
@@ -143,74 +164,170 @@ class _MomentCard extends StatelessWidget {
     required this.moment,
     required this.revealed,
     required this.onReveal,
+    required this.shielded,
+    required this.onDeclassify,
   });
 
   final Moment moment;
   final bool revealed;
   final VoidCallback onReveal;
 
+  /// From a chapter the viewer hasn't watched, with the shield on.
+  final bool shielded;
+  final VoidCallback onDeclassify;
+
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
     final k = moment.kind;
+    final accent = world.tint(moment.accent);
+    final kindColor = world.tint(k.color);
+
+    final titleStyle = AppText.h2(world.ink).copyWith(fontSize: 19);
+    final setupStyle = AppText.body(
+      world.ink.withValues(alpha: 0.8),
+      size: 13.5,
+    );
+    final header = SizedBox(
+      height: 132,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ImageFiltered(
+            enabled: shielded,
+            imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: EventArt(
+              photo: moment.photo,
+              accent: moment.accent,
+              icon: _kindIcon(k),
+            ),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.black.withValues(alpha: 0.25), world.card],
+                stops: const [0.35, 1],
+              ),
+            ),
+          ),
+          // Kind + chapter badge row.
+          Positioned(
+            top: 12,
+            left: 12,
+            right: 12,
+            child: Row(
+              children: [
+                GlowBadge(
+                  text: k.label,
+                  color: kindColor,
+                  icon: _kindIcon(k),
+                  onImage: true,
+                ),
+                const Spacer(),
+                GlowBadge(
+                  text: moment.chapterLabel,
+                  color: world.muted,
+                  icon: Icons.live_tv,
+                  onImage: true,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (shielded) {
+      return NeonCard(
+        glow: moment.accent,
+        padding: EdgeInsets.zero,
+        onTap: onDeclassify,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            header,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RedactedText(moment.title, style: titleStyle, maxLines: 1),
+                  const SizedBox(height: 8),
+                  RedactedText(moment.setup, style: setupStyle, maxLines: 3),
+                  const SizedBox(height: 12),
+                  ClassifiedBanner(unlock: moment.chapterLabel),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return NeonCard(
       glow: moment.accent,
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Kind + chapter badge row.
-          Row(
-            children: [
-              GlowBadge(text: k.label, color: k.color, icon: _kindIcon(k)),
-              const Spacer(),
-              GlowBadge(text: moment.chapterLabel, color: world.muted, icon: Icons.live_tv),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(moment.title, style: AppText.h2(world.ink).copyWith(fontSize: 19)),
-          const SizedBox(height: 8),
-          Text(
-            moment.setup,
-            style: AppText.body(world.ink.withValues(alpha: 0.8), size: 13.5),
-          ),
-          const SizedBox(height: 14),
-          // Reveal block, veiled until tapped.
-          _SpoilerVeil(
-            revealed: revealed,
-            accent: moment.accent,
-            onReveal: onReveal,
+          header,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('THE REVEAL', style: AppText.label(moment.accent)),
-                const SizedBox(height: 6),
-                Text(
-                  moment.reveal,
-                  style: AppText.dossier(world.ink.withValues(alpha: 0.9), size: 14),
-                ),
-                const SizedBox(height: 12),
-                // The "why it lands" note.
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 3,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: k.color,
-                        borderRadius: BorderRadius.circular(3),
+                Text(moment.title, style: titleStyle),
+                const SizedBox(height: 8),
+                Text(moment.setup, style: setupStyle),
+                const SizedBox(height: 14),
+                // Reveal block, veiled until tapped.
+                _SpoilerVeil(
+                  revealed: revealed,
+                  accent: accent,
+                  onReveal: onReveal,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('THE REVEAL', style: AppText.label(accent)),
+                      const SizedBox(height: 6),
+                      TypewriterText(
+                        moment.reveal,
+                        charMs: 12,
+                        delay: const Duration(milliseconds: 450),
+                        style: AppText.dossier(
+                          world.ink.withValues(alpha: 0.9),
+                          size: 14,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        moment.why,
-                        style: AppText.body(world.ink.withValues(alpha: 0.62), size: 12.5),
+                      const SizedBox(height: 12),
+                      // The "why it lands" note.
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 3,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: kindColor,
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              moment.why,
+                              style: AppText.body(
+                                world.ink.withValues(alpha: 0.62),
+                                size: 12.5,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -259,7 +376,7 @@ class _SpoilerVeil extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
-        padding: revealed ? EdgeInsets.zero : const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           color: revealed
@@ -296,7 +413,9 @@ class _SpoilerVeil extends StatelessWidget {
                       Flexible(
                         child: Text(
                           'SPOILER — TAP TO REVEAL',
-                          style: AppText.label(accent).copyWith(fontSize: 11, letterSpacing: 1.1),
+                          style: AppText.label(
+                            accent,
+                          ).copyWith(fontSize: 11, letterSpacing: 1.1),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -328,6 +447,10 @@ class _VhsTuneInState extends State<_VhsTuneIn>
     duration: const Duration(milliseconds: 560),
   )..forward();
 
+  // Keeps the clean copy's state (e.g. a typewriter mid-sentence) when the
+  // ghosts are dropped and it moves out of the Stack.
+  final _clean = GlobalKey();
+
   @override
   void dispose() {
     _c.dispose();
@@ -343,7 +466,9 @@ class _VhsTuneInState extends State<_VhsTuneIn>
         // Once tuned in, drop the ghosts so a revealed card costs no more
         // than a plain one. The content is stateless text, so swapping the
         // tree shape here loses nothing.
-        if (_c.isCompleted) return child!;
+        if (_c.isCompleted || MediaQuery.disableAnimationsOf(context)) {
+          return KeyedSubtree(key: _clean, child: child!);
+        }
         final t = _c.value;
         final amp = (1 - Curves.easeOut.transform(t)) * 7;
         final jitter = math.sin(t * 70) * amp * 0.6;
@@ -354,7 +479,10 @@ class _VhsTuneInState extends State<_VhsTuneIn>
               child: Transform.translate(
                 offset: Offset(-amp + jitter, 0),
                 child: ColorFiltered(
-                  colorFilter: const ColorFilter.mode(Color(0xFFFF2D3C), BlendMode.srcATop),
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFFFF2D3C),
+                    BlendMode.srcATop,
+                  ),
                   child: ExcludeSemantics(child: child),
                 ),
               ),
@@ -364,14 +492,20 @@ class _VhsTuneInState extends State<_VhsTuneIn>
               child: Transform.translate(
                 offset: Offset(amp - jitter, 0),
                 child: ColorFiltered(
-                  colorFilter: const ColorFilter.mode(Color(0xFF29E6FF), BlendMode.srcATop),
+                  colorFilter: const ColorFilter.mode(
+                    Color(0xFF29E6FF),
+                    BlendMode.srcATop,
+                  ),
                   child: ExcludeSemantics(child: child),
                 ),
               ),
             ),
             Opacity(
               opacity: Curves.easeIn.transform(t.clamp(0.0, 1.0)),
-              child: Transform.translate(offset: Offset(jitter * 0.3, 0), child: child),
+              child: Transform.translate(
+                offset: Offset(jitter * 0.3, 0),
+                child: KeyedSubtree(key: _clean, child: child!),
+              ),
             ),
           ],
         );

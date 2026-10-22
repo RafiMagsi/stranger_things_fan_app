@@ -78,7 +78,13 @@ class AppText {
           ..style = PaintingStyle.stroke
           ..strokeWidth = (size * 0.045).clamp(1.0, 3.2)
           ..strokeJoin = StrokeJoin.round
-          ..color = Color.lerp(color, Colors.white, 0.18)!,
+          // An unlit tube is still there, just dull: lerp from dark glass to
+          // the hot lit tube as the glow comes up.
+          ..color = Color.lerp(
+            Color.lerp(color, Colors.black, 0.55),
+            Color.lerp(color, Colors.white, 0.18),
+            glow.clamp(0.0, 1.0),
+          )!,
         shadows: [
           Shadow(color: color.withValues(alpha: 0.55 * glow), blurRadius: size * 0.12),
           Shadow(color: color.withValues(alpha: 0.65 * glow), blurRadius: size * 0.45),
