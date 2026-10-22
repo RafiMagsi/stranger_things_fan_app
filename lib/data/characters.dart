@@ -396,7 +396,7 @@ class Cast {
     line: '... (petals open)',
     accent: Color(0xFFE53935),
     accentDeep: Color(0xFF4A0E0E),
-    icon: Icons.pets,
+    icon: Icons.filter_vintage,
     stats: CharacterStats(
       power: 9,
       courage: 8,

@@ -53,7 +53,7 @@ class Bestiary {
         'gates between the Upside Down and Hawkins.',
     weakness: 'Fire, Eleven\'s power, heavy firepower',
     firstSeason: 1,
-    icon: Icons.pets,
+    icon: Icons.filter_vintage,
     accent: Color(0xFFE53935),
     threat: 4,
   );
@@ -65,7 +65,7 @@ class Bestiary {
     detail:
         'Juvenile Demogorgons that move as a pack and grow from puppy-sized '
         'to wolf-sized in weeks. Dustin raised one and named it D\'Artagnan.',
-    weakness: 'Numbers, fire, being underestimated',
+    weakness: 'Fire - and they drop when the Gate is closed',
     firstSeason: 2,
     icon: Icons.pets,
     accent: Color(0xFFEF5350),
@@ -80,7 +80,7 @@ class Bestiary {
         'A vast smoky intelligence that spreads over the Upside Down like '
         'weather. It possesses Will, engineers the Flayed, and has played '
         'the long game since the gate first opened.',
-    weakness: 'Closing the gate; it cannot follow Eleven',
+    weakness: 'Heat drives it out of a host; closing the Gate cuts it off',
     firstSeason: 2,
     icon: Icons.thunderstorm,
     accent: Color(0xFF546E7A),
@@ -92,10 +92,10 @@ class Bestiary {
     name: 'Vecna',
     alias: 'Henry Creel · One',
     detail:
-        'The first test subject, remade into the Upside Down\'s priest. He '
-        'kills by turning guilt into a curse - a clock counts down, the '
-        'victim floats, and the vines take them.',
-    weakness: 'Memories of love; her music; a friends\' assault',
+        'Henry Creel, the first test subject, remade in the Upside Down. He '
+        'hunts the guilty through their minds - a clock chimes, the victim '
+        'floats, and their bones break.',
+    weakness: 'Music and happy memories break the curse; fire in his lair',
     firstSeason: 4,
     icon: Icons.hourglass_bottom,
     accent: Color(0xFF8E4585),
@@ -107,9 +107,9 @@ class Bestiary {
     name: 'Demo-Bat',
     alias: 'The swarm',
     detail:
-        'Winged Demogorgon kin that nest in the Upside Down\'s canopy. They '
-        'drain life on contact and swarm the Party on the way to the gate.',
-    weakness: 'Concentrated fire; Eleven\'s shield',
+        'Winged predators that roost in the Upside Down sky. They swarm, '
+        'bite and strangle - Steve barely survives them at Lover\'s Lake.',
+    weakness: 'Fire, and a good distraction - like a guitar solo',
     firstSeason: 4,
     icon: Icons.wb_twilight,
     accent: Color(0xFF6D4BC3),
@@ -123,7 +123,7 @@ class Bestiary {
     detail:
         'People infected by the Mind Flayer\'s goo. They are drawn to it, '
         'melt into a slurry, and are consumed to build its physical body.',
-    weakness: 'Fire - the Flayed burn together',
+    weakness: 'Heat and fire; they melt back into the Mind Flayer',
     firstSeason: 3,
     icon: Icons.waves,
     accent: Color(0xFF26C6DA),

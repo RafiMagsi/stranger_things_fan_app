@@ -1,29 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/media/art.dart';
 import '../core/media/poster_image.dart';
 import '../core/state/app_state.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
 import '../core/theme/world_palette.dart';
-import '../core/widgets/glass_card.dart';
+import '../core/widgets/neon_card.dart';
 import '../core/widgets/rift_route.dart';
 import '../core/widgets/st_effects.dart';
+import '../core/widgets/st_logo.dart';
+import '../core/widgets/st_scaffold.dart';
+import '../core/widgets/world_toggle.dart';
 import '../data/characters.dart' as cast_data;
+import '../data/quotes.dart';
+import '../data/seasons.dart';
 import '../models/character.dart';
+import '../models/season.dart';
 import 'bestiary_screen.dart';
+import 'cast_screen.dart';
 import 'character_detail_screen.dart';
+import 'credits_screen.dart';
 import 'locations_screen.dart';
 import 'moments_screen.dart';
 import 'quiz_screen.dart';
 import 'quotes_screen.dart';
+import 'season_detail_screen.dart';
 import 'seasons_screen.dart';
 import 'soundboard_screen.dart';
 import 'timeline_screen.dart';
+import 'trailer_player_screen.dart';
 import 'transmissions_screen.dart';
 
-/// The hub. Featured banner + character carousel + quick tiles into every
-/// section of the app.
+/// The hub: a feed of cards for exploring Hawkins. The finale up top, where
+/// you are in the series, the Party, the seasons, Joyce's wall, every
+/// section of the app, the town's grown-ups, and what crawled out of the
+/// Upside Down.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -32,8 +45,20 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final _carouselController = PageController(viewportFraction: 0.78);
+  final _carouselController = PageController(viewportFraction: 0.7);
   int _carouselIndex = 0;
+
+  static const _wallMessages = ['RIGHT HERE', 'RUN', 'FRIENDS DONT LIE'];
+  int _wallMessage = 0;
+
+  static const _residents = [
+    cast_data.Cast.steve,
+    cast_data.Cast.nancy,
+    cast_data.Cast.jonathan,
+    cast_data.Cast.robin,
+    cast_data.Cast.hopper,
+    cast_data.Cast.joyce,
+  ];
 
   @override
   void dispose() {
@@ -41,556 +66,420 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.dispose();
   }
 
+  void _open(Widget page, String name) =>
+      RiftPageRoute.push(context, page, name: name);
+
+  void _openCharacter(Character c, String heroTag) => _open(
+        CharacterDetailScreen(character: c, heroTag: heroTag),
+        '/character/${c.id}',
+      );
+
+  void _openSeason(Season s, {String? heroTag, int? focusEpisode}) => _open(
+        SeasonDetailScreen(season: s, heroTag: heroTag, focusEpisode: focusEpisode),
+        '/season/${s.number}',
+      );
+
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final world = WorldPalette.of(context);
     final upsideDown = ref.watch(worldModeProvider);
+    final watched = ref.watch(watchProgressProvider);
+    final next = Seasons.nextUp(watched);
 
     return Scaffold(
       body: Stack(
+        fit: StackFit.expand,
         children: [
+          const WorldAtmosphere(),
           SafeArea(
+            bottom: false,
             child: CustomScrollView(
               slivers: [
-            // App bar with world toggle.
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 12, 0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ShaderMask(
-            blendMode: BlendMode.srcIn,
-            shaderCallback: (rect) => const LinearGradient(
-              colors: [Color(0xFFE50914), Color(0xFFA00312)],
-              stops: [0.0, 1.0],
-            ).createShader(rect),
-            child: Text(
-              'STRANGER THINGS',
-              style: AppText.title(
-                size: 22,
-                glow: upsideDown
-                    ? AppColors.udSpore
-                    : AppColors.stRed,
-              ),
-            ),
-          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            upsideDown ? 'You are in the Upside Down' : 'Hawkins, Indiana · 1985',
-                            style: AppText.body(
-                              scheme.onSurface.withValues(alpha: 0.55),
-                              size: 12,
-                            ),
+                SliverToBoxAdapter(child: _Header(upsideDown: upsideDown)),
+
+                // The finale, front and centre.
+                SliverToBoxAdapter(
+                  child: FlickerIn(
+                    child: _FeaturedBanner(
+                      onOpen: () => _openSeason(Seasons.s5),
+                      onPlay: () => _open(
+                        TrailerPlayerScreen(trailer: Seasons.s5.trailers.first),
+                        '/trailer',
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Where you are in the series.
+                SliverToBoxAdapter(
+                  child: FlickerIn(
+                    index: 1,
+                    child: _NextUpCard(
+                      next: next,
+                      watched: watched.length,
+                      onTap: next == null
+                          ? () => _open(const MomentsScreen(), '/moments')
+                          : () => _openSeason(next.$1, focusEpisode: next.$2.number),
+                    ),
+                  ),
+                ),
+
+                const SliverToBoxAdapter(child: SectionHeader(title: 'Meet the Party')),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 340,
+                    child: PageView.builder(
+                      controller: _carouselController,
+                      itemCount: cast_data.Cast.party.length,
+                      onPageChanged: (i) => setState(() => _carouselIndex = i),
+                      itemBuilder: (context, i) {
+                        final c = cast_data.Cast.party[i];
+                        final tag = 'char-party-${c.id}';
+                        return AnimatedPadding(
+                          duration: const Duration(milliseconds: 280),
+                          curve: Curves.easeOut,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: _carouselIndex == i ? 0 : 18,
                           ),
-                        ],
-                      ),
+                          child: _CharacterCard(
+                            character: c,
+                            heroTag: tag,
+                            focused: _carouselIndex == i,
+                            onTap: () => _openCharacter(c, tag),
+                          ),
+                        );
+                      },
                     ),
-                    const WorldToggle(),
-                  ],
+                  ),
                 ),
-              ),
-            ),
 
-            // Featured banner.
-            SliverToBoxAdapter(
-              child: _FeaturedBanner(
-                onTap: () => RiftPageRoute.push(
-                  context,
-                  const TransmissionsScreen(),
-                  name: '/transmissions',
+                SectionHeader(
+                  title: 'The Seasons',
+                  trailing: _SeeAll(onTap: () => _open(const SeasonsScreen(), '/seasons')),
+                ).sliver,
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 236,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: Seasons.all.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 12),
+                      itemBuilder: (context, i) {
+                        final s = Seasons.all[i];
+                        final tag = 'season-home-${s.number}';
+                        final done = s.episodes.where((e) => watched.contains(s.keyFor(e))).length;
+                        return _SeasonPoster(
+                          season: s,
+                          heroTag: tag,
+                          watched: done,
+                          onTap: () => _openSeason(s, heroTag: tag),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-              ),
-            ),
 
-            // Character carousel section.
-            const SliverToBoxAdapter(
-              child: SectionHeader(title: 'Meet the Party'),
-            ),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 320,
-                child: PageView.builder(
-                  controller: _carouselController,
-                  itemCount: cast_data.Cast.party.length,
-                  onPageChanged: (i) => setState(() => _carouselIndex = i),
-                  itemBuilder: (context, i) {
-                    final c = cast_data.Cast.party[i];
-                    return AnimatedPadding(
-                      duration: const Duration(milliseconds: 280),
-                      curve: Curves.easeOut,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: _carouselIndex == i ? 0 : 14,
+                const SliverToBoxAdapter(child: SectionHeader(title: 'Joyce\'s Wall')),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _WallCard(
+                      message: _wallMessages[_wallMessage],
+                      upsideDown: upsideDown,
+                      onTap: () => setState(
+                        () => _wallMessage = (_wallMessage + 1) % _wallMessages.length,
                       ),
-                      child: _CharacterCard(
-                        character: c,
-                        onTap: () => _openDetail(context, c),
-                      ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
-              ),
-            ),
 
-            // Quick tiles.
-            const SliverToBoxAdapter(
-              child: SectionHeader(title: 'Explore'),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverGrid.count(
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.35,
-                children: [
-                  _HubTile(
-                    title: 'Seasons',
-                    subtitle: '5 seasons · 42 chapters',
-                    icon: Icons.live_tv,
-                    color: AppColors.stRed,
-                    onTap: () => RiftPageRoute.push(
-                      context,
-                      const SeasonsScreen(),
-                      name: '/seasons',
-                    ),
+                const SliverToBoxAdapter(child: SectionHeader(title: 'Explore')),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: SliverGrid.count(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 1.12,
+                    children: [
+                      for (final (i, tile) in _tiles.indexed)
+                        _HubTile(
+                          file: i + 1,
+                          title: tile.title,
+                          subtitle: tile.subtitle,
+                          icon: tile.icon,
+                          // The grid glows in Joyce's Christmas-bulb colours.
+                          color: AppColors.bulbs[i % AppColors.bulbs.length],
+                          onTap: () => _open(tile.page(), tile.route),
+                        ),
+                    ],
                   ),
-                  _HubTile(
-                    title: 'Transmissions',
-                    subtitle: 'Trailers & teasers',
-                    icon: Icons.play_circle,
-                    color: AppColors.hawkinsGold,
-                    onTap: () => RiftPageRoute.push(
-                      context,
-                      const TransmissionsScreen(),
-                      name: '/transmissions',
-                    ),
-                  ),
-                  _HubTile(
-                    title: 'Timeline',
-                    subtitle: '1959 to the rightside up',
-                    icon: Icons.timeline,
-                    color: const Color(0xFF8E4585),
-                    onTap: () => RiftPageRoute.push(
-                      context,
-                      const TimelineScreen(),
-                      name: '/timeline',
-                    ),
-                  ),
-                  _HubTile(
-                    title: 'Hawkins Map',
-                    subtitle: 'Key locations',
-                    icon: Icons.map,
-                    color: const Color(0xFF4DD0E1),
-                    onTap: () => RiftPageRoute.push(
-                      context,
-                      const LocationsScreen(),
-                      name: '/locations',
-                    ),
-                  ),
-                  _HubTile(
-                    title: 'Bestiary',
-                    subtitle: 'Creatures of the Upside Down',
-                    icon: Icons.pets,
-                    color: const Color(0xFFEF5350),
-                    onTap: () => RiftPageRoute.push(
-                      context,
-                      const BestiaryScreen(),
-                      name: '/bestiary',
-                    ),
-                  ),
-                  _HubTile(
-                    title: 'Moments',
-                    subtitle: 'Twists, reveals & ironies',
-                    icon: Icons.local_fire_department,
-                    color: const Color(0xFFB388FF),
-                    onTap: () => RiftPageRoute.push(
-                      context,
-                      const MomentsScreen(),
-                      name: '/moments',
-                    ),
-                  ),
-                  _HubTile(
-                    title: 'Quotes',
-                    subtitle: 'Lines every fan knows',
-                    icon: Icons.format_quote,
-                    color: const Color(0xFF57D9A3),
-                    onTap: () => RiftPageRoute.push(
-                      context,
-                      const QuotesScreen(),
-                      name: '/quotes',
-                    ),
-                  ),
-                  _HubTile(
-                    title: 'Trivia',
-                    subtitle: 'Prove you\'re Hawkins-ready',
-                    icon: Icons.lightbulb,
-                    color: AppColors.udSpore,
-                    onTap: () => RiftPageRoute.push(
-                      context,
-                      const QuizScreen(),
-                      name: '/quiz',
-                    ),
-                  ),
-                  _HubTile(
-                    title: 'Soundboard',
-                    subtitle: 'Synth cues & SFX',
-                    icon: Icons.graphic_eq,
-                    color: const Color(0xFFB388FF),
-                    onTap: () => RiftPageRoute.push(
-                      context,
-                      const SoundboardScreen(),
-                      name: '/soundboard',
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                ),
 
-            // Creatures row.
-            const SliverToBoxAdapter(
-              child: SectionHeader(title: 'From the Upside Down'),
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-              sliver: SliverList.list(
-                children: [
-                  for (final c in cast_data.Cast.creatures)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _CreatureRowTile(
-                        character: c,
-                        onTap: () => _openDetail(context, c),
-                      ),
+                const SliverToBoxAdapter(child: SectionHeader(title: 'Hawkins Residents')),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 214,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: _residents.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 12),
+                      itemBuilder: (context, i) {
+                        final c = _residents[i];
+                        final tag = 'char-resident-${c.id}';
+                        return _MiniCharacterCard(
+                          character: c,
+                          heroTag: tag,
+                          width: 140,
+                          onTap: () => _openCharacter(c, tag),
+                        );
+                      },
                     ),
-                ],
-              ),
-            ),
+                  ),
+                ),
+
+                const SliverToBoxAdapter(child: SectionHeader(title: 'From the Upside Down')),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 214,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: cast_data.Cast.creatures.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 12),
+                      itemBuilder: (context, i) {
+                        final c = cast_data.Cast.creatures[i];
+                        final tag = 'char-creature-${c.id}';
+                        return _MiniCharacterCard(
+                          character: c,
+                          heroTag: tag,
+                          width: 168,
+                          creature: true,
+                          onTap: () => _openCharacter(c, tag),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+                    child: _QuoteOfTheDay(
+                      onTap: () => _open(const QuotesScreen(), '/quotes'),
+                    ),
+                  ),
+                ),
+
+                SliverToBoxAdapter(
+                  child: _Footer(
+                    accent: world.accent,
+                    onCredits: () => _open(const CreditsScreen(), '/credits'),
+                  ),
+                ),
               ],
             ),
           ),
-
-          // Faint CRT/VHS texture across the whole hub.
-          const IgnorePointer(
-            child: CrtOverlay(opacity: 0.08),
-          ),
+          const CrtOverlay(opacity: 0.06, animate: false),
         ],
       ),
     );
   }
-
-  void _openDetail(BuildContext context, Character c) {
-    RiftPageRoute.push(
-      context,
-      CharacterDetailScreen(character: c),
-      name: '/character/${c.id}',
-    );
-  }
 }
 
-/// Animated Hawkins ⇄ Upside Down switch in the app bar.
-class WorldToggle extends ConsumerWidget {
-  const WorldToggle({super.key});
+typedef _Tile = ({
+  String title,
+  String subtitle,
+  IconData icon,
+  String route,
+  Widget Function() page,
+});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final upsideDown = ref.watch(worldModeProvider);
-    final primary = upsideDown ? AppColors.udSpore : AppColors.stRed;
+final List<_Tile> _tiles = [
+  (title: 'Seasons', subtitle: 'Watch guide · 42 chapters', icon: Icons.live_tv, route: '/seasons', page: () => const SeasonsScreen()),
+  (title: 'The Cast', subtitle: 'Every dossier', icon: Icons.badge, route: '/cast', page: () => const CastScreen()),
+  (title: 'Transmissions', subtitle: 'Official trailers & radio', icon: Icons.play_circle, route: '/transmissions', page: () => const TransmissionsScreen()),
+  (title: 'Timeline', subtitle: '1959 to 1989, in order', icon: Icons.timeline, route: '/timeline', page: () => const TimelineScreen()),
+  (title: 'Hawkins Map', subtitle: 'Places & filming locations', icon: Icons.map, route: '/locations', page: () => const LocationsScreen()),
+  (title: 'Bestiary', subtitle: 'Creatures of the Upside Down', icon: Icons.pets, route: '/bestiary', page: () => const BestiaryScreen()),
+  (title: 'Moments', subtitle: 'Twists, reveals & ironies', icon: Icons.local_fire_department, route: '/moments', page: () => const MomentsScreen()),
+  (title: 'Quotes', subtitle: 'Lines every fan knows', icon: Icons.format_quote, route: '/quotes', page: () => const QuotesScreen()),
+  (title: 'Trivia', subtitle: 'Prove you\'re Hawkins-ready', icon: Icons.lightbulb, route: '/quiz', page: () => const QuizScreen()),
+  (title: 'Soundboard', subtitle: 'Synth cues & SFX', icon: Icons.graphic_eq, route: '/soundboard', page: () => const SoundboardScreen()),
+];
 
-    return GestureDetector(
-      key: const ValueKey('world-toggle'),
-      onTap: () => ref.read(worldModeProvider.notifier).toggle(),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 420),
-        curve: Curves.easeOut,
-        width: 92,
-        height: 38,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(999),
-          color: upsideDown
-              ? AppColors.udFogHi.withValues(alpha: 0.5)
-              : Colors.black.withValues(alpha: 0.06),
-          border: Border.all(color: primary.withValues(alpha: 0.5)),
-          boxShadow: [
-            BoxShadow(
-              color: primary.withValues(alpha: 0.3),
-              blurRadius: 12,
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: upsideDown
-              ? MainAxisAlignment.end
-              : MainAxisAlignment.start,
-          children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 420),
-              curve: Curves.easeOut,
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: upsideDown
-                      ? [AppColors.udSpore, const Color(0xFF2A5C58)]
-                      : [Colors.amber, AppColors.stRed],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: primary.withValues(alpha: 0.8),
-                    blurRadius: 8,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+extension on SectionHeader {
+  Widget get sliver => SliverToBoxAdapter(child: this);
 }
 
-/// The big "featured" banner at the top of the hub.
-class _FeaturedBanner extends StatelessWidget {
-  const _FeaturedBanner({required this.onTap});
+class _Header extends StatelessWidget {
+  const _Header({required this.upsideDown});
 
-  final VoidCallback onTap;
+  final bool upsideDown;
 
   @override
   Widget build(BuildContext context) {
+    final world = WorldPalette.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
-      child: GestureDetector(
-        onTap: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Container(
-            height: 190,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF2A0E2C),
-                  Color(0xFF5B1236),
-                  Color(0xFFE50914),
-                ],
-                stops: [0, 0.55, 1],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.12),
-              ),
-            ),
-            child: Stack(
-              fit: StackFit.expand,
+      padding: const EdgeInsets.fromLTRB(20, 14, 16, 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Drop-in featured still if bundled, else the gradient art.
-                PosterImage(
-                  assetKey: 'featured',
-                  fallback: const SizedBox.expand(),
-                ),
-                // Vignette + grain overlay.
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        center: const Alignment(-0.3, 0.4),
-                        radius: 1.2,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.55),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 20,
-                  bottom: 20,
-                  right: 100,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                const STLogo(size: 19),
+                const SizedBox(height: 10),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400),
+                  child: Row(
+                    key: ValueKey(upsideDown),
                     children: [
-                      const GlowBadge(
-                        text: 'Now Streaming',
-                        color: Colors.amber,
-                        icon: Icons.play_arrow,
+                      Icon(
+                        upsideDown ? Icons.blur_on : Icons.location_on,
+                        size: 14,
+                        color: world.secondary,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'THE FINAL CHAPTER',
-                        style: AppText.h1(Colors.white).copyWith(
-                          fontSize: 26,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Season 5 · 8 chapters · the gate closes for good.',
-                        style: AppText.body(
-                          Colors.white.withValues(alpha: 0.85),
-                          size: 13,
+                      const SizedBox(width: 5),
+                      Flexible(
+                        child: Text(
+                          upsideDown
+                              ? 'You are in the Upside Down'
+                              : 'Hawkins, Indiana · 1983-1989',
+                          style: AppText.dossier(world.muted, size: 12.5),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
                 ),
-                // Play affordance.
-                Positioned(
-                  right: 18,
-                  bottom: 18,
-                  child: Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 12,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(Icons.play_arrow,
-                        color: AppColors.stRed, size: 30),
-                  ),
-                ),
               ],
             ),
           ),
-        ),
+          const WorldToggle(),
+        ],
       ),
     );
   }
 }
 
-/// Parallax character card in the carousel.
-class _CharacterCard extends StatelessWidget {
-  const _CharacterCard({required this.character, required this.onTap});
+class _SeeAll extends StatelessWidget {
+  const _SeeAll({required this.onTap});
 
-  final Character character;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
-
     return GestureDetector(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            // DARK end of the gradient anchors the text (bottom-left).
-            gradient: LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [
-                character.accent,
-                character.accentDeep,
-                world.bg,
-              ],
-              stops: const [0, 0.55, 1],
-            ),
-            border: Border.all(
-              color: world.accent.withValues(alpha: 0.35),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: character.accent.withValues(alpha: 0.25),
-                blurRadius: 18,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
+      child: Text('SEE ALL', style: AppText.label(world.muted).copyWith(fontSize: 11)),
+    );
+  }
+}
+
+/// The big banner at the top of the hub: the Gate breathing in the dark.
+class _FeaturedBanner extends StatelessWidget {
+  const _FeaturedBanner({required this.onOpen, required this.onPlay});
+
+  final VoidCallback onOpen;
+  final VoidCallback onPlay;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+      child: NeonCard(
+        onTap: onOpen,
+        padding: EdgeInsets.zero,
+        borderRadius: 22,
+        glow: AppColors.stRed,
+        child: SizedBox(
+          height: 236,
           child: Stack(
             fit: StackFit.expand,
             children: [
-              // Drop-in still if bundled, else the icon art.
               PosterImage(
-                assetKey: 'char_${character.id}',
-                fallback: const SizedBox.expand(),
-              ),
-              // Legibility scrim over any still.
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.15),
-                        Colors.black.withValues(alpha: 0.8),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              // Icon "art" in the upper right, softly lit.
-              Positioned(
-                top: 18,
-                right: 18,
-                child: Opacity(
-                  opacity: 0.22,
-                  child: Icon(character.icon, size: 120, color: Colors.white),
-                ),
-              ),
-              // Identity dot.
-              Positioned(
-                top: 16,
-                left: 16,
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: character.accent,
-                        blurRadius: 10,
-                        spreadRadius: 2,
+                assetKey: 'featured',
+                fallback: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    const DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topRight,
+                          end: Alignment.bottomLeft,
+                          colors: [Color(0xFF3A0508), Color(0xFF12030A), Colors.black],
+                        ),
                       ),
-                    ],
+                    ),
+                    GateArt(color: AppColors.stRed, seed: 1987),
+                  ],
+                ),
+              ),
+              // Legibility: dark end under the text, bottom-left.
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topRight,
+                    end: Alignment.bottomLeft,
+                    colors: [Color(0x00000000), Color(0x66000000), Color(0xE6000000)],
+                    stops: [0.2, 0.55, 1],
                   ),
                 ),
               ),
-              // Text block anchored bottom-left on the dark end.
+              const CrtOverlay(opacity: 0.12, animate: false),
               Positioned(
                 left: 18,
                 right: 18,
                 bottom: 18,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      character.name.toUpperCase(),
-                      style: AppText.h1(Colors.white).copyWith(
-                        fontSize: 24,
-                        letterSpacing: 0.6,
-                      ),
+                    const GlowBadge(
+                      text: 'All 5 seasons streaming',
+                      color: AppColors.hawkinsGold,
+                      icon: Icons.play_arrow,
+                      onImage: true,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 10),
                     Text(
-                      character.tagline,
-                      style: AppText.body(
-                        Colors.white.withValues(alpha: 0.82),
-                        size: 13,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      'THE FINAL\nCHAPTER',
+                      style: AppText.neon(size: 30, color: AppColors.stRed),
                     ),
                     const SizedBox(height: 8),
-                    GlowBadge(text: character.seasonLabel, color: Colors.white70),
+                    Text(
+                      'Season 5 · Hawkins, November 1987 · 8 chapters',
+                      style: AppText.body(Colors.white.withValues(alpha: 0.85), size: 12.5),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        FilledButton.icon(
+                          onPressed: onPlay,
+                          icon: const Icon(Icons.play_arrow, size: 18),
+                          label: const Text('TRAILER'),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.stRed,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        OutlinedButton(
+                          onPressed: onOpen,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.white54),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          ),
+                          child: const Text('EPISODES'),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -602,62 +491,184 @@ class _CharacterCard extends StatelessWidget {
   }
 }
 
-/// Wide tile for the creatures section.
-class _CreatureRowTile extends StatelessWidget {
-  const _CreatureRowTile({required this.character, required this.onTap});
+/// "Next up": the first chapter you haven't watched, and how far you are.
+class _NextUpCard extends StatelessWidget {
+  const _NextUpCard({
+    required this.next,
+    required this.watched,
+    required this.onTap,
+  });
 
-  final Character character;
+  final (Season, Episode)? next;
+  final int watched;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GlassCard(
-      onTap: onTap,
-      glow: character.accent,
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              gradient: LinearGradient(
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-                colors: [character.accent, character.accentDeep],
+    final world = WorldPalette.of(context);
+    final total = Seasons.totalEpisodes;
+    final next = this.next;
+    final accent = next?.$1.accent ?? AppColors.safeGreen;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: NeonCard(
+        onTap: onTap,
+        glow: accent,
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: 62,
+                height: 62,
+                child: next == null
+                    ? const KeyArt(accent: AppColors.safeGreen, icon: Icons.emoji_events, iconSize: 34, iconAlignment: Alignment.center)
+                    : Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          SeasonArt(season: next.$1),
+                          Center(
+                            child: Text(
+                              '${next.$1.number}',
+                              style: AppText.neon(size: 30, color: Colors.white, glow: 0.8),
+                            ),
+                          ),
+                        ],
+                      ),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: character.accent.withValues(alpha: 0.5),
-                  blurRadius: 12,
-                ),
-              ],
             ),
-            child: Icon(character.icon, color: Colors.white, size: 28),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    next == null
+                        ? 'SERIES COMPLETE'
+                        : 'NEXT UP · S${next.$1.number} ${next.$2.chapterLabel}',
+                    style: AppText.chapter(accent, size: 11),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    next == null ? 'Friends don\'t lie. You finished it.' : next.$2.title,
+                    style: AppText.h2(world.ink).copyWith(fontSize: 17),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: LinearProgressIndicator(
+                            value: watched / total,
+                            minHeight: 4,
+                            color: accent,
+                            backgroundColor: world.ink.withValues(alpha: 0.1),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        '$watched / $total',
+                        style: AppText.label(world.muted).copyWith(fontSize: 10.5),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(Icons.chevron_right, color: world.muted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Portrait card in the Party carousel. The art flies into the dossier
+/// header (Hero) as the page tears open.
+class _CharacterCard extends StatelessWidget {
+  const _CharacterCard({
+    required this.character,
+    required this.heroTag,
+    required this.focused,
+    required this.onTap,
+  });
+
+  final Character character;
+  final String heroTag;
+  final bool focused;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = character;
+    return NeonCard(
+      onTap: onTap,
+      glow: c.accent,
+      padding: EdgeInsets.zero,
+      borderRadius: 24,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Hero(tag: heroTag, child: CharacterArt(character: c)),
+          // Legibility scrim: the dark end sits under the text.
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0x14000000), Color(0x33000000), Color(0xF2000000)],
+                stops: [0, 0.45, 1],
+              ),
+            ),
           ),
-          const SizedBox(width: 14),
-          Expanded(
+          Positioned(
+            top: 14,
+            left: 14,
+            child: GlowBadge(text: c.role ?? 'Hawkins', color: Colors.white70, onImage: true),
+          ),
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 16,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(character.name, style: AppText.h2(Theme.of(context).colorScheme.onSurface)),
+                Text(
+                  c.name.toUpperCase(),
+                  style: AppText.h1(Colors.white, heavy: true).copyWith(
+                    fontSize: 27,
+                    letterSpacing: 1,
+                    shadows: [Shadow(color: c.accent, blurRadius: focused ? 18 : 0)],
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(
-                  character.tagline,
-                  style: AppText.body(
-                    Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    size: 12.5,
-                  ),
-                  maxLines: 1,
+                  c.tagline,
+                  style: AppText.body(Colors.white.withValues(alpha: 0.85), size: 13),
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (c.actor != null) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    c.actor!,
+                    style: AppText.dossier(Colors.white.withValues(alpha: 0.65), size: 12),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                GlowBadge(text: c.seasonLabel, color: c.accent),
               ],
             ),
-          ),
-          Icon(
-            Icons.chevron_right,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
           ),
         ],
       ),
@@ -665,9 +676,206 @@ class _CreatureRowTile extends StatelessWidget {
   }
 }
 
-/// Grid tile into a section.
+/// Smaller character card for the horizontal rows.
+class _MiniCharacterCard extends StatelessWidget {
+  const _MiniCharacterCard({
+    required this.character,
+    required this.heroTag,
+    required this.width,
+    required this.onTap,
+    this.creature = false,
+  });
+
+  final Character character;
+  final String heroTag;
+  final double width;
+  final VoidCallback onTap;
+  final bool creature;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = character;
+    return SizedBox(
+      width: width,
+      child: NeonCard(
+        onTap: onTap,
+        glow: creature ? AppColors.udLightning : c.accent,
+        padding: EdgeInsets.zero,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Hero(tag: heroTag, child: CharacterArt(character: c, iconSize: 110)),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x00000000), Color(0xE6000000)],
+                  stops: [0.35, 1],
+                ),
+              ),
+            ),
+            if (creature)
+              const Positioned(
+                top: 10,
+                left: 10,
+                child: GlowBadge(text: 'Threat', color: AppColors.udLightning, icon: Icons.warning_amber, onImage: true),
+              ),
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: 12,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    c.name,
+                    style: AppText.h2(Colors.white).copyWith(fontSize: 17),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    c.actor ?? c.alias,
+                    style: AppText.dossier(Colors.white.withValues(alpha: 0.7), size: 11),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A season as a poster: art, a big neon numeral, and your progress.
+class _SeasonPoster extends StatelessWidget {
+  const _SeasonPoster({
+    required this.season,
+    required this.heroTag,
+    required this.watched,
+    required this.onTap,
+  });
+
+  final Season season;
+  final String heroTag;
+  final int watched;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = season;
+    return SizedBox(
+      width: 156,
+      child: NeonCard(
+        onTap: onTap,
+        glow: s.accent,
+        padding: EdgeInsets.zero,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Hero(tag: heroTag, child: SeasonArt(season: s)),
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x00000000), Color(0xEB000000)],
+                  stops: [0.3, 1],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 10,
+              right: 12,
+              child: Text('${s.number}', style: AppText.neon(size: 54, color: s.accent)),
+            ),
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: 12,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('SEASON ${numberWord(s.number)}', style: AppText.chapter(Colors.white, size: 12)),
+                  const SizedBox(height: 4),
+                  Text(
+                    s.setting,
+                    style: AppText.dossier(Colors.white.withValues(alpha: 0.75), size: 11.5),
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(2),
+                    child: LinearProgressIndicator(
+                      value: watched / s.episodes.length,
+                      minHeight: 3,
+                      color: s.accent,
+                      backgroundColor: Colors.white.withValues(alpha: 0.15),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Joyce's alphabet wall, as an interactive card.
+class _WallCard extends StatelessWidget {
+  const _WallCard({
+    required this.message,
+    required this.upsideDown,
+    required this.onTap,
+  });
+
+  final String message;
+  final bool upsideDown;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final world = WorldPalette.of(context);
+    return NeonCard(
+      onTap: onTap,
+      glow: AppColors.hawkinsGold,
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          AlphabetWall(message: message, upsideDown: upsideDown),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+            child: Row(
+              children: [
+                const Icon(Icons.lightbulb, size: 16, color: AppColors.hawkinsGold),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    upsideDown
+                        ? 'Someone on the other side is spelling...'
+                        : 'Will is spelling a message. Tap for another.',
+                    style: AppText.dossier(world.muted, size: 12.5),
+                  ),
+                ),
+                Icon(Icons.refresh, size: 18, color: world.muted),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Grid tile into a section, filed like a lab case.
 class _HubTile extends StatelessWidget {
   const _HubTile({
+    required this.file,
     required this.title,
     required this.subtitle,
     required this.icon,
@@ -675,6 +883,7 @@ class _HubTile extends StatelessWidget {
     required this.onTap,
   });
 
+  final int file;
   final String title;
   final String subtitle;
   final IconData icon;
@@ -684,44 +893,110 @@ class _HubTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
-    return GestureDetector(
+    return NeonCard(
       onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [color.withValues(alpha: 0.28), world.card],
-              stops: const [0, 0.7],
-            ),
-            border: Border.all(color: color.withValues(alpha: 0.4)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      glow: color,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Icon(icon, color: color, size: 28),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: AppText.h2(Theme.of(context).colorScheme.onSurface).copyWith(fontSize: 17)),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: AppText.body(
-                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
-                      size: 11.5,
-                    ),
-                  ),
-                ],
+              Container(
+                width: 38,
+                height: 38,
+                // Opaque centre: a translucent fill would let the halo
+                // bleed through and read as a solid disc.
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color.lerp(world.card, color, 0.14),
+                  border: Border.all(color: color.withValues(alpha: 0.75)),
+                  boxShadow: [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 12)],
+                ),
+                child: Icon(icon, color: color, size: 20, shadows: [Shadow(color: color, blurRadius: 8)]),
+              ),
+              const Spacer(),
+              Text(
+                'FILE ${file.toString().padLeft(2, '0')}',
+                style: AppText.dossier(world.muted.withValues(alpha: 0.8), size: 10.5),
               ),
             ],
           ),
-        ),
+          const Spacer(),
+          Text(title, style: AppText.h2(world.ink).copyWith(fontSize: 17)),
+          const SizedBox(height: 2),
+          Text(
+            subtitle,
+            style: AppText.body(world.muted, size: 11.5),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A line from the wall of quotes, changing daily.
+class _QuoteOfTheDay extends StatelessWidget {
+  const _QuoteOfTheDay({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final world = WorldPalette.of(context);
+    final q = Quotes.all[DateTime.now().day % Quotes.all.length];
+    return NeonCard(
+      onTap: onTap,
+      glow: q.accent,
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('OVERHEARD IN HAWKINS', style: AppText.chapter(q.accent, size: 11)),
+          const SizedBox(height: 10),
+          Text(
+            '"${q.text}"',
+            style: AppText.dossier(world.ink, size: 17),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '- ${q.speaker}, Season ${q.season}',
+            style: AppText.label(world.muted).copyWith(fontSize: 11),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Footer extends StatelessWidget {
+  const _Footer({required this.accent, required this.onCredits});
+
+  final Color accent;
+  final VoidCallback onCredits;
+
+  @override
+  Widget build(BuildContext context) {
+    final world = WorldPalette.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 32, 20, 48),
+      child: Column(
+        children: [
+          const ChristmasLights(bulbCount: 16, animate: false),
+          const SizedBox(height: 16),
+          Text(
+            'An unofficial fan companion for education and fun.\n'
+            'Not affiliated with or endorsed by Netflix.',
+            textAlign: TextAlign.center,
+            style: AppText.dossier(world.muted, size: 12),
+          ),
+          TextButton(
+            onPressed: onCredits,
+            child: Text('CREDITS & SOURCES', style: AppText.label(accent)),
+          ),
+        ],
       ),
     );
   }

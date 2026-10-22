@@ -6,48 +6,82 @@ class Quiz {
   Quiz._();
 
   static const List<QuizQuestion> bank = [
+    // ---- Season 1 ----
     QuizQuestion(
-      question: 'What does Eleven use to open cans of food in Season 1?',
-      options: ['A knife', 'Her mind', 'A rock', 'Hopper\'s badge'],
+      question: 'What monster attacks the Party in Mike\'s campaign in the very first scene?',
+      options: ['The Mind Flayer', 'The Demogorgon', 'Vecna', 'The Thessalhydra'],
       correctIndex: 1,
-      fact: 'Telekinesis is her party trick - and her only weapon until the gate.',
+      fact: 'Will rolls a seven and the Demogorgon gets him - so the boys name the real creature after it.',
     ),
     QuizQuestion(
-      question: 'What song does Max listen to to escape Vecna\'s curse?',
+      question: 'Where do the boys first find Eleven?',
+      options: [
+        'Hawkins National Lab',
+        'Benny\'s Burgers',
+        'In the woods, searching for Will',
+        'The Byers\' shed',
+      ],
+      correctIndex: 2,
+      fact: 'Mike, Lucas and Dustin find her soaked in the rain-dark woods while out looking for Will.',
+    ),
+    QuizQuestion(
+      question: 'What does the alphabet wall spell when Joyce asks Will where he is?',
+      options: ['HELP', 'RIGHT HERE', 'COME HOME', 'GO AWAY'],
+      correctIndex: 1,
+      fact: 'R-I-G-H-T H-E-R-E. Her next question gets a scarier answer: R-U-N.',
+    ),
+    QuizQuestion(
+      question: 'Which song does Will sing to stay brave in the Upside Down?',
       options: [
         'Should I Stay or Should I Go',
         'Every Breath You Take',
-        'Running Up That Hill',
         'Heroes',
+        'Atmosphere',
       ],
-      correctIndex: 2,
-      fact: 'Kate Bush\'s 1985 track became the lifeline that pulled Max back.',
-    ),
-    QuizQuestion(
-      question: 'What is the name of Dustin\'s pet demodog?',
-      options: ['Dartagnan', 'Barb', 'Chester', 'Fig'],
       correctIndex: 0,
-      fact: 'He named it D\'Artagnan after the Three Musketeers - then it grew teeth.',
+      fact: 'The Clash song Jonathan shared with him - with Eleven\'s help, the Party hears him singing it through the static.',
     ),
     QuizQuestion(
-      question: 'Where do the kids first find Eleven?',
+      question: 'Which food is Eleven\'s unofficial survival ration?',
+      options: ['Eggo waffles', 'Pop-Tarts', 'Candy corn', 'Cheerios'],
+      correctIndex: 0,
+      fact: 'Eggos. She steals them from Bradley\'s Big Buy, and Hopper leaves them in the woods for her.',
+    ),
+
+    // ---- Season 2 ----
+    QuizQuestion(
+      question: 'What is the name of Dustin\'s pet from the Upside Down?',
+      options: ['Dartagnan', 'Barb', 'Chester', 'Mews'],
+      correctIndex: 0,
+      fact: 'D\'Artagnan - "Dart" - after the Three Musketeers. Mews was the cat it ate.',
+    ),
+    QuizQuestion(
+      question: 'What name is on the birth certificate Hopper gets for Eleven?',
+      options: ['Jane Ives', 'Jane Hopper', 'Eleanor Hopper', 'El Byers'],
+      correctIndex: 1,
+      fact: 'Jane Hopper. "Jane" was the name her mother Terry Ives gave her.',
+    ),
+    QuizQuestion(
+      question: 'Who closes the Gate at the end of Season 2?',
+      options: ['Hopper', 'Eleven', 'Will', 'Mike'],
+      correctIndex: 1,
+      fact: 'Eleven seals it from the lab with Hopper beside her, while Joyce burns the Mind Flayer out of Will.',
+    ),
+    QuizQuestion(
+      question: 'What is Hopper\'s job in Hawkins?',
       options: [
-        'Hawkins National Lab',
-        'The Byers\' house',
-        'A costume shop on Main Street',
-        'The woods behind Wheeler\'s',
+        'Diner owner',
+        'Chief of police',
+        'Lab security guard',
+        'Truck driver',
       ],
-      correctIndex: 3,
-      fact: 'The woods - eating a stolen Eggo, shaved head, borrowed blanket.',
+      correctIndex: 1,
+      fact: 'Chief of Police - badge, coffee, and a terrible personal life.',
     ),
+
+    // ---- Season 3 ----
     QuizQuestion(
-      question: 'What letters spell out Will\'s message through the Christmas lights?',
-      options: ['HERE', 'RUN', 'OUT', 'LIE'],
-      correctIndex: 2,
-      fact: 'Out. The lights lit letter by letter across the wall of the Byers\' living room.',
-    ),
-    QuizQuestion(
-      question: 'What is Steve\'s job at Starcourt Mall?',
+      question: 'What is Steve\'s summer job at Starcourt Mall?',
       options: [
         'Scoops Ahoy sailor',
         'RadioShack clerk',
@@ -55,52 +89,19 @@ class Quiz {
         'Food court cook',
       ],
       correctIndex: 0,
-      fact: 'Scoops Ahoy - where the Russian code-breaking plot actually starts.',
+      fact: 'Scoops Ahoy - where Robin cracks the Russian code and the whole plot starts.',
     ),
     QuizQuestion(
-      question: 'What does Nancy find inside the wall of her house?',
-      options: [
-        'A demogorgon nest',
-        'A rotting tendril',
-        'Barb\'s necklace',
-        'A hidden switch',
-      ],
+      question: 'What does Dustin call the giant radio tower he builds at camp?',
+      options: ['Cerebro', 'Suzie', 'Skynet', 'The Beacon'],
+      correctIndex: 0,
+      fact: 'Cerebro, after the X-Men machine. Suzie is the girlfriend on the other end.',
+    ),
+    QuizQuestion(
+      question: 'Which song do Dustin and Suzie sing over the radio at the worst possible moment?',
+      options: ['Take On Me', 'The NeverEnding Story', 'Africa', 'Ghostbusters'],
       correctIndex: 1,
-      fact: 'The rotting tendril - proof the Upside Down had rooted into Hawkins itself.',
-    ),
-    QuizQuestion(
-      question: 'Which season introduces a villain targeting Hawkins High students?',
-      options: ['Season 2', 'Season 3', 'Season 4', 'Season 5'],
-      correctIndex: 2,
-      fact: 'Vecna\'s curse chain drives all of Season 4 - one victim, one clock, every week.',
-    ),
-    QuizQuestion(
-      question: 'What is Hopper\'s job while searching for answers?',
-      options: [
-        'Diner owner',
-        'Hawkins police chief',
-        'Lab security guard',
-        'Truck driver',
-      ],
-      correctIndex: 1,
-      fact: 'Chief of Police - badge, coffee, and a terrible personal life.',
-    ),
-    QuizQuestion(
-      question: 'What does Robin accidentally decode in the Russian storage room?',
-      options: [
-        'A distress signal',
-        'A fast-food order',
-        'A soldier\'s love letter',
-        'A launch code',
-      ],
-      correctIndex: 2,
-      fact: 'The Russians were sending a love letter - which cracked the whole cipher.',
-    ),
-    QuizQuestion(
-      question: 'Who closes the gate to the Upside Down at the end of Season 2?',
-      options: ['Hopper', 'Eleven', 'Will', 'Mike'],
-      correctIndex: 1,
-      fact: 'Eleven poured everything into sealing the gate beneath the lab.',
+      fact: 'The NeverEnding Story - while everyone waits for Suzie to recite Planck\'s constant.',
     ),
     QuizQuestion(
       question: 'What does the Party fight in the Starcourt finale?',
@@ -111,25 +112,68 @@ class Quiz {
         'Vecna himself',
       ],
       correctIndex: 1,
-      fact: 'The Mind Flayer\'s meat-avatar - built from the Flayed of Hawkins.',
+      fact: 'The Mind Flayer\'s flesh body - built from the flayed people of Hawkins.',
     ),
+
+    // ---- Season 4 ----
     QuizQuestion(
-      question: 'What is the final chapter of Season 5 called?',
-      options: ['The Crawl', 'The Bridge', 'The Rightside Up', 'The Turnbow Trap'],
+      question: 'What song does Max listen to to escape Vecna\'s curse?',
+      options: [
+        'Should I Stay or Should I Go',
+        'Every Breath You Take',
+        'Running Up That Hill',
+        'Heroes',
+      ],
       correctIndex: 2,
-      fact: 'The Rightside Up - the series finale that closes the gate for good.',
-    ),
-    QuizQuestion(
-      question: 'Which food item is Eleven\'s unofficial survival ration?',
-      options: ['Eggo waffles', 'Pop-Tarts', 'Candy corn', 'Cheerios'],
-      correctIndex: 0,
-      fact: 'Eggos. Hopper stocked the freezer before he knew what "family" meant.',
+      fact: 'Kate Bush\'s 1985 track - it became a number-one hit all over again in 2022.',
     ),
     QuizQuestion(
       question: 'Who runs the Hellfire Club at Hawkins High?',
       options: ['Mike Wheeler', 'Eddie Munson', 'Dustin Henderson', 'Lucas Sinclair'],
       correctIndex: 1,
-      fact: 'Eddie Munson - Hellfire\'s DM, and Season 4\'s most metal casualty.',
+      fact: 'Eddie Munson - Hellfire\'s Dungeon Master, in his third senior year.',
+    ),
+    QuizQuestion(
+      question: 'What does Eddie play on his guitar to draw the demobats away?',
+      options: [
+        'Master of Puppets',
+        'Eye of the Tiger',
+        'Running Up That Hill',
+        'Should I Stay or Should I Go',
+      ],
+      correctIndex: 0,
+      fact: 'Metallica\'s "Master of Puppets", played on the roof of his trailer in the Upside Down.',
+    ),
+    QuizQuestion(
+      question: 'Who was Vecna before he became Vecna?',
+      options: ['Victor Creel', 'Martin Brenner', 'Henry Creel', 'Dr. Owens'],
+      correctIndex: 2,
+      fact: 'Henry Creel - Subject One, the first of Brenner\'s children.',
+    ),
+
+    // ---- Season 5 ----
+    QuizQuestion(
+      question: 'What does Holly Wheeler call her mysterious imaginary friend?',
+      options: ['Mr. Whatsit', 'Mr. Clarke', 'Mr. Wizard', 'Mr. Bones'],
+      correctIndex: 0,
+      fact: 'Mr. Whatsit - who turns out to be Henry Creel.',
+    ),
+    QuizQuestion(
+      question: 'What does Dustin work out the Upside Down really is?',
+      options: [
+        'A mirror world',
+        'A wormhole to another dimension',
+        'A shared dream',
+        'A Soviet experiment',
+      ],
+      correctIndex: 1,
+      fact: 'A wormhole held open by exotic matter - a bridge to the Abyss.',
+    ),
+    QuizQuestion(
+      question: 'What is the final chapter of the series called?',
+      options: ['The Crawl', 'The Bridge', 'The Rightside Up', 'The Turnbow Trap'],
+      correctIndex: 2,
+      fact: 'Chapter Eight: The Rightside Up - released New Year\'s Eve 2025.',
     ),
   ];
 }

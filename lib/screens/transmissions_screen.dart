@@ -6,12 +6,17 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
-import '../core/widgets/glass_card.dart';
+import '../core/theme/world_palette.dart';
+import '../core/widgets/neon_card.dart';
 import '../core/widgets/particles.dart';
+import '../core/widgets/rift_route.dart';
+import '../core/widgets/st_scaffold.dart';
+import '../data/seasons.dart';
+import 'trailer_player_screen.dart';
 
-/// A "transmission" = one playable teaser (synth stinger) with an animated
-/// title card and waveform. Stands in for the plan's video player with
-/// original audio + rich visuals, so it works offline on every platform.
+/// Transmissions from Hawkins: every official trailer (streamed from
+/// Netflix's own YouTube channels) and a bank of original synth "radio
+/// signals" with an animated title card and waveform that work offline.
 class TransmissionsScreen extends StatefulWidget {
   const TransmissionsScreen({super.key});
 
@@ -142,31 +147,59 @@ class _TransmissionsScreenState extends State<TransmissionsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final world = WorldPalette.of(context);
+    final trailers = [for (final season in Seasons.all) ...season.trailers];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'TRANSMISSIONS',
-          style: AppText.h2(scheme.onSurface).copyWith(letterSpacing: 1.5),
+    return STScaffold(
+      title: 'TRANSMISSIONS',
+      subtitle: '${trailers.length} trailers · ${_transmissions.length} radio signals',
+      actions: [
+        IconButton(
+          tooltip: _muted ? 'Unmute' : 'Mute',
+          icon: Icon(_muted ? Icons.volume_off : Icons.volume_up),
+          onPressed: () {
+            _player.setVolume(_muted ? 1 : 0);
+            setState(() => _muted = !_muted);
+          },
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(_muted ? Icons.volume_off : Icons.volume_up),
-            onPressed: () {
-              _player.setVolume(_muted ? 1 : 0);
-              setState(() => _muted = !_muted);
-            },
-          ),
-        ],
-      ),
+      ],
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
         children: [
+          const SectionHeader(
+            title: 'Official Trailers',
+            padding: EdgeInsets.fromLTRB(0, 16, 0, 12),
+          ),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.25,
+            ),
+            itemCount: trailers.length,
+            itemBuilder: (context, i) => FlickerIn(
+              index: i,
+              child: TrailerCard(
+                trailer: trailers[i],
+                onTap: () {
+                  // Don't talk over the trailer.
+                  if (_playingIndex != null) _toggle(_playingIndex!);
+                  RiftPageRoute.push(
+                    context,
+                    TrailerPlayerScreen(trailer: trailers[i]),
+                    name: '/trailer',
+                  );
+                },
+              ),
+            ),
+          ),
+          const SectionHeader(
+            title: 'Radio Signals',
+            padding: EdgeInsets.fromLTRB(0, 28, 0, 12),
+          ),
           // Now-playing hero card.
           if (_playingIndex != null) ...[
             _NowPlayingCard(
@@ -178,7 +211,6 @@ class _TransmissionsScreenState extends State<TransmissionsScreen> {
             ),
             const SizedBox(height: 18),
           ],
-          const SectionHeader(title: 'Available Signals'),
           for (var i = 0; i < _transmissions.length; i++)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
@@ -190,21 +222,19 @@ class _TransmissionsScreenState extends State<TransmissionsScreen> {
               ),
             ),
           const SizedBox(height: 8),
-          GlassCard(
+          NeonCard(
+            tube: false,
             padding: const EdgeInsets.all(14),
             child: Row(
               children: [
-                Icon(Icons.info_outline,
-                    size: 18, color: scheme.onSurface.withValues(alpha: 0.5)),
+                Icon(Icons.info_outline, size: 18, color: world.muted),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'All cues are original procedurally-generated homages '
-                    '(see tool/generate_audio.py) — no copyrighted recordings.',
-                    style: AppText.body(
-                      scheme.onSurface.withValues(alpha: 0.55),
-                      size: 12,
-                    ),
+                    'Trailers stream from Netflix\'s official YouTube channels. '
+                    'Radio signals are original synth homages generated for this '
+                    'app (tool/generate_audio.py) - no recordings from the show.',
+                    style: AppText.body(world.muted, size: 12),
                   ),
                 ),
               ],
@@ -380,8 +410,8 @@ class _TransmissionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return GlassCard(
+    final world = WorldPalette.of(context);
+    return NeonCard(
       onTap: onTap,
       glow: t.accent,
       padding: const EdgeInsets.all(14),
@@ -416,14 +446,11 @@ class _TransmissionTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(t.title, style: AppText.h2(scheme.onSurface).copyWith(fontSize: 16)),
+                Text(t.title, style: AppText.h2(world.ink).copyWith(fontSize: 16)),
                 const SizedBox(height: 2),
                 Text(
                   t.subtitle,
-                  style: AppText.body(
-                    scheme.onSurface.withValues(alpha: 0.6),
-                    size: 12.5,
-                  ),
+                  style: AppText.body(world.muted, size: 12.5),
                 ),
               ],
             ),

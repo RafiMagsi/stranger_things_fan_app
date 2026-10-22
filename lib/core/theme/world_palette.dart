@@ -13,6 +13,8 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
     required this.upsideDown,
     required this.accent,
     required this.accentGlow,
+    required this.secondary,
+    required this.atmosphere,
     required this.bg,
     required this.card,
     required this.cardHi,
@@ -22,8 +24,10 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
   });
 
   final bool upsideDown;
-  final Color accent; // primary brand accent (red / spore)
+  final Color accent; // primary neon accent (logo red / storm blue)
   final Color accentGlow; // neon halo color
+  final Color secondary; // supporting accent (amber / red lightning)
+  final Color atmosphere; // the light that leaks in at the top of a screen
   final Color bg;
   final Color card;
   final Color cardHi;
@@ -35,6 +39,8 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
         upsideDown: false,
         accent: AppColors.stRed,
         accentGlow: AppColors.stRedGlow,
+        secondary: AppColors.hawkinsGold,
+        atmosphere: AppColors.stRed,
         bg: AppColors.hawkinsBg,
         card: AppColors.hawkinsCard,
         cardHi: AppColors.hawkinsCardHi,
@@ -45,8 +51,10 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
 
   factory WorldPalette.upsideDown() => const WorldPalette(
         upsideDown: true,
-        accent: AppColors.udSpore,
+        accent: AppColors.udGlow,
         accentGlow: AppColors.udSpore,
+        secondary: AppColors.udLightning,
+        atmosphere: AppColors.udLightning,
         bg: AppColors.udVoid,
         card: AppColors.udFog,
         cardHi: AppColors.udFogHi,
@@ -66,6 +74,8 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
     bool? upsideDown,
     Color? accent,
     Color? accentGlow,
+    Color? secondary,
+    Color? atmosphere,
     Color? bg,
     Color? card,
     Color? cardHi,
@@ -77,6 +87,8 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
       upsideDown: upsideDown ?? this.upsideDown,
       accent: accent ?? this.accent,
       accentGlow: accentGlow ?? this.accentGlow,
+      secondary: secondary ?? this.secondary,
+      atmosphere: atmosphere ?? this.atmosphere,
       bg: bg ?? this.bg,
       card: card ?? this.card,
       cardHi: cardHi ?? this.cardHi,
@@ -93,6 +105,8 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
       upsideDown: t < 0.5 ? upsideDown : other.upsideDown,
       accent: Color.lerp(accent, other.accent, t)!,
       accentGlow: Color.lerp(accentGlow, other.accentGlow, t)!,
+      secondary: Color.lerp(secondary, other.secondary, t)!,
+      atmosphere: Color.lerp(atmosphere, other.atmosphere, t)!,
       bg: Color.lerp(bg, other.bg, t)!,
       card: Color.lerp(card, other.card, t)!,
       cardHi: Color.lerp(cardHi, other.cardHi, t)!,

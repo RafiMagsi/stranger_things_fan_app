@@ -3,14 +3,18 @@ import 'dart:math' as math;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/theme/text_styles.dart';
-import '../core/widgets/glass_card.dart';
+import '../core/theme/world_palette.dart';
+import '../core/widgets/neon_card.dart';
+import '../core/widgets/st_scaffold.dart';
 import '../data/soundboard.dart';
 import '../models/sound_clip.dart';
 
-/// Soundboard: a responsive grid of original synth cues. Tapping a tile
-/// plays it and pulses the tile's glow in time with a fake amplitude meter.
+/// Soundboard: a grid of original synth cues, like a bank of pads on a
+/// 1984 synth. Tapping a pad plays it and pulses its glow in time with an
+/// amplitude meter.
 class SoundboardScreen extends StatefulWidget {
   const SoundboardScreen({super.key});
 
@@ -20,6 +24,7 @@ class SoundboardScreen extends StatefulWidget {
 
 class _SoundboardScreenState extends State<SoundboardScreen> {
   final _player = AudioPlayer();
+  StreamSubscription<void>? _completeSub;
   String? _playingId;
   double _level = 0;
   Timer? _meter;
@@ -28,7 +33,7 @@ class _SoundboardScreenState extends State<SoundboardScreen> {
   @override
   void initState() {
     super.initState();
-    _player.onPlayerComplete.listen((_) {
+    _completeSub = _player.onPlayerComplete.listen((_) {
       if (!mounted) return;
       _meter?.cancel();
       setState(() {
@@ -40,12 +45,14 @@ class _SoundboardScreenState extends State<SoundboardScreen> {
 
   @override
   void dispose() {
+    _completeSub?.cancel();
     _meter?.cancel();
     _player.dispose();
     super.dispose();
   }
 
   Future<void> _play(SoundClip clip) async {
+    HapticFeedback.selectionClick();
     if (_playingId == clip.id) {
       await _player.stop();
       _meter?.cancel();
@@ -68,45 +75,34 @@ class _SoundboardScreenState extends State<SoundboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'SOUNDBOARD',
-          style: AppText.h2(scheme.onSurface).copyWith(letterSpacing: 1.5),
+    final world = WorldPalette.of(context);
+    return STScaffold(
+      title: 'SOUNDBOARD',
+      subtitle: '${Soundboard.clips.length} original synth cues',
+      actions: [
+        IconButton(
+          tooltip: _muted ? 'Unmute' : 'Mute',
+          icon: Icon(_muted ? Icons.volume_off : Icons.volume_up),
+          onPressed: () {
+            _player.setVolume(_muted ? 1 : 0);
+            setState(() => _muted = !_muted);
+          },
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(_muted ? Icons.volume_off : Icons.volume_up),
-            onPressed: () {
-              _player.setVolume(_muted ? 1 : 0);
-              setState(() => _muted = !_muted);
-            },
-          ),
-        ],
-      ),
+      ],
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
         children: [
-          // Intro card.
-          GlassCard(
+          NeonCard(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                Icon(Icons.graphic_eq, color: scheme.primary, size: 22),
+                Icon(Icons.graphic_eq, color: world.accent, size: 22),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Original synth cues, procedurally generated. Tap a tile '
-                    'to trigger — tap again to stop.',
-                    style: AppText.body(
-                      scheme.onSurface.withValues(alpha: 0.7),
-                      size: 13,
-                    ),
+                    'Original synth cues, generated for this app. Tap a pad to '
+                    'trigger it - tap again to stop.',
+                    style: AppText.body(world.muted, size: 13),
                   ),
                 ),
               ],
@@ -120,17 +116,20 @@ class _SoundboardScreenState extends State<SoundboardScreen> {
               crossAxisCount: 2,
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 0.95,
+              childAspectRatio: 0.98,
             ),
             itemCount: Soundboard.clips.length,
             itemBuilder: (context, i) {
               final clip = Soundboard.clips[i];
               final isPlaying = _playingId == clip.id;
-              return _SoundTile(
-                clip: clip,
-                isPlaying: isPlaying,
-                level: isPlaying ? _level : 0,
-                onTap: () => _play(clip),
+              return FlickerIn(
+                index: i,
+                child: _SoundTile(
+                  clip: clip,
+                  isPlaying: isPlaying,
+                  level: isPlaying ? _level : 0,
+                  onTap: () => _play(clip),
+                ),
               );
             },
           ),
@@ -155,106 +154,100 @@ class _SoundTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final world = WorldPalette.of(context);
 
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.all(14),
-        transform: Matrix4.diagonal3Values(
-          isPlaying ? 1.02 : 1.0,
-          isPlaying ? 1.02 : 1.0,
-          1,
-        ),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: isPlaying
-                ? [
-                    clip.accent.withValues(alpha: 0.55),
-                    clip.accent.withValues(alpha: 0.25),
-                    scheme.surface,
-                  ]
-                : [
-                    clip.accent.withValues(alpha: 0.18),
-                    scheme.surface,
-                  ],
-            stops: isPlaying ? const [0, 0.45, 1] : const [0, 0.7],
+    return Semantics(
+      button: true,
+      label: '${isPlaying ? 'Stop' : 'Play'} ${clip.label}',
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.all(14),
+          transform: Matrix4.diagonal3Values(
+            isPlaying ? 1.02 : 1.0,
+            isPlaying ? 1.02 : 1.0,
+            1,
           ),
-          border: Border.all(
-            color: clip.accent.withValues(alpha: isPlaying ? 0.9 : 0.4),
-            width: isPlaying ? 1.6 : 1,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: isPlaying
+                  ? [
+                      clip.accent.withValues(alpha: 0.5),
+                      clip.accent.withValues(alpha: 0.2),
+                      world.card,
+                    ]
+                  : [
+                      clip.accent.withValues(alpha: 0.16),
+                      world.card,
+                    ],
+              stops: isPlaying ? const [0, 0.45, 1] : const [0, 0.7],
+            ),
+            border: Border.all(
+              color: clip.accent.withValues(alpha: isPlaying ? 0.9 : 0.35),
+              width: isPlaying ? 1.6 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: clip.accent.withValues(alpha: isPlaying ? 0.35 + level * 0.25 : 0.1),
+                blurRadius: isPlaying ? 18 + level * 12 : 16,
+                spreadRadius: isPlaying ? 1 : 0,
+              ),
+            ],
           ),
-          boxShadow: isPlaying
-              ? [
-                  BoxShadow(
-                    color: clip.accent.withValues(alpha: 0.35 + level * 0.25),
-                    blurRadius: 18 + level * 12,
-                    spreadRadius: 1,
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    gradient: LinearGradient(
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
-                      colors: [clip.accent, clip.accent.withValues(alpha: 0.6)],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: clip.accent.withValues(alpha: 0.15),
+                      border: Border.all(color: clip.accent.withValues(alpha: 0.8)),
+                      boxShadow: [BoxShadow(color: clip.accent.withValues(alpha: 0.5), blurRadius: 10)],
                     ),
+                    child: Icon(clip.icon, color: clip.accent, size: 20),
                   ),
-                  child: Icon(clip.icon, color: Colors.white, size: 20),
-                ),
-                const Spacer(),
-                Icon(
-                  isPlaying ? Icons.stop : Icons.play_arrow,
-                  color: clip.accent,
-                  size: 22,
-                ),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  clip.label,
-                  style: AppText.h2(scheme.onSurface).copyWith(fontSize: 15),
-                ),
-                const SizedBox(height: 4),
-                // Amplitude bars animate while playing.
-                SizedBox(
-                  height: 16,
-                  child: isPlaying
-                      ? CustomPaint(
-                          size: const Size(double.infinity, 16),
-                          painter: _BarsPainter(color: clip.accent, level: level),
-                        )
-                      : Text(
-                          clip.caption,
-                          style: AppText.body(
-                            scheme.onSurface.withValues(alpha: 0.55),
-                            size: 11.5,
+                  const Spacer(),
+                  Icon(
+                    isPlaying ? Icons.stop : Icons.play_arrow,
+                    color: clip.accent,
+                    size: 22,
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(clip.label, style: AppText.h2(world.ink).copyWith(fontSize: 15)),
+                  const SizedBox(height: 4),
+                  // Amplitude bars animate while playing.
+                  SizedBox(
+                    height: 30,
+                    child: isPlaying
+                        ? CustomPaint(
+                            size: const Size(double.infinity, 30),
+                            painter: _BarsPainter(color: clip.accent, level: level),
+                          )
+                        : Text(
+                            clip.caption,
+                            style: AppText.body(world.muted, size: 11.5),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                ),
-              ],
-            ),
-          ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -14,6 +14,8 @@ void main() {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
     ),
   );
   runApp(const ProviderScope(child: StrangerThingsApp()));
@@ -32,13 +34,16 @@ class StrangerThingsApp extends ConsumerWidget {
       theme: AppTheme.hawkins,
       darkTheme: AppTheme.upsideDown,
       themeMode: upsideDown ? ThemeMode.dark : ThemeMode.light,
-      home: _WorldStack(child: const SplashScreen()),
+      themeAnimationDuration: const Duration(milliseconds: 600),
+      builder: (context, child) => _WorldStack(child: child!),
+      home: const SplashScreen(),
     );
   }
 }
 
-/// Wraps the app so the spore particle field and the rift flash sit above
-/// content but below dialogs. Particles render only in the Upside Down.
+/// Sits above every route: records where fingers land (so pages can tear
+/// open from the tapped card), drifts ash through the air in the Upside
+/// Down, and fires the lightning storm whenever the world flips.
 class _WorldStack extends ConsumerStatefulWidget {
   const _WorldStack({required this.child});
 
@@ -50,14 +55,15 @@ class _WorldStack extends ConsumerStatefulWidget {
 
 class _WorldStackState extends ConsumerState<_WorldStack>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _rift = AnimationController(
+  late final AnimationController _storm = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 900),
+    duration: const Duration(milliseconds: 1100),
   );
+  int _strikes = 0;
 
   @override
   void dispose() {
-    _rift.dispose();
+    _storm.dispose();
     super.dispose();
   }
 
@@ -65,32 +71,35 @@ class _WorldStackState extends ConsumerState<_WorldStack>
   Widget build(BuildContext context) {
     final upsideDown = ref.watch(worldModeProvider);
 
-    // Fire the rift sweep whenever the world flips (not on first build).
+    // Strike whenever the world flips (not on first build).
     ref.listen(worldModeProvider, (previous, next) {
       if (previous != next && mounted) {
-        _rift.forward(from: 0);
+        setState(() => _strikes++);
+        _storm.forward(from: 0);
       }
     });
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        widget.child,
-        if (upsideDown)
-          const IgnorePointer(
-            child: ParticleField(
-              color: AppColors.udSpore,
-              glowColor: AppColors.udSpore,
-              count: 40,
-              baseRadius: 1.4,
-              speed: 0.7,
-              opacity: 0.7,
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (e) => TapOrigin.last = e.position,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          widget.child,
+          if (upsideDown)
+            const IgnorePointer(
+              child: ParticleField(
+                color: AppColors.udSpore,
+                glowColor: AppColors.udGlow,
+                count: 46,
+                baseRadius: 1.3,
+                speed: 0.6,
+                opacity: 0.75,
+              ),
             ),
-          ),
-        // Signature transition: a red-teal rift sweeping across the screen
-        // each time Hawkins <-> the Upside Down is toggled.
-        IgnorePointer(child: RiftFlash(controller: _rift)),
-      ],
+          IgnorePointer(child: RiftFlash(controller: _storm, seed: _strikes)),
+        ],
+      ),
     );
   }
 }

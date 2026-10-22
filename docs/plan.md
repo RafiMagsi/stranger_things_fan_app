@@ -1,38 +1,55 @@
 # 🛸 Stranger Things — Super Fan App
 
-An unofficial, fan-made Stranger Things companion built with Flutter. This
-document reflects the **shipped** architecture (it started as a plan and was
-rewritten once the app was real). Everything here is implemented and covered
-by tests.
+An unofficial, fan-made Stranger Things companion built with Flutter: a
+card-based way to explore Hawkins and follow the whole series in watch order.
+This document reflects the **shipped** architecture (it started as a plan and
+is kept in step with the code). Everything here is implemented and covered by
+tests.
 
 ---
 
-## 1. Design language — CINEMATIC DARK
+## 1. Design language — CINEMATIC DARK, NEON RED
 
-The single most important decision: **both worlds are near-black**. The show
-lives at night — pure black frames, glowing red neon, cold spore light in the
-Upside Down. There is no "light mode."
+The single most important decision: **anyone glancing at a screen should know
+it's Stranger Things.** So every screen is built from the show's own signals:
 
-| World | Base | Accent | Feel |
+- **The logotype** — `STLogo` rebuilds it from type: hollow neon Benguiat
+  (Grenze), oversized S and R, the bar over STRANGER and the rule THINGS hangs
+  from. It converges letter-by-letter on the splash, like the title sequence.
+- **Neon tubes** — every card (`NeonCard`) is a near-black panel lit by a
+  neon tube along its top edge, echoing the logo's bars. Titles use
+  `AppText.neon` (stroke + glow in a single `Text`).
+- **Joyce's alphabet wall** — a live card on Home that spells RIGHT HERE /
+  RUN / FRIENDS DONT LIE one bulb at a time.
+- **Chapter title cards** — episodes are "CHAPTER ONE", "CHAPTER TWO"…
+- **Hawkins Lab dossiers** — character pages are stamped CLASSIFIED; the hub
+  tiles are filed as FILE 01…10, glowing in Christmas-bulb colours.
+- **Tube-TV texture** — faint CRT scanlines over every screen.
+
+Both worlds are near-black; the toggle swaps the light:
+
+| World | Base | Accent | Atmosphere |
 | --- | --- | --- | --- |
-| **Hawkins** (Right Side Up) | warm void `#0A0507` | brand red `#E50914` + gold | red neon on black |
-| **Upside Down** | cold void `#05070B` | spore teal `#5BFFDF` + vine purple | decayed, bioluminescent |
+| **Hawkins** (Right Side Up) | warm void `#070405` | logo red `#E50914` + amber | red title-sequence bloom, embers |
+| **Upside Down** | storm void `#03060C` | storm blue `#5AAEFF` + red lightning | ash spores, vines in the corners, cold haze |
 
-- `WorldPalette` is a `ThemeExtension` carrying per-world accent/glow/surface
-  colors, so widgets pull the right tokens **without brightness-branching**
-  (`ThemeExtension` in `lib/core/theme/world_palette.dart`).
-- The Hawkins ⇄ Upside Down toggle fires a full-screen **rift sweep**
-  (`RiftFlash`) and swaps the particle field from red embers to teal spores.
+The logo stays red in both worlds (it's red in the show). Cast photos are
+**re-graded live** into the active world's light when you flip.
+
+- `WorldPalette` (`lib/core/theme/world_palette.dart`) is a `ThemeExtension`
+  carrying accent / secondary / atmosphere / surface tokens per world, so
+  widgets never branch on brightness.
+- `STScaffold` gives every section screen the same chrome: neon title +
+  subtitle, burning tube under the app bar, world atmosphere, CRT layer, and a
+  compact world toggle.
 
 ### Typography
-Both bundled fonts are **variable fonts** (Grenze wght 100–900, Space Grotesk
-wght 300–700). Declaring them at several `weight:` steps does NOT move the
-axis — Flutter renders the default instance. So real weight is driven through
-`fontVariations: [FontVariation('wght', N)]` (see `lib/core/theme/text_styles.dart`).
-- **Grenze** ≈ ITC Benguiat (the show's title face) — title pushed to 900, tight,
-  glowing red.
+Both bundled display/UI fonts are **variable fonts**; real weight is driven
+through `fontVariations` (see `lib/core/theme/text_styles.dart`).
+- **Grenze** ≈ ITC Benguiat (the show's title face) — logo, neon titles,
+  chapter labels.
 - **Space Grotesk** — UI copy.
-- **Special Elite** — dossier/typewriter flavor (reports, quotes, weaknesses).
+- **Special Elite** — dossier/typewriter flavour (reports, quotes, captions).
 
 ---
 
@@ -40,99 +57,129 @@ axis — Flutter renders the default instance. So real weight is driven through
 
 ```text
 lib/
-│── main.dart                     # ProviderScope, dual theme, world stack, rift flash
+│── main.dart                      # ProviderScope, dual theme, world shell (tap origin, ash, storm)
 ├── core/
-│   ├── theme/  app_colors · app_theme · text_styles · world_palette
-│   ├── state/  app_state (Riverpod: worldMode, audioEnabled)
-│   ├── widgets/ particles · rift_route · glass_card
-│   └── media/  asset_media · poster_image      # DROP-IN stills/trailers
-├── models/     character · season · quiz_question · sound_clip
-├── data/       characters · seasons · quiz · soundboard
-│               timeline · locations · bestiary · quotes
-└── screens/    splash · home · character_detail · seasons ·
-                timeline · locations · bestiary · quotes ·
-                quiz · soundboard · transmissions
+│   ├── theme/   app_colors · app_theme · text_styles · world_palette
+│   ├── state/   app_state (worldMode, audioEnabled, watchProgress → shared_preferences)
+│   ├── widgets/ neon_card (NeonCard, NeonTube, GlowBadge, SectionHeader, FlickerIn)
+│   │            st_logo · st_scaffold (STScaffold, WorldAtmosphere, NeonBackButton)
+│   │            st_effects (CRT, ChristmasLights, KeyArt, DuotonePhoto, GateArt,
+│   │                        VineOverlay, AlphabetWall)
+│   │            rift_route (Gate transition, lightning storm) · world_toggle · particles
+│   └── media/   asset_media · poster_image · art (CharacterArt, SeasonArt, LocationArt)
+├── models/      character · season (+Episode) · trailer · moment · media_credit · quiz_question · sound_clip
+├── data/        characters · seasons · timeline · moments · locations · bestiary
+│                quotes · quiz · soundboard · credits
+└── screens/     splash · home · seasons · season_detail · trailer_player · cast ·
+                 character_detail · timeline · locations · bestiary · moments ·
+                 quotes · quiz · soundboard · transmissions · credits
 ```
 
 ---
 
-## 3. DROP-IN media (add your own posters & trailers)
+## 3. Images & video — real, and legally used
 
-The app ships with **procedural key art** (gradients + icons) so it looks
-complete out of the box, offline, and copyright-clean. You can drop **your
-own licensed/captured** stills and trailers into the asset folders and the app
-**automatically prefers them**, with procedural art as the fallback — no code
-changes needed.
+Netflix's stills and trailers are copyrighted; "educational" doesn't make it
+OK to re-host them inside an app. So the app uses three legitimate sources:
+
+1. **Official trailers, streamed** — 8 trailers (every season) embedded from
+   Netflix's own YouTube channels via `youtube_player_iframe`, in a VCR-styled
+   player with an "Open in YouTube" fallback. Nothing is downloaded or
+   re-hosted. Every id was verified with YouTube's oEmbed endpoint to confirm
+   the uploader is an official Netflix channel.
+2. **Freely-licensed photos, bundled** — 13 cast portraits and 3 filming
+   locations (Gwinnett Place Mall = Starcourt, Lukiškės Prison = the Kamchatka
+   prison, Jackson GA = downtown Hawkins) from Wikimedia Commons under CC0 /
+   CC BY / CC BY-SA, in `assets/images/cast/` and `assets/images/filming/`.
+   Attribution lives in `lib/data/credits.dart`, on each dossier/location
+   card, and on the **Credits** screen (required by the licences).
+3. **Procedural key art** — Gate, lightning, vines, the alphabet wall and
+   season/creature art are drawn in code, so the app is complete offline.
+
+### Drop-in slots (your own licensed files)
+The app still prefers any file you drop in, with the above as fallback:
 
 ```text
-assets/images/char_<id>.jpg     e.g. char_eleven.jpg, char_vecna.jpg
+assets/images/char_<id>.jpg     e.g. char_eleven.jpg
 assets/images/season_<n>.jpg    e.g. season_4.jpg
 assets/images/featured.jpg      the big home banner
 assets/images/loc_<id>.jpg      e.g. loc_hawkins_lab.jpg
 assets/images/monster_<id>.jpg  e.g. monster_demogorgon.jpg
-assets/video/s1_teaser.mp4 … s5_teaser.mp4, featured.mp4
 ```
 
-Resolution is handled by `AssetMedia` (`lib/core/media/asset_media.dart`) and
-surfaced through the `PosterImage` widget, which tries the bundled file then
-falls back to the procedural art. Run `flutter pub get` + rebuild after adding.
-
-**Where to get real assets legitimately:** Netflix's official press/media site
-publishes key art and trailers for editorial/fan use. Do not scrape TikTok /
-Instagram / YouTube — that violates those platforms' terms and rips copyrighted
-material; this app is deliberately built so it never needs to.
+The generated "PLACEHOLDER — DROP YOUR OWN FILE HERE" slates now live in
+`tool/placeholder_slates/` (not bundled) — while they sat in `assets/images/`
+the app showed them on every card.
 
 ---
 
-## 4. Fan content (all shipped)
+## 4. Fan content — the whole series, in watch order
 
-- **Roster** — 15 characters + creatures with **actor credits**, story role,
-  six-axis stats radar, skills, and a field-report quote.
-- **Seasons** — all 5 seasons, 42 real chapter titles, expandable.
-- **Timeline** — in-story chronology 1959 → 1987 as a glowing rail.
-- **Hawkins Map** — recurring locations with drop-in stills.
-- **Bestiary** — creatures with threat meters + weaknesses.
-- **Quotes** — the wall of lines fans know by heart (long-press to copy).
-- **Trivia** — 15 questions, animated feedback, score + rank.
-- **Soundboard** — 12 original synth cues with amplitude meters.
-- **Transmissions** — playable teasers with waveform + progress.
+- **Watch guide** — all 5 seasons, all 42 chapters, each with a spoiler-light
+  synopsis, the in-story setting (Nov 1983 → Nov 1987), official trailers,
+  and a "watched" mark. Progress persists on device; Home always shows
+  **Next up**.
+- **Timeline** — 34 beats in story order, 1959 → the spring-1989 epilogue,
+  grouped by era; each says which episode reveals it.
+- **Moments** — 34 twists, reveals, ironies, sacrifices and betrayals across
+  all five seasons, spoiler-veiled until tapped.
+- **The Cast** — 15 dossiers with actor credits, story role, stats radar,
+  skills, and a field-report quote.
+- **Hawkins Map** — 11 places, with where they were filmed.
+- **Bestiary** — creatures with threat meters and weaknesses.
+- **Quotes**, **Trivia** (20 questions, every season), **Soundboard**,
+  **Transmissions** (trailers + synth radio signals).
+
+Content was fact-checked against the show; Season 5 against Wikipedia's
+episode summaries.
 
 ---
 
 ## 5. Audio — original, procedurally synthesized
 
-No copyrighted recordings. `tool/generate_audio.py` synthesizes 12 WAV cues
+No copyrighted recordings. `tool/generate_audio.py` synthesizes the WAV cues
 (theme, screech, static, dice, squelch, portal, chime, coin, power, clock,
 heartbeat, vines). Re-run it to regenerate or extend.
 
 ---
 
-## 6. Animation roadmap (implemented)
+## 6. Animation & special effects (implemented)
 
-- **Splash** — the title sequence rebuilt: letters start spread out and
-  glowing, then converge (easeOutExpo) over a red bloom with particles.
-- **`RiftPageRoute`** — custom transitions: incoming rises/fades/scales in;
-  the outgoing screen drifts left and dims as it's pulled under. Works for
-  every push and reverses on back.
-- **Particles** — `ParticleField` (spores/dust), `ParticleBurst` (tap),
-  rift painter, waveform painters.
-- **Radar chart** — animated hexagon draw-on for character stats.
+- **The Gate transition** (`RiftPageRoute`) — every card → screen push tears
+  the new page open through a writhing, red-rimmed portal that grows from the
+  exact point you tapped (`TapOrigin`), while the old page dims and sinks.
+  Back closes the tear. Hero animations fly cast portraits and season art
+  from the card into the page header on top of it.
+- **The storm** (`RiftFlash`) — flipping worlds cracks two forked red
+  lightning bolts across the screen in a double strike, rolls a red-blue
+  shockwave, and the theme eases over 600ms.
+- **Flicker-in** (`FlickerIn`) — cards stutter on like a Hawkins streetlight
+  when something is near, staggered, only while a screen is arriving.
+- **VHS tune-in** — spoiler reveals split into red/cyan ghosts that jitter and
+  snap together, like a tape finding its tracking.
+- **Splash** — the title sequence: scattered hollow letters converge, the
+  bars light, the camera pushes in over a red bloom with embers.
+- **Living art** — the Gate breathes, Christmas lights chase, ash drifts in
+  the Upside Down, the stats radar draws on with a neon edge.
 
 ---
 
-## 7. **Important Moments**
-* Add All Important, Twisting, Ironic moments in the App
+## 7. Important moments
+All important, twisting and ironic moments of the series are in the
+**Moments** screen (see §4), one card per moment, in watch order.
+
+---
 
 ## 8. Verify
 
 ```bash
 flutter analyze   # No issues found
-flutter test      # 11/11 pass
+flutter test      # 20/20 pass (widgets + series-data integrity)
 flutter build web --release
+flutter build ios --debug --no-codesign
 ```
 
-Run it: `flutter run -d chrome` (or `-d macos`). Tune the drift/rift/particles
-in `rift_route.dart`, `main.dart`, and `particles.dart`.
+Run it: `flutter run` on a device (trailers need a network connection).
 
 > Unofficial fan work, not affiliated with or endorsed by Netflix. Built for
 > personal/educational use.

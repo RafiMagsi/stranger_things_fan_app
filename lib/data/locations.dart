@@ -11,6 +11,7 @@ class STLocation {
     required this.seasons,
     required this.icon,
     required this.accent,
+    this.filmedAt,
     this.upsideDown = false,
   });
 
@@ -24,6 +25,9 @@ class STLocation {
   final IconData icon;
   final Color accent;
 
+  /// The real place that stood in for it on screen, when it's well known.
+  final String? filmedAt;
+
   /// True for locations that exist in the Upside Down.
   final bool upsideDown;
 
@@ -35,15 +39,32 @@ class Locations {
   Locations._();
 
   static const List<STLocation> all = [
+    downtownHawkins,
     hawkinsLab,
     byersHouse,
     wheelerHouse,
+    hawkinsHigh,
     palaceArcade,
+    hoppersCabin,
     starcourt,
     creelHouse,
     upsideDown,
     russianBase,
   ];
+
+  static const STLocation downtownHawkins = STLocation(
+    id: 'downtown_hawkins',
+    name: 'Downtown Hawkins',
+    note: 'Hawkins, Indiana · pop. small',
+    detail:
+        'Melvald\'s General Store where Joyce works, the police station where '
+        'Hopper drinks his coffee, Bradley\'s Big Buy and the Hawkins Post: '
+        'the ordinary town the whole story is trying to protect.',
+    seasons: [1, 2, 3, 4, 5],
+    icon: Icons.location_city,
+    accent: Color(0xFFF5C518),
+    filmedAt: 'Jackson, Georgia',
+  );
 
   static const STLocation hawkinsLab = STLocation(
     id: 'hawkins_lab',
@@ -53,19 +74,20 @@ class Locations {
         'The black-site lab under Department of Energy letterhead. It ran '
         'the sensory-deprivation tank on children, punched a hole into '
         'another dimension, and buried its mistakes underneath.',
-    seasons: [1, 2, 3, 4],
+    seasons: [1, 2, 3, 4, 5],
     icon: Icons.science,
     accent: Color(0xFF90A4AE),
+    filmedAt: 'Emory University\'s Briarcliff campus, Georgia',
   );
 
   static const STLocation byersHouse = STLocation(
     id: 'byers_house',
     name: 'The Byers House',
-    note: '124 Maple Street',
+    note: 'At the end of Mirkwood',
     detail:
-        'Where Will hung on the wall as a ghost in the Upside Down, where '
-        'Joyce wired Christmas lights to the alphabet, and where the phone '
-        'rang from the other side.',
+        'Where the phone rang from the other side, where Joyce wired '
+        'Christmas lights to the alphabet on the wall, and where Will was '
+        'taken from his own shed.',
     seasons: [1, 2, 3],
     icon: Icons.home,
     accent: Color(0xFFB9F6CA),
@@ -74,13 +96,27 @@ class Locations {
   static const STLocation wheelerHouse = STLocation(
     id: 'wheeler_house',
     name: 'The Wheeler Basement',
-    note: 'Party headquarters',
+    note: 'Party headquarters · Maple Street',
     detail:
         'The dungeon where the Party campaigns, argues, and plans. Every '
-        'operation against the Upside Down starts on this shag carpet.',
+        'operation against the Upside Down starts - and the series ends - '
+        'on this carpet.',
     seasons: [1, 2, 3, 4, 5],
     icon: Icons.casino,
     accent: Color(0xFF63B3FF),
+  );
+
+  static const STLocation hawkinsHigh = STLocation(
+    id: 'hawkins_high',
+    name: 'Hawkins High School',
+    note: 'Home of the Tigers',
+    detail:
+        'Steve\'s reign as king, the Hellfire Club\'s lunch table, and the gym '
+        'where the Tigers won the championship on the night Chrissy '
+        'Cunningham died.',
+    seasons: [1, 2, 4],
+    icon: Icons.school,
+    accent: Color(0xFFE53935),
   );
 
   static const STLocation palaceArcade = STLocation(
@@ -88,11 +124,24 @@ class Locations {
     name: 'Palace Arcade',
     note: 'Dig Dug high-score territory',
     detail:
-        'Where MADMAX outscored Dustin, where the Demogorgon was glimpsed in '
-        'the reflections, and where nerd pride turned into a first date.',
+        'Where MADMAX outscored Dustin, and where Will slipped into his first '
+        'episode of the Upside Down halfway through a game of Dragon\'s Lair.',
     seasons: [2],
     icon: Icons.sports_esports,
     accent: Color(0xFFD4E157),
+  );
+
+  static const STLocation hoppersCabin = STLocation(
+    id: 'hoppers_cabin',
+    name: 'Hopper\'s Cabin',
+    note: 'Three rules, no visitors',
+    detail:
+        'Where Hopper hid Eleven for 353 days: Eggo towers, soap operas, '
+        'a TV with bad reception, and a door that had to stay open three '
+        'inches.',
+    seasons: [2, 3],
+    icon: Icons.cabin,
+    accent: Color(0xFFFFB74D),
   );
 
   static const STLocation starcourt = STLocation(
@@ -100,22 +149,23 @@ class Locations {
     name: 'Starcourt Mall',
     note: 'The summer of 1985',
     detail:
-        'Hawkins\' neon cathedral. Scoops Ahoy, the food court, the '
-        'Hawkins Post - and underneath it all, a Russian gate punched into '
-        'the earth.',
+        'Hawkins\' neon cathedral. Scoops Ahoy, the food court, the movie '
+        'theatre - and underneath it all, a Russian machine trying to break '
+        'the Gate back open.',
     seasons: [3],
     icon: Icons.local_mall,
     accent: Color(0xFF00E5FF),
+    filmedAt: 'Gwinnett Place Mall, Duluth, Georgia',
   );
 
   static const STLocation creelHouse = STLocation(
     id: 'creel_house',
     name: 'The Creel House',
-    note: 'Hexgate ground zero',
+    note: 'Where the curse began, 1959',
     detail:
-        'The Victorian where the Creels lost everything. Vecna\'s curse '
-        'roots back to its grandfather clock - and to Henry Creel himself.',
-    seasons: [4],
+        'The Victorian where the Creels lost everything. Vecna\'s curse roots '
+        'back to its grandfather clock - and to the boy who grew up there.',
+    seasons: [4, 5],
     icon: Icons.church,
     accent: Color(0xFF8E4585),
   );
@@ -123,14 +173,14 @@ class Locations {
   static const STLocation upsideDown = STLocation(
     id: 'upside_down',
     name: 'The Upside Down',
-    note: 'A parallel dimension',
+    note: 'A wormhole wearing Hawkins\' face',
     detail:
-        'A decayed mirror of Hawkins, frozen at the moment of the blast, '
-        'webbed in vines and lit by spores. The gate connects it to the '
-        'lab - and to Vecna\'s mind.',
+        'A decayed mirror of Hawkins frozen on the night of November 6, '
+        '1983, webbed in vines and drifting with spores. The finale reveals '
+        'what it really is: a bridge to somewhere else.',
     seasons: [1, 2, 3, 4, 5],
     icon: Icons.blur_on,
-    accent: Color(0xFF5BFFDF),
+    accent: Color(0xFF5AAEFF),
     upsideDown: true,
   );
 
@@ -139,10 +189,11 @@ class Locations {
     name: 'The Russian Base',
     note: 'Under Starcourt & Kamchatka',
     detail:
-        'The Soviets reverse-engineered the gate. Under Starcourt they kept '
-        'a Demogorgon; in Kamchatka they kept a prison - and Hopper with it.',
+        'The Soviets tried to reverse-engineer the Gate. Under Starcourt they '
+        'built a machine; in Kamchatka they kept a prison - and Hopper in it.',
     seasons: [3, 4],
     icon: Icons.foundation,
     accent: Color(0xFFEF5350),
+    filmedAt: 'Lukiškės Prison, Vilnius, Lithuania',
   );
 }

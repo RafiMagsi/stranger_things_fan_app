@@ -7,8 +7,12 @@ original, procedurally-drawn slates (dark gradient + neon ring + a clear
 still or clip would go. They keep the demo visually complete while making it
 obvious which real asset replaces each one.
 
-Stills -> assets/images/*.jpg   (PIL)
-Slates  -> assets/video/*.mp4   (ffmpeg, from a generated PNG sequence)
+Stills -> tool/placeholder_slates/images/*.jpg   (PIL)
+Slates  -> tool/placeholder_slates/video/*.mp4   (ffmpeg, from a PNG sequence)
+
+They are written OUTSIDE assets/ on purpose: the app prefers any file it
+finds under assets/images/, so bundling these would put a "PLACEHOLDER"
+slate on every card. Copy one into assets/images/ only to check a slot.
 
 Run: python3 tool/generate_placeholders.py
 """
@@ -18,8 +22,8 @@ import subprocess
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-IMG = os.path.join(ROOT, "assets", "images")
-VID = os.path.join(ROOT, "assets", "video")
+IMG = os.path.join(ROOT, "tool", "placeholder_slates", "images")
+VID = os.path.join(ROOT, "tool", "placeholder_slates", "video")
 
 # (filename stem, display label, accent RGB, kind)
 STILLS = [

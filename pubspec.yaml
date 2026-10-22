@@ -15,6 +15,10 @@ dependencies:
 
   # Audio: soundboard + teaser stingers
   audioplayers: ^6.1.0
+  youtube_player_iframe: ^6.0.2
+  url_launcher: ^6.3.3
+  shared_preferences: ^2.5.6
+  cupertino_icons: ^1.0.9
 
 dev_dependencies:
   flutter_test:
@@ -27,6 +31,9 @@ flutter:
   assets:
     - assets/audio/
     - assets/images/
+    # Licensed photos (see lib/data/credits.dart); asset dirs aren't recursive.
+    - assets/images/cast/
+    - assets/images/filming/
     - assets/video/
 
   fonts:

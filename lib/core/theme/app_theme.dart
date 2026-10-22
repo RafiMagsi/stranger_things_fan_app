@@ -4,8 +4,9 @@ import 'app_colors.dart';
 import 'text_styles.dart';
 import 'world_palette.dart';
 
-/// Two CINEMATIC-DARK worlds, one app. Both are near-black; only the neon
-/// changes: Hawkins glows warm red-gold, the Upside Down glows spore-teal.
+/// Two CINEMATIC-DARK worlds, one app. Both are near-black; only the light
+/// changes: Hawkins glows logo-red and amber, the Upside Down glows storm
+/// blue and red lightning.
 ///
 /// Each theme carries a [WorldPalette] extension so widgets can pull the
 /// right accent/glow/surface without brightness-branching.
@@ -16,11 +17,12 @@ class AppTheme {
   static ThemeData get upsideDown => _build(WorldPalette.upsideDown());
 
   static ThemeData _build(WorldPalette world) {
+    final onAccent = world.upsideDown ? AppColors.udVoid : Colors.white;
     final scheme = ColorScheme(
       brightness: Brightness.dark, // both worlds are dark
       primary: world.accent,
-      onPrimary: world.upsideDown ? AppColors.udVoid : Colors.white,
-      secondary: world.upsideDown ? AppColors.udVine : AppColors.hawkinsGold,
+      onPrimary: onAccent,
+      secondary: world.secondary,
       onSecondary: world.upsideDown ? Colors.white : AppColors.hawkinsBg,
       surface: world.card,
       onSurface: world.ink,
@@ -48,13 +50,15 @@ class AppTheme {
         color: world.card,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(18),
           side: BorderSide(color: world.line),
         ),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         foregroundColor: world.ink,
         titleTextStyle: AppText.h2(world.ink),
@@ -67,16 +71,34 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
       ),
       dividerTheme: DividerThemeData(color: world.line, space: 1),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: world.cardHi,
+        contentTextStyle: AppText.body(world.ink, size: 14),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: world.accent.withValues(alpha: 0.5)),
+        ),
+      ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: world.accent,
-          foregroundColor: world.upsideDown ? AppColors.udVoid : Colors.white,
-          textStyle: AppText.label(
-            world.upsideDown ? AppColors.udVoid : Colors.white,
-          ),
+          foregroundColor: onAccent,
+          textStyle: AppText.label(onAccent),
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: world.ink,
+          textStyle: AppText.label(world.ink),
+          side: BorderSide(color: world.accent.withValues(alpha: 0.6)),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),

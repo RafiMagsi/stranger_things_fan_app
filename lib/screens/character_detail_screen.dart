@@ -3,19 +3,33 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../core/media/poster_image.dart';
+import '../core/media/art.dart';
 import '../core/state/app_state.dart';
+import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
-import '../core/widgets/glass_card.dart';
+import '../core/theme/world_palette.dart';
+import '../core/widgets/neon_card.dart';
 import '../core/widgets/particles.dart';
+import '../core/widgets/st_effects.dart';
+import '../core/widgets/st_scaffold.dart';
+import '../core/widgets/world_toggle.dart';
+import '../data/credits.dart';
 import '../models/character.dart';
 
-/// Full dossier for a character: hero header, animated radar chart, skill
-/// chips, and a typewriter-voiced "field report" quote.
+/// Full Hawkins Lab dossier for a character: the portrait flies in from
+/// the card that opened it, stamped CLASSIFIED; then the file — profile,
+/// animated stats radar, what they're known for, and a field-report quote.
 class CharacterDetailScreen extends ConsumerStatefulWidget {
-  const CharacterDetailScreen({super.key, required this.character});
+  const CharacterDetailScreen({
+    super.key,
+    required this.character,
+    this.heroTag,
+  });
 
   final Character character;
+
+  /// Matches the card this dossier was opened from, so the art flies in.
+  final String? heroTag;
 
   @override
   ConsumerState<CharacterDetailScreen> createState() =>
@@ -38,200 +52,195 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
   @override
   Widget build(BuildContext context) {
     final c = widget.character;
-    final scheme = Theme.of(context).colorScheme;
+    final world = WorldPalette.of(context);
     final upsideDown = ref.watch(worldModeProvider);
+    final photo = MediaCredits.castPhoto(c.id);
+    final credit = photo == null ? null : MediaCredits.forAsset(photo);
+    final art = CharacterArt(character: c, iconSize: 220);
 
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // Hero header.
-          SliverAppBar(
-            expandedHeight: 280,
-            pinned: true,
-            backgroundColor: Colors.transparent,
-            leading: const _BackButton(),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  // Drop-in still if bundled, else the procedural gradient.
-                  PosterImage(
-                    assetKey: 'char_${c.id}',
-                    fallback: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topRight,
-                          end: Alignment.bottomLeft,
-                          colors: [
-                            c.accent,
-                            c.accentDeep,
-                            Colors.black.withValues(alpha: 0.7),
-                          ],
-                          stops: const [0, 0.5, 1],
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Scrim so the name stays legible over any still.
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.85),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (c.isCreature && upsideDown)
-                    ParticleField(
-                      color: c.accent,
-                      glowColor: c.accent,
-                      count: 26,
-                      baseRadius: 1.1,
-                      speed: 0.8,
-                      opacity: 0.9,
-                    ),
-                  // Big soft icon, upper right.
-                  Positioned(
-                    top: 30,
-                    right: -10,
-                    child: Opacity(
-                      opacity: 0.18,
-                      child: Icon(c.icon, size: 220, color: Colors.white),
-                    ),
-                  ),
-                  // Name block, bottom left.
-                  Positioned(
-                    left: 20,
-                    right: 20,
-                    bottom: 20,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          c.name.toUpperCase(),
-                          style: AppText.h1(Colors.white).copyWith(
-                            fontSize: 36,
-                            letterSpacing: 0.8,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withValues(alpha: 0.5),
-                                blurRadius: 10,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            GlowBadge(
-                              text: c.alias,
-                              color: Colors.white70,
-                              icon: c.isCreature ? Icons.warning : Icons.person,
-                            ),
-                            const SizedBox(width: 8),
-                            GlowBadge(
-                              text: c.seasonLabel,
-                              color: Colors.white70,
-                            ),
-                          ],
-                        ),
-                        if (c.actor != null) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            'played by ${c.actor}',
-                            style: AppText.body(
-                              Colors.white.withValues(alpha: 0.75),
-                              size: 12.5,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const WorldAtmosphere(),
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 400,
+                pinned: true,
+                backgroundColor: world.bg,
+                surfaceTintColor: Colors.transparent,
+                automaticallyImplyLeading: false,
+                leading: const NeonBackButton(),
+                actions: const [
+                  Padding(
+                    padding: EdgeInsets.only(right: 14),
+                    child: Center(child: WorldToggle(compact: true)),
                   ),
                 ],
-              ),
-            ),
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Tagline.
-                  Text(
-                    c.tagline,
-                    style: AppText.h2(scheme.onSurface).copyWith(fontSize: 19),
-                  ),
-                  const SizedBox(height: 12),
-                  // Bio.
-                  Text(c.bio, style: AppText.body(scheme.onSurface, size: 14.5)),
-                  const SizedBox(height: 24),
-
-                  // Radar chart.
-                  const SectionHeader(title: 'Field Stats'),
-                  Center(
-                    child: SizedBox(
-                      height: 260,
-                      child: AnimatedBuilder(
-                        animation: _controller,
-                        builder: (context, _) => _StatsRadar(
-                          stats: c.stats,
-                          progress: Curves.easeOutCubic.transform(
-                            _controller.value,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      widget.heroTag == null ? art : Hero(tag: widget.heroTag!, child: art),
+                      // Scrim so the name stays legible over any still.
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Color(0x66000000), Color(0x00000000), Color(0xF2000000)],
+                            stops: [0, 0.35, 1],
                           ),
+                        ),
+                      ),
+                      if (c.isCreature && upsideDown)
+                        ParticleField(
                           color: c.accent,
+                          glowColor: c.accent,
+                          count: 26,
+                          baseRadius: 1.1,
+                          speed: 0.8,
+                          opacity: 0.9,
+                        ),
+                      const CrtOverlay(opacity: 0.12, animate: false),
+                      // Beside the name, clear of the face.
+                      Positioned(
+                        bottom: 126,
+                        right: 16,
+                        child: _ClassifiedStamp(creature: c.isCreature),
+                      ),
+                      // Name block, bottom left.
+                      Positioned(
+                        left: 20,
+                        right: 20,
+                        bottom: 20,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              c.name.toUpperCase(),
+                              style: AppText.h1(Colors.white, heavy: true).copyWith(
+                                fontSize: 40,
+                                letterSpacing: 1.2,
+                                shadows: [Shadow(color: c.accent, blurRadius: 22)],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
+                              children: [
+                                GlowBadge(
+                                  text: c.alias,
+                                  color: Colors.white70,
+                                  icon: c.isCreature ? Icons.warning : Icons.person,
+                                ),
+                                GlowBadge(text: c.seasonLabel, color: c.accent),
+                              ],
+                            ),
+                            if (c.actor != null) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                'played by ${c.actor}',
+                                style: AppText.dossier(Colors.white.withValues(alpha: 0.8), size: 13),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                  child: FlickerIn(
+                    child: NeonCard(
+                      glow: c.accent,
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            c.role == null ? 'SUBJECT FILE' : 'SUBJECT FILE · ${c.role!.toUpperCase()}',
+                            style: AppText.chapter(c.accent, size: 11),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(c.tagline, style: AppText.h2(world.ink).copyWith(fontSize: 20)),
+                          const SizedBox(height: 10),
+                          Text(c.bio, style: AppText.body(world.ink.withValues(alpha: 0.85), size: 14.5)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SectionHeader(title: 'Field Stats')),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: FlickerIn(
+                    index: 1,
+                    child: NeonCard(
+                      glow: c.accent,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Center(
+                        child: SizedBox(
+                          height: 260,
+                          child: AnimatedBuilder(
+                            animation: _controller,
+                            builder: (context, _) => _StatsRadar(
+                              stats: c.stats,
+                              progress: Curves.easeOutCubic.transform(_controller.value),
+                              color: c.accent,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                ),
+              ),
 
-                  // Skills.
-                  const SectionHeader(title: 'Known For'),
-                  Wrap(
+              const SliverToBoxAdapter(child: SectionHeader(title: 'Known For')),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
                       for (final s in c.skills)
                         Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 7,
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            color: c.accent.withValues(alpha: 0.14),
-                            border: Border.all(
-                              color: c.accent.withValues(alpha: 0.45),
-                            ),
+                            borderRadius: BorderRadius.circular(8),
+                            color: c.accent.withValues(alpha: 0.12),
+                            border: Border.all(color: c.accent.withValues(alpha: 0.5)),
+                            boxShadow: [BoxShadow(color: c.accent.withValues(alpha: 0.18), blurRadius: 10)],
                           ),
-                          child: Text(s, style: AppText.body(scheme.onSurface, size: 13)),
+                          child: Text(s, style: AppText.body(world.ink, size: 13)),
                         ),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                ),
+              ),
 
-                  // Field report quote (typewriter).
-                  GlassCard(
+              // Field report quote (typewriter).
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                  child: NeonCard(
                     glow: c.accent,
                     padding: const EdgeInsets.all(18),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'FIELD REPORT',
-                          style: AppText.label(
-                            scheme.onSurface.withValues(alpha: 0.55),
-                          ),
-                        ),
+                        Text('FIELD REPORT', style: AppText.label(world.muted)),
                         const SizedBox(height: 10),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,16 +251,14 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                               decoration: BoxDecoration(
                                 color: c.accent,
                                 borderRadius: BorderRadius.circular(3),
+                                boxShadow: [BoxShadow(color: c.accent, blurRadius: 8)],
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 '"${c.line}"',
-                                style: AppText.dossier(
-                                  scheme.onSurface.withValues(alpha: 0.85),
-                                  size: 16,
-                                ),
+                                style: AppText.dossier(world.ink.withValues(alpha: 0.9), size: 16),
                               ),
                             ),
                           ],
@@ -259,10 +266,22 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                       ],
                     ),
                   ),
-                  const SizedBox(height: 32),
-                ],
+                ),
               ),
-            ),
+
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
+                  child: credit == null
+                      ? const SizedBox.shrink()
+                      : Text(
+                          'Portrait: ${credit.subject} by ${credit.author}, ${credit.license}, '
+                          'via Wikimedia Commons. Colour-graded for the app.',
+                          style: AppText.body(world.muted.withValues(alpha: 0.8), size: 11),
+                        ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -270,22 +289,29 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
   }
 }
 
-class _BackButton extends StatelessWidget {
-  const _BackButton();
+/// The red rubber stamp on every Hawkins Lab file.
+class _ClassifiedStamp extends StatelessWidget {
+  const _ClassifiedStamp({required this.creature});
+
+  final bool creature;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: GestureDetector(
-        onTap: () => Navigator.of(context).maybePop(),
-        child: Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.black.withValues(alpha: 0.35),
-            border: Border.all(color: Colors.white24),
+    const red = AppColors.stRed;
+    return Transform.rotate(
+      angle: -0.2,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          border: Border.all(color: red.withValues(alpha: 0.85), width: 2.5),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          creature ? 'HOSTILE' : 'CLASSIFIED',
+          style: AppText.dossier(red.withValues(alpha: 0.9), size: 15).copyWith(
+            letterSpacing: 3,
+            fontWeight: FontWeight.w700,
           ),
-          child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
         ),
       ),
     );
@@ -306,13 +332,14 @@ class _StatsRadar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final world = WorldPalette.of(context);
     return CustomPaint(
       painter: _RadarPainter(
         stats: stats,
         progress: progress,
         color: color,
-        gridColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.15),
-        labelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+        gridColor: world.ink.withValues(alpha: 0.15),
+        labelColor: world.ink.withValues(alpha: 0.7),
       ),
       size: const Size(260, 260),
     );
@@ -392,6 +419,15 @@ class _RadarPainter extends CustomPainter {
         ..style = PaintingStyle.fill
         ..color = color.withValues(alpha: 0.28),
     );
+    // Neon edge: glow, then the tube.
+    canvas.drawPath(
+      dataPath,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 6
+        ..color = color.withValues(alpha: 0.4)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+    );
     canvas.drawPath(
       dataPath,
       Paint()
@@ -405,11 +441,7 @@ class _RadarPainter extends CustomPainter {
       final a = -math.pi / 2 + (i / n) * math.pi * 2;
       final v = (values[i] / 10) * progress;
       final p = center + Offset(math.cos(a), math.sin(a)) * radius * v;
-      canvas.drawCircle(
-        p,
-        4,
-        Paint()..color = color,
-      );
+      canvas.drawCircle(p, 4, Paint()..color = color);
 
       // Label outside.
       final lp = center + Offset(math.cos(a), math.sin(a)) * (radius + 16);
@@ -417,9 +449,10 @@ class _RadarPainter extends CustomPainter {
         text: TextSpan(
           text: '${_labels[i]} ${values[i].toInt()}',
           style: TextStyle(
-            fontFamily: 'SpaceGrotesk',
+            fontFamily: AppText.ui,
             fontSize: 10,
             fontWeight: FontWeight.w700,
+            fontVariations: const [FontVariation('wght', 700)],
             color: labelColor,
             letterSpacing: 1.2,
           ),

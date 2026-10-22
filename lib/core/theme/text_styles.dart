@@ -57,6 +57,47 @@ class AppText {
       ],
   );
 
+  /// The show's neon lettering: hollow Benguiat strokes with the tube's
+  /// glow bleeding through. The stroke is the foreground paint, and the
+  /// shadows (always painted as filled, blurred glyphs) give the inner and
+  /// outer bloom — one Text widget, no stacking.
+  static TextStyle neon({
+    double size = 22,
+    Color color = AppColors.stRed,
+    double glow = 1.0,
+    double letterSpacing = 0.06,
+  }) =>
+      TextStyle(
+        fontFamily: display,
+        fontWeight: FontWeight.w900,
+        fontVariations: const [FontVariation('wght', 900)],
+        fontSize: size,
+        height: 1.0,
+        letterSpacing: size * letterSpacing,
+        foreground: Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = (size * 0.045).clamp(1.0, 3.2)
+          ..strokeJoin = StrokeJoin.round
+          ..color = Color.lerp(color, Colors.white, 0.18)!,
+        shadows: [
+          Shadow(color: color.withValues(alpha: 0.55 * glow), blurRadius: size * 0.12),
+          Shadow(color: color.withValues(alpha: 0.65 * glow), blurRadius: size * 0.45),
+          Shadow(color: color.withValues(alpha: 0.35 * glow), blurRadius: size * 1.1),
+        ],
+      );
+
+  /// "CHAPTER ONE" — the episode title card's small caps line.
+  static TextStyle chapter(Color c, {double size = 12}) => TextStyle(
+        fontFamily: display,
+        fontWeight: FontWeight.w700,
+        fontVariations: const [FontVariation('wght', 700)],
+        fontSize: size,
+        letterSpacing: size * 0.22,
+        height: 1.1,
+        color: c,
+        shadows: [Shadow(color: c.withValues(alpha: 0.6), blurRadius: size * 0.8)],
+      );
+
   static TextStyle h1(Color c, {bool heavy = false}) => TextStyle(
     fontFamily: display,
     fontWeight: heavy ? FontWeight.w900 : FontWeight.w700,
