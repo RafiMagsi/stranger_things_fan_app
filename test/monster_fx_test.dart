@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:stranger_things_fan_app/core/media/asset_media.dart';
 
 import 'package:stranger_things_fan_app/core/theme/app_theme.dart';
 import 'package:stranger_things_fan_app/core/widgets/monster_fx.dart';
@@ -12,8 +13,9 @@ import 'package:stranger_things_fan_app/screens/cast_screen.dart';
 import 'package:stranger_things_fan_app/screens/character_detail_screen.dart';
 import 'package:stranger_things_fan_app/screens/home_screen.dart';
 
-Widget _wrap({required Widget child}) =>
-    ProviderScope(child: MaterialApp(theme: AppTheme.hawkins, home: child));
+Widget _wrap({required Widget child}) => ProviderScope(
+  child: MaterialApp(theme: AppTheme.hawkins, home: child),
+);
 
 /// Phone-shaped surface (the cards are taller than the 800x600 default).
 void usePhoneSize(WidgetTester tester) {
@@ -33,10 +35,13 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
+  setUp(() {
+    // Each case resolves media in its own zone.
+    AssetMedia.debugReset();
+    SharedPreferences.setMockInitialValues({});
+  });
 
-  testWidgets('Every creature id renders its signature effect',
-      (tester) async {
+  testWidgets('Every creature id renders its signature effect', (tester) async {
     usePhoneSize(tester);
     // One frame per creature: the painter must not throw for any id.
     for (final m in Bestiary.all) {
@@ -57,8 +62,9 @@ void main() {
     }
   });
 
-  testWidgets('Unknown creature ids fall back to drifting spores',
-      (tester) async {
+  testWidgets('Unknown creature ids fall back to drifting spores', (
+    tester,
+  ) async {
     usePhoneSize(tester);
     await tester.pumpWidget(
       _wrap(
@@ -72,8 +78,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('MonsterFx never steals taps from the card it decorates',
-      (tester) async {
+  testWidgets('MonsterFx never steals taps from the card it decorates', (
+    tester,
+  ) async {
     usePhoneSize(tester);
     var tapped = false;
     await tester.pumpWidget(
@@ -82,10 +89,7 @@ void main() {
           body: Stack(
             children: [
               Positioned.fill(
-                child: MonsterFx(
-                  monsterId: 'demogorgon',
-                  accent: Colors.red,
-                ),
+                child: MonsterFx(monsterId: 'demogorgon', accent: Colors.red),
               ),
               Center(
                 child: GestureDetector(
@@ -105,8 +109,7 @@ void main() {
     expect(tapped, isTrue);
   });
 
-  testWidgets('Bestiary cards are alive and flinch when poked',
-      (tester) async {
+  testWidgets('Bestiary cards are alive and flinch when poked', (tester) async {
     usePhoneSize(tester);
     await tester.pumpWidget(_wrap(child: const BestiaryScreen()));
     await tester.pump(const Duration(milliseconds: 300));
@@ -124,8 +127,9 @@ void main() {
     expect(find.byType(MonsterFx), findsWidgets);
   });
 
-  testWidgets('The home "From the Upside Down" row animates its creatures',
-      (tester) async {
+  testWidgets('The home "From the Upside Down" row animates its creatures', (
+    tester,
+  ) async {
     usePhoneSize(tester);
     await tester.pumpWidget(_wrap(child: const HomeScreen()));
     await tester.pump(const Duration(milliseconds: 300));
@@ -135,15 +139,12 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('A creature dossier animates its subject in the header',
-      (tester) async {
+  testWidgets('A creature dossier animates its subject in the header', (
+    tester,
+  ) async {
     usePhoneSize(tester);
     await tester.pumpWidget(
-      _wrap(
-        child: CharacterDetailScreen(
-          character: cast_data.Cast.demogorgon,
-        ),
-      ),
+      _wrap(child: CharacterDetailScreen(character: cast_data.Cast.demogorgon)),
     );
     await tester.pump(const Duration(milliseconds: 400));
 

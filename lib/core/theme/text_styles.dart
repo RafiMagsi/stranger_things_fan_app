@@ -16,6 +16,26 @@ class AppText {
   static const String display = 'Grenze';
   static const String ui = 'SpaceGrotesk';
   static const String typewriter = 'SpecialElite';
+  static const String condensed = 'Oswald';
+
+  /// Condensed poster headline: screen titles, section labels, hero lines.
+  /// Oswald is variable (wght 200-700), so the weight goes through
+  /// `fontVariations` like the other faces.
+  static TextStyle headline(
+    Color c, {
+    double size = 24,
+    double weight = 600,
+    double letterSpacing = 0.08,
+  }) =>
+      TextStyle(
+        fontFamily: condensed,
+        fontWeight: FontWeight.values[((weight / 100).round() - 1).clamp(0, 8)],
+        fontVariations: [FontVariation('wght', weight)],
+        fontSize: size,
+        height: 1.05,
+        letterSpacing: size * letterSpacing,
+        color: c,
+      );
 
   /// The Stranger Things title treatment: Grenze pushed to 900, tight,
   /// glowing brand red on black.

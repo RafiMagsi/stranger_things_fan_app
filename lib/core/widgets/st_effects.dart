@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../media/decode_size.dart';
 import '../theme/app_colors.dart';
 import '../theme/text_styles.dart';
 import 'world_fx.dart';
@@ -387,19 +388,6 @@ class DuotonePhoto extends StatelessWidget {
     ];
   }
 
-  /// The long edge to decode at for a [box]: the smallest bucket that still
-  /// covers it (cover-fit crops one axis, hence the headroom), or null for
-  /// full size. Buckets, not exact sizes, so a hero flight re-decodes a
-  /// couple of times rather than every frame.
-  static int? _decodeEdge(Size box, double dpr) {
-    final need = box.longestSide * dpr * 1.3;
-    if (!need.isFinite) return null;
-    for (final bucket in const [480, 960]) {
-      if (need <= bucket) return bucket;
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
@@ -409,17 +397,8 @@ class DuotonePhoto extends StatelessWidget {
         builder: (context, box) {
           // Story mode wants the full 1400px still; a small tile doesn't
           // need to hold one in the image cache.
-          final edge = _decodeEdge(box.biggest, dpr);
-          final ImageProvider image = edge == null
-              ? AssetImage(asset)
-              : ResizeImage(
-                  AssetImage(asset),
-                  width: edge,
-                  height: edge,
-                  policy: ResizeImagePolicy.fit,
-                );
           return Image(
-            image: image,
+            image: sizedAsset(asset, box.biggest, dpr),
             fit: BoxFit.cover,
             alignment: alignment,
             gaplessPlayback: true,

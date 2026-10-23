@@ -322,7 +322,10 @@ class SectionHeader extends StatelessWidget {
             flex: 6,
             child: Text(
               title.toUpperCase(),
-              style: AppText.chapter(world.accent, size: 14),
+              // A condensed poster label, lit by the world's neon.
+              style: AppText.headline(world.ink, size: 15, letterSpacing: 0.16).copyWith(
+                shadows: [Shadow(color: world.accent.withValues(alpha: 0.55), blurRadius: 10)],
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ),

@@ -99,9 +99,9 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
                   ),
                   _Toggle(
                     key: const ValueKey('setting-previews'),
-                    title: 'Trailer previews',
+                    title: 'Motion clips',
                     body:
-                        'Official trailers play silently behind the home banner.',
+                        'Silent fan-edit loops behind banners, dossiers and the Gate.',
                     icon: Icons.slow_motion_video,
                     value: settings.autoplayPreviews,
                     onChanged: notifier.setAutoplayPreviews,

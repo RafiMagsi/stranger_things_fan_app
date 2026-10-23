@@ -11,7 +11,7 @@ import '../core/widgets/particles.dart';
 import '../core/widgets/rift_route.dart';
 import '../core/widgets/st_effects.dart';
 import '../core/widgets/st_logo.dart';
-import 'home_screen.dart';
+import 'main_shell.dart';
 
 /// Splash: the show's title sequence, rebuilt. Like the real opening it
 /// starts in extreme close-up - fragments of glowing red letters drifting
@@ -63,7 +63,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     // The score drifts out as the Gate opens onto Hawkins.
     Score.stop(fade: const Duration(milliseconds: 2600));
     Navigator.of(context).pushReplacement(
-      RiftPageRoute<void>(page: const HomeScreen(), name: '/home'),
+      RiftPageRoute<void>(page: const MainShell(), name: '/home'),
     );
   }
 

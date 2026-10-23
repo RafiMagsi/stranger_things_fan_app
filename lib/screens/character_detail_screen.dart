@@ -19,6 +19,7 @@ import '../core/widgets/world_fx.dart';
 import '../core/widgets/st_scaffold.dart';
 import '../core/widgets/world_toggle.dart';
 import '../data/credits.dart';
+import '../data/fan_media.dart';
 import '../models/character.dart';
 
 /// Full Hawkins Lab dossier for a character: the portrait flies in from
@@ -143,51 +144,24 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                           ),
                         ),
                       ),
-                      // When footage of them exists, offer it with sound.
-                      Positioned(
-                        top: 56,
-                        right: 14,
-                        child: FutureBuilder<bool>(
-                          future: AssetMedia.hasVideo('char_${c.id}'),
-                          builder: (context, snap) {
-                            if (snap.data != true) {
-                              return const SizedBox.shrink();
-                            }
-                            return Material(
-                              color: Colors.black.withValues(alpha: 0.55),
-                              child: InkWell(
-                                onTap: () => ClipPlayer.open(
-                                  context,
-                                  videoKey: 'char_${c.id}',
-                                  title: c.name,
-                                  subtitle: 'Field footage · fan capture',
-                                ),
-                                child: const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 5),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.play_arrow,
-                                          size: 15, color: Colors.white),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'CLIP',
-                                        style: TextStyle(
-                                          fontSize: 10.5,
-                                          letterSpacing: 1.6,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ],
+                      // When an edit of them is bundled, offer it with sound.
+                      if (FanMedia.clip(FanMedia.characterReel[c.id] ?? '')
+                          case final reel?)
+                        Positioned(
+                          top: 56,
+                          right: 14,
+                          child: FutureBuilder<bool>(
+                            future: AssetMedia.hasVideo(reel.videoKey),
+                            builder: (context, snap) => snap.data != true
+                                ? const SizedBox.shrink()
+                                : _WatchChip(
+                                    accent: accent,
+                                    onTap: () => ClipPlayer.play(context, [
+                                      ClipItem.fan(reel),
+                                    ]),
                                   ),
-                                ),
-                              ),
-                            );
-                          },
+                          ),
                         ),
-                      ),
                       // The dossier's subject, observed: creatures animate
                       // in both worlds (the file always shows it alive).
                       if (c.isCreature)
@@ -201,10 +175,7 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                       // Vecna gets the room: clock, rain, gold light, door.
                       if (c.id == 'vecna')
                         Positioned.fill(
-                          child: VecnaScene(
-                            accent: c.accent,
-                            story: false,
-                          ),
+                          child: VecnaScene(accent: c.accent, story: false),
                         ),
                       if (c.isCreature && upsideDown)
                         ParticleField(
@@ -441,16 +412,29 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
-                  child: credit == null
-                      ? const SizedBox.shrink()
-                      : Text(
-                          'Portrait: ${credit.subject} by ${credit.author}, ${credit.license}, '
-                          'via Wikimedia Commons. Colour-graded for the app.',
-                          style: AppText.body(
-                            world.muted.withValues(alpha: 0.8),
-                            size: 11,
-                          ),
+                  child: FutureBuilder<bool>(
+                    // A fan still or loop of them outranks the portrait.
+                    future: AssetMedia.hasImage('char_${c.id}'),
+                    builder: (context, snap) {
+                      final fan = snap.data == true
+                          ? FanMedia.sourceLine('char_${c.id}')
+                          : null;
+                      final line = fan != null
+                          ? 'Footage: $fan. Personal fan-media pack.'
+                          : credit == null
+                          ? null
+                          : 'Portrait: ${credit.subject} by ${credit.author}, ${credit.license}, '
+                                'via Wikimedia Commons. Colour-graded for the app.';
+                      if (line == null) return const SizedBox.shrink();
+                      return Text(
+                        line,
+                        style: AppText.body(
+                          world.muted.withValues(alpha: 0.8),
+                          size: 11,
                         ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
@@ -638,4 +622,46 @@ class _RadarPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _RadarPainter old) =>
       old.progress != progress || old.color != color;
+}
+
+/// "WATCH" over the dossier header: the edit of this character, with sound.
+class _WatchChip extends StatelessWidget {
+  const _WatchChip({required this.accent, required this.onTap});
+
+  final Color accent;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'Watch footage',
+      child: GestureDetector(
+        key: const ValueKey('dossier-watch'),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: accent.withValues(alpha: 0.8)),
+            boxShadow: [
+              BoxShadow(color: accent.withValues(alpha: 0.45), blurRadius: 12),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.play_arrow, size: 16, color: Colors.white),
+              const SizedBox(width: 4),
+              Text(
+                'WATCH',
+                style: AppText.label(Colors.white).copyWith(fontSize: 10.5),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

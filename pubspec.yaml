@@ -40,6 +40,9 @@ flutter:
     - assets/images/cast/
     - assets/images/filming/
     - assets/images/events/
+    # Fan-media pack (tool/build_fan_media.py; credits in lib/data/fan_media.dart).
+    - assets/images/reel/
+    - assets/images/fan/
     - assets/video/
 
   fonts:
@@ -64,6 +67,11 @@ flutter:
           weight: 500
         - asset: assets/fonts/SpaceGrotesk.ttf
           weight: 700
+
+    # Oswald - condensed grotesque for headlines and section titles (OFL).
+    - family: Oswald
+      fonts:
+        - asset: assets/fonts/Oswald.ttf
 
     # Special Elite - typewriter face for dossier/report flavor text.
     - family: SpecialElite

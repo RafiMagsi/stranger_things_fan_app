@@ -47,12 +47,18 @@ class STScaffold extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // The title powers on like a neon sign as the page arrives.
+            // A condensed poster title whose neon halo powers on as the
+            // page arrives.
             NeonIgnite(
               delay: const Duration(milliseconds: 250),
               builder: (context, glow) => Text(
                 title,
-                style: AppText.neon(size: 24, color: world.accent, glow: glow),
+                style: AppText.headline(world.ink, size: 24, letterSpacing: 0.1).copyWith(
+                  shadows: [
+                    Shadow(color: world.accent.withValues(alpha: 0.8 * glow), blurRadius: 8),
+                    Shadow(color: world.accent.withValues(alpha: 0.5 * glow), blurRadius: 22),
+                  ],
+                ),
               ),
             ),
             if (subtitle != null) ...[

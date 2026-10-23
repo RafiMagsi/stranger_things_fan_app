@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// Drop-in media resolver.
@@ -18,10 +19,36 @@ import 'package:flutter/services.dart';
 /// changes — every screen already asks this resolver first and falls back to
 /// procedural art when the file is absent.
 ///
-/// We probe by attempting a rootBundle load; a missing asset throws, which we
-/// swallow into a null. Results are cached so we don't re-probe every frame.
+/// We probe the bundle's asset manifest - a list of names, so finding a
+/// 5 MB clip never means loading it. Results are cached so we don't
+/// re-probe every frame.
 class AssetMedia {
   AssetMedia._();
+
+  static Future<Set<String>>? _manifest;
+
+  /// Every asset path in the bundle, read once.
+  static Future<Set<String>> _assets() => _manifest ??= _readManifest();
+
+  // async/await rather than then/catchError: once the bundle has cached the
+  // manifest it hands back a SynchronousFuture, whose catchError returns a
+  // future that never completes.
+  static Future<Set<String>> _readManifest() async {
+    try {
+      final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+      return manifest.listAssets().toSet();
+    } catch (_) {
+      return <String>{};
+    }
+  }
+
+  /// Forget everything resolved so far (tests start each case fresh).
+  @visibleForTesting
+  static void debugReset() {
+    _manifest = null;
+    _imageCache.clear();
+    _videoCache.clear();
+  }
 
   static const List<String> _exts = ['.jpg', '.jpeg', '.png', '.webp'];
 
@@ -58,12 +85,6 @@ class AssetMedia {
   static Future<bool> hasImage(String key) async => await image(key) != null;
   static Future<bool> hasVideo(String key) async => await video(key) != null;
 
-  static Future<bool> _exists(String assetPath) async {
-    try {
-      await rootBundle.load(assetPath);
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
+  static Future<bool> _exists(String assetPath) async =>
+      (await _assets()).contains(assetPath);
 }

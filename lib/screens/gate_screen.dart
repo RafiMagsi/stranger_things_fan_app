@@ -11,20 +11,20 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
 import '../core/theme/world_palette.dart';
 import '../core/widgets/gate_wind.dart';
+import '../core/widgets/neon_card.dart';
 import '../core/widgets/particles.dart';
 import '../core/widgets/st_effects.dart';
 import '../core/widgets/st_scaffold.dart';
-import '../core/widgets/world_fx.dart';
 import '../core/widgets/world_toggle.dart';
 
-/// The Gate — the doorway between Hawkins and the other side.
+/// The Gate, behind the blast door on Hawkins Lab's lowest level.
 ///
-/// Press the door and it swings inward on a hinge while light, wind and
-/// spores of the other world spill through the widening crack. Past the
-/// halfway mark the portal roars (sound + haptic + a flash of light), and
-/// when it is fully open the whole app turns over into the world you were
-/// aiming at, the way the flip works from the world toggle — then the door
-/// shuts behind you, still sealed, on the other side.
+/// Hold to force it, the way Eleven did: the steel halves grind apart, and
+/// behind them a living red tear opens onto the other side - real footage
+/// of the membrane, light flooding out, wind and spores pouring through,
+/// vines crawling in over the door, the room shaking harder the longer you
+/// hold. Let go and it heals shut. Hold all the way and you fall through:
+/// the whole app turns over into the other world.
 class GateScreen extends ConsumerStatefulWidget {
   const GateScreen({super.key});
 
@@ -33,194 +33,216 @@ class GateScreen extends ConsumerStatefulWidget {
 }
 
 class _GateScreenState extends ConsumerState<GateScreen>
-    with SingleTickerProviderStateMixin {
-  /// How far the door has been pushed open, 0..1.
-  late final AnimationController _door = AnimationController(
+    with TickerProviderStateMixin {
+  /// How far it's been forced, 0..1. Holding drives it forward; letting go
+  /// lets it heal back, a little faster.
+  late final AnimationController _force = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1700),
+    duration: const Duration(milliseconds: 2800),
+    reverseDuration: const Duration(milliseconds: 1600),
   );
 
-  /// The burst of light when the doorway is first forced past halfway.
+  /// The tear's own life: its edge crawls, the light breathes.
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 3),
+  );
+
+  /// The white-out as you fall through.
   late final AnimationController _flash = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 450),
+    duration: const Duration(milliseconds: 700),
   );
 
-  /// True from "fully open" until the door has finished shutting — the
-  /// world flip is already underway, don't start a second one.
+  bool _holding = false;
   bool _crossing = false;
+  bool _cracked = false;
 
   @override
   void initState() {
     super.initState();
-    _door.addStatusListener((status) {
-      if (!mounted) return;
-      if (status == AnimationStatus.completed) {
-        _crossOver();
-      } else if (status == AnimationStatus.dismissed) {
+    _force.addListener(_onForce);
+    _force.addStatusListener((s) {
+      if (s == AnimationStatus.completed) _fallThrough();
+      if (s == AnimationStatus.dismissed) {
         _crossing = false;
+        _cracked = false;
       }
     });
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _pulse.stop();
+    } else if (!_pulse.isAnimating) {
+      _pulse.repeat();
+    }
+  }
+
+  @override
   void dispose() {
-    _door.dispose();
+    _force.dispose();
+    _pulse.dispose();
     _flash.dispose();
     super.dispose();
   }
 
   bool get _reduce => MediaQuery.disableAnimationsOf(context);
 
-  void _toggleDoor() {
-    if (_crossing) return;
-    if (_door.status == AnimationStatus.forward) {
-      _door.reverse();
-      return;
+  void _onForce() {
+    // Halfway: the membrane gives way.
+    if (!_cracked && _force.value > 0.5) {
+      _cracked = true;
+      HapticFeedback.heavyImpact();
+      Sfx.cue(ref, 'audio/power.wav', volume: 0.7);
     }
-    HapticFeedback.selectionClick();
-    _door.forward();
   }
 
-  /// The doorway is more than half open: light spills, the world answers.
-  void _onDoorCrack() {
-    HapticFeedback.heavyImpact();
-    Sfx.cue(ref, 'audio/portal.wav', volume: 0.75);
-    if (!_reduce) _flash.forward(from: 0);
+  void _press() {
+    if (_crossing || _holding) return;
+    setState(() => _holding = true);
+    HapticFeedback.mediumImpact();
+    Sfx.cue(ref, 'audio/portal.wav', volume: 0.6);
+    _force.forward();
   }
 
-  /// Fully open: turn the whole app over into the other world, then let
-  /// the door swing shut behind you.
-  void _crossOver() {
+  void _release() {
+    if (!_holding) return;
+    setState(() => _holding = false);
+    if (!_crossing) _force.reverse();
+  }
+
+  /// All the way open: white-out, and the world turns over.
+  void _fallThrough() {
     if (_crossing || !mounted) return;
     _crossing = true;
+    _holding = false;
     HapticFeedback.heavyImpact();
+    if (!_reduce) _flash.forward(from: 0);
     final shell = WorldFlipScope.maybeOf(context);
     if (shell != null) {
-      // In the app: the full screen-turns-over storm, like the world toggle.
       shell.onFlip();
     } else {
-      // Standalone (tests, deep links): flip directly, still with sound.
       ref.read(worldModeProvider.notifier).toggle();
       Sfx.cue(ref, 'audio/portal.wav');
     }
-    _door.reverse(from: 1);
-  }
-
-  /// Post-frame so the portal's onOpen (which arrives mid-rebuild) never
-  /// kicks a controller while the tree is building.
-  void _scheduleCrack() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _onDoorCrack();
+    // It heals behind you.
+    Future<void>.delayed(const Duration(milliseconds: 900), () {
+      if (mounted) _force.reverse();
     });
   }
 
-  String _statusText(double open) {
-    if (_crossing) return 'THE WORLD IS TURNING';
-    if (open < 0.04) return 'SEALED';
-    if (open < 0.5) return 'IT IS TEARING OPEN';
-    return 'LIGHT IS SPILLING THROUGH';
+  String _status(double v) {
+    if (_crossing) return 'YOU\'RE THROUGH';
+    if (v < 0.03) return 'SEALED';
+    if (v < 0.45) return _holding ? 'THE DOOR IS GIVING' : 'IT\'S CLOSING';
+    if (v < 0.9) return _holding ? 'IT\'S TEARING OPEN' : 'IT\'S HEALING';
+    return 'HOLD ON';
   }
 
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
+    final toHawkins = world.depth > 0.5;
     return STScaffold(
       title: 'THE GATE',
-      subtitle: 'Hawkins Lab · sub-level · press the door',
+      subtitle: 'Hawkins National Laboratory · Sublevel 3',
       body: AnimatedBuilder(
-        animation: _door,
+        animation: Listenable.merge([_force, _pulse, _flash]),
         builder: (context, _) {
-          final open = Curves.easeInOutCubic.transform(_door.value);
-          final haze = Color.lerp(AppColors.stRed, AppColors.udGlow, world.depth)!;
-          final statusColor = open > 0.5 ? haze : world.muted;
+          final v = _force.value;
+          final light = toHawkins ? AppColors.hawkinsGold : AppColors.stRed;
           return Stack(
             fit: StackFit.expand,
             children: [
-              SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(height: 360, child: _scene(open, world, haze)),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: statusColor,
-                            boxShadow: [
-                              BoxShadow(color: statusColor.withValues(alpha: 0.7), blurRadius: 8),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(_statusText(open), style: AppText.label(statusColor)),
-                        const Spacer(),
-                        Text(
-                          world.depth > 0.5
-                              ? 'LEADS TO: HAWKINS'
-                              : 'LEADS TO: THE UPSIDE DOWN',
-                          style: AppText.dossier(world.muted, size: 11),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'The wall under the lab never really healed. Push the door '
-                      'and the light of the other side spills through the crack — '
-                      'keep going and the world turns over.',
-                      style: AppText.body(
-                        world.ink.withValues(alpha: 0.75),
-                        size: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    FilledButton.icon(
-                      key: const ValueKey('gate-toggle'),
-                      onPressed: _toggleDoor,
-                      icon: Icon(
-                        open > 0.5 ? Icons.vertical_align_center : Icons.open_in_full,
-                        size: 18,
-                      ),
-                      label: Text(open > 0.5 ? 'LET IT SHUT' : 'PUSH THE DOOR'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.stRed,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // The flash of the other side when the crack first gives way.
-              IgnorePointer(
-                child: AnimatedBuilder(
-                  animation: _flash,
-                  builder: (context, _) {
-                    final v = _flash.value;
-                    if (v <= 0 || v >= 1) return const SizedBox.shrink();
-                    final a = math.sin(v * math.pi);
-                    return DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          colors: [
-                            Color.lerp(Colors.white, AppColors.stRed, 0.35)!
-                                .withValues(alpha: 0.5 * a),
-                            AppColors.stRed.withValues(alpha: 0.18 * a),
+              ListView(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+                children: [
+                  _scene(v, world, light, toHawkins),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: v > 0.03 ? light : world.muted,
+                          boxShadow: [
+                            if (v > 0.03)
+                              BoxShadow(color: light, blurRadius: 8),
                           ],
                         ),
                       ),
-                    );
-                  },
-                ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _status(v),
+                          key: const ValueKey('gate-status'),
+                          style: AppText.headline(
+                            v > 0.03 ? world.ink : world.muted,
+                            size: 15,
+                            letterSpacing: 0.12,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        toHawkins
+                            ? 'LEADS TO: HAWKINS'
+                            : 'LEADS TO: THE UPSIDE DOWN',
+                        style: AppText.dossier(world.muted, size: 11),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Center(
+                    child: _HoldButton(
+                      value: v,
+                      holding: _holding,
+                      color: light,
+                      onPress: _press,
+                      onRelease: _release,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  NeonCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'CASE FILE · THE GATE',
+                          style: AppText.chapter(world.accent, size: 11),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'November 1983. Reaching for the creature in the void, Eleven tore '
+                          'a hole in the wall under the lab. Joyce and Hopper walked through '
+                          'it in hazmat suits to bring Will home. A year later Eleven came '
+                          'back down here and closed it - and it wasn\'t the last.',
+                          style: AppText.body(
+                            world.ink.withValues(alpha: 0.82),
+                            size: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
+              // The white-out of the fall.
+              if (_flash.isAnimating)
+                IgnorePointer(
+                  child: ColoredBox(
+                    color: Color.lerp(Colors.white, light, 0.3)!.withValues(
+                      alpha:
+                          math.sin(_flash.value * math.pi).clamp(0.0, 1.0) *
+                          0.9,
+                    ),
+                  ),
+                ),
             ],
           );
         },
@@ -228,280 +250,585 @@ class _GateScreenState extends ConsumerState<GateScreen>
     );
   }
 
-  /// The wall, the lit doorway behind it, and the door itself on its hinge.
-  Widget _scene(double open, WorldPalette world, Color haze) {
+  Widget _scene(double v, WorldPalette world, Color light, bool toHawkins) {
+    // The door gives first; the tear follows it open.
+    final door = Curves.easeInOutCubic.transform((v / 0.5).clamp(0.0, 1.0));
+    final tear = Curves.easeOutCubic.transform(
+      ((v - 0.18) / 0.82).clamp(0.0, 1.0),
+    );
+    final t = _pulse.value;
+    // The room shakes with the effort.
+    final rnd = math.Random((t * 997).floor());
+    final shake = _reduce || !_holding
+        ? Offset.zero
+        : Offset(rnd.nextDouble() - 0.5, rnd.nextDouble() - 0.5) * (2 + 7 * v);
+    final spore = Color.lerp(
+      AppColors.stRedGlow,
+      AppColors.udSpore,
+      world.depth,
+    )!;
+
     return Semantics(
       button: true,
-      label: open > 0.5 ? 'Close the Gate' : 'Open the Gate',
+      label: 'Hold to open the Gate',
       child: GestureDetector(
         key: const ValueKey('gate-door'),
         behavior: HitTestBehavior.opaque,
-        onTap: _toggleDoor,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final w = constraints.maxWidth;
-            final h = constraints.maxHeight;
-            final rect = Rect.fromLTWH(w * 0.2, h * 0.06, w * 0.6, h * 0.88);
-            final spore = Color.lerp(AppColors.stRedGlow, AppColors.udSpore, world.depth)!;
-            return Stack(
-              children: [
-                // The lab wall the doorway is cut into.
-                Positioned.fill(
-                  child: WorldGrade(
-                    child: const DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topRight,
-                          end: Alignment.bottomLeft,
-                          colors: [Color(0xFF17131A), Color(0xFF0B0910), Colors.black],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // The other side, seen through the opening: real footage
-                // of the other world, fading in with the crack.
-                Positioned.fromRect(
-                  rect: rect,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: RadialGradient(
-                              center: const Alignment(0, -0.1),
-                              radius: 1.3,
-                              colors: [
-                                haze.withValues(alpha: 0.85),
-                                const Color(0xFF120A14),
-                                Colors.black,
-                              ],
+        onLongPressStart: (_) => _press(),
+        onLongPressEnd: (_) => _release(),
+        onLongPressCancel: _release,
+        child: Transform.translate(
+          offset: shake,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: SizedBox(
+              height: 430,
+              child: LayoutBuilder(
+                builder: (context, box) {
+                  final w = box.maxWidth;
+                  final h = box.maxHeight;
+                  final frame = Rect.fromLTWH(
+                    w * 0.14,
+                    h * 0.08,
+                    w * 0.72,
+                    h * 0.8,
+                  );
+                  return Stack(
+                    children: [
+                      // Poured concrete, the lab's lowest level.
+                      const Positioned.fill(child: _LabWall()),
+                      // Behind the door: the tear, and the other side through it.
+                      Positioned.fromRect(
+                        rect: frame,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            const ColoredBox(color: Color(0xFF050305)),
+                            ClipPath(
+                              clipper: _TearClipper(open: tear, t: t),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      gradient: RadialGradient(
+                                        colors: [
+                                          light,
+                                          Color.lerp(light, Colors.black, 0.7)!,
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  ClipLoop(
+                                    videoKey: toHawkins
+                                        ? 'gate_hawkins'
+                                        : 'gate_crossing',
+                                    placeholder: const SizedBox.shrink(),
+                                  ),
+                                  UpsideDownGate(
+                                    openPercent: tear,
+                                    color: light,
+                                    seed: 1983,
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ),
-                        // In Hawkins the door shows the Upside Down; over
-                        // there it shows Hawkins. The label says as much.
-                        Positioned.fill(
-                          child: Opacity(
-                            opacity: open,
-                            child: ClipLoop(
-                              videoKey: world.depth > 0.5
-                                  ? 'hawkins_world'
-                                  : 'upside_down',
-                              placeholder: const SizedBox.shrink(),
+                            IgnorePointer(
+                              child: CustomPaint(
+                                painter: _TearRim(
+                                  open: tear,
+                                  t: t,
+                                  color: light,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        // Wind and light of the other world, gated by the crack.
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: UpsideDownGate(
-                              openPercent: open,
-                              color: haze,
-                              seed: 1983,
-                              onOpen: _scheduleCrack,
-                            ),
-                          ),
-                        ),
-                        Positioned.fill(
-                          child: IgnorePointer(
-                            child: ParticleField(
-                              color: spore,
-                              glowColor: haze,
-                              count: 30,
-                              baseRadius: 1.2,
-                              speed: 0.9,
-                              opacity: 0.25 + 0.75 * open,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Light from the doorway spilling onto the wall around it.
-                if (open > 0.02)
-                  Positioned.fromRect(
-                    rect: rect.inflate(26),
-                    child: IgnorePointer(
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(36),
-                          boxShadow: [
-                            BoxShadow(
-                              color: haze.withValues(alpha: 0.55 * open),
-                              blurRadius: 60,
-                              spreadRadius: 6,
+                            Positioned.fill(
+                              child: IgnorePointer(
+                                child: ParticleField(
+                                  color: spore,
+                                  glowColor: light,
+                                  count: 28,
+                                  baseRadius: 1.2,
+                                  speed: 0.6 + v,
+                                  opacity: tear,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ),
-                // The door, hinged on its left edge, swinging inward.
-                Positioned.fromRect(
-                  rect: rect,
-                  child: Transform(
-                    alignment: Alignment.centerLeft,
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.0012)
-                      ..rotateY(open * 1.55),
-                    child: _DoorPanel(width: rect.width, height: rect.height),
-                  ),
-                ),
-                // The frame, drawn over the door's edges so it passes behind.
-                Positioned.fromRect(
-                  rect: rect.inflate(9),
-                  child: IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: world.ink.withValues(alpha: 0.5),
-                          width: 12,
+                      // The blast door, its halves sliding into the walls.
+                      Positioned.fromRect(
+                        rect: frame,
+                        child: ClipRect(
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                left: -frame.width / 2 * door,
+                                top: 0,
+                                bottom: 0,
+                                width: frame.width / 2,
+                                child: _DoorHalf(
+                                  left: true,
+                                  overgrown: world.depth,
+                                ),
+                              ),
+                              Positioned(
+                                right: -frame.width / 2 * door,
+                                top: 0,
+                                bottom: 0,
+                                width: frame.width / 2,
+                                child: _DoorHalf(
+                                  left: false,
+                                  overgrown: world.depth,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                ),
-                // Vines of the other side creeping in as the light spills.
-                Positioned.fill(child: VineOverlay(grow: open, seed: 9)),
-                // Spores drifting out into the room once it's open.
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: ParticleField(
-                      color: spore,
-                      glowColor: haze,
-                      count: 26,
-                      baseRadius: 1.1,
-                      speed: 0.5,
-                      opacity: 0.8 * open,
-                    ),
-                  ),
-                ),
-                if (open < 0.02)
-                  Positioned(
-                    bottom: 4,
-                    left: 0,
-                    right: 0,
-                    child: IgnorePointer(
-                      child: Center(
-                        child: Text(
-                          'PRESS THE DOOR',
-                          style: AppText.label(world.muted).copyWith(fontSize: 10),
+                      // Light spilling out into the room.
+                      if (tear > 0.01)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: RadialGradient(
+                                  radius: 0.9,
+                                  colors: [
+                                    light.withValues(
+                                      alpha:
+                                          0.35 *
+                                          tear *
+                                          (0.85 +
+                                              0.15 * math.sin(t * math.pi * 2)),
+                                    ),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      // The door frame and its warning light.
+                      Positioned.fromRect(
+                        rect: frame.inflate(8),
+                        child: _Frame(alarm: v > 0.03, t: t),
+                      ),
+                      // The other side gets in.
+                      Positioned.fill(
+                        child: IgnorePointer(
+                          child: VineOverlay(grow: tear, seed: 9),
                         ),
                       ),
-                    ),
-                  ),
-              ],
-            );
-          },
+                      if (v < 0.03)
+                        Positioned(
+                          bottom: 24,
+                          left: 0,
+                          right: 0,
+                          child: IgnorePointer(
+                            child: Text(
+                              'PRESS AND HOLD',
+                              textAlign: TextAlign.center,
+                              style: AppText.headline(
+                                Colors.white54,
+                                size: 11,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-/// The physical door: dark lab wood, two recessed panels, a brass plaque
-/// and a knob. Pure decoration — everything interactive lives above it.
-class _DoorPanel extends StatelessWidget {
-  const _DoorPanel({required this.width, required this.height});
+/// The ring you hold - Eleven's hand, the effort filling up around it.
+class _HoldButton extends StatelessWidget {
+  const _HoldButton({
+    required this.value,
+    required this.holding,
+    required this.color,
+    required this.onPress,
+    required this.onRelease,
+  });
 
-  final double width;
-  final double height;
+  final double value;
+  final bool holding;
+  final Color color;
+  final VoidCallback onPress;
+  final VoidCallback onRelease;
 
   @override
   Widget build(BuildContext context) {
-    Widget panel(double h) => Container(
-          width: width * 0.62,
-          height: h,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment(-0.4, -1),
-              end: Alignment(0.4, 1),
-              colors: [Color(0xFF241A12), Color(0xFF3A2A1C), Color(0xFF1C130D)],
-            ),
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              color: Colors.black.withValues(alpha: 0.55),
-              width: 2,
-            ),
-            boxShadow: const [
-              BoxShadow(color: Color(0x88000000), blurRadius: 8, spreadRadius: 2),
+    final world = WorldPalette.of(context);
+    return Semantics(
+      button: true,
+      label: 'Hold to open the Gate',
+      child: GestureDetector(
+        key: const ValueKey('gate-hold'),
+        onTapDown: (_) => onPress(),
+        onTapUp: (_) => onRelease(),
+        onTapCancel: onRelease,
+        child: SizedBox(
+          width: 92,
+          height: 92,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox.expand(
+                child: CircularProgressIndicator(
+                  value: value,
+                  strokeWidth: 4,
+                  color: color,
+                  backgroundColor: world.ink.withValues(alpha: 0.1),
+                ),
+              ),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 160),
+                width: holding ? 70 : 76,
+                height: holding ? 70 : 76,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: world.card,
+                  border: Border.all(color: color.withValues(alpha: 0.8)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: holding ? 0.7 : 0.3),
+                      blurRadius: holding ? 26 : 14,
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.back_hand, color: color, size: 26),
+                    Text(
+                      'HOLD',
+                      style: AppText.headline(
+                        world.ink,
+                        size: 10,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-        );
+        ),
+      ),
+    );
+  }
+}
 
+/// A living tear: a jagged slit whose edges crawl, pointed at both ends,
+/// widening into an eye as it's forced.
+class _TearClipper extends CustomClipper<Path> {
+  const _TearClipper({required this.open, required this.t});
+
+  final double open;
+  final double t;
+
+  @override
+  Path getClip(Size size) => _tearPath(size, open, t);
+
+  @override
+  bool shouldReclip(covariant _TearClipper o) => o.open != open || o.t != t;
+}
+
+Path _tearPath(Size size, double open, double t) {
+  final cx = size.width / 2;
+  // It runs the height of the doorway before it widens.
+  final reach = 0.46 * math.min(1.0, open * 2.2);
+  final top = size.height * (0.5 - reach);
+  final bottom = size.height * (0.5 + reach);
+  final half = size.width * 0.5 * open;
+  const steps = 28;
+  final left = <Offset>[];
+  final right = <Offset>[];
+  for (var i = 0; i <= steps; i++) {
+    final u = i / steps;
+    final y = top + (bottom - top) * u;
+    final env = math.pow(math.sin(math.pi * u), 0.8).toDouble();
+    final jag =
+        1 +
+        0.18 * math.sin(u * 37 + t * math.pi * 2) +
+        0.12 * math.sin(u * 91 - t * math.pi * 4);
+    left.add(Offset(cx - half * env * jag, y));
+    right.add(Offset(cx + half * env * (2 - jag), y));
+  }
+  final path = Path()..moveTo(left.first.dx, left.first.dy);
+  for (final p in left.skip(1)) {
+    path.lineTo(p.dx, p.dy);
+  }
+  for (final p in right.reversed) {
+    path.lineTo(p.dx, p.dy);
+  }
+  return path..close();
+}
+
+/// The tear's wet, glowing rim and the strands still bridging it.
+class _TearRim extends CustomPainter {
+  const _TearRim({required this.open, required this.t, required this.color});
+
+  final double open;
+  final double t;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (open <= 0.005) return;
+    final path = _tearPath(size, open, t);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 10
+        ..color = color.withValues(alpha: 0.5 * open)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2
+        ..color = Color.lerp(color, Colors.white, 0.35)!.withValues(alpha: 0.9),
+    );
+    final rnd = math.Random(7);
+    final strand = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..color = Color.lerp(
+        color,
+        Colors.black,
+        0.35,
+      )!.withValues(alpha: 0.75 * (1 - open * 0.6));
+    final cx = size.width / 2;
+    for (var i = 0; i < 6; i++) {
+      final y = size.height * (0.25 + 0.5 * rnd.nextDouble());
+      final span = size.width * 0.5 * open * (0.4 + 0.5 * rnd.nextDouble());
+      final sag =
+          10 + 14 * rnd.nextDouble() + 4 * math.sin(t * math.pi * 2 + i);
+      canvas.drawPath(
+        Path()
+          ..moveTo(cx - span, y)
+          ..quadraticBezierTo(cx, y + sag, cx + span, y + rnd.nextDouble() * 6),
+        strand,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _TearRim o) =>
+      o.open != open || o.t != t || o.color != color;
+}
+
+/// Lab concrete: cold, stained, with the panel seams of the sublevel and
+/// hazard chevrons along the floor.
+class _LabWall extends StatelessWidget {
+  const _LabWall();
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF1B1D20), Color(0xFF111214), Color(0xFF08090A)],
+        ),
+      ),
+      child: CustomPaint(painter: _WallSeams(), size: Size.infinite),
+    );
+  }
+}
+
+class _WallSeams extends CustomPainter {
+  const _WallSeams();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final seam = Paint()
+      ..color = Colors.black.withValues(alpha: 0.45)
+      ..strokeWidth = 1;
+    for (var y = 0.0; y < size.height; y += size.height / 6) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), seam);
+    }
+    final band = Rect.fromLTWH(0, size.height - 18, size.width, 18);
+    canvas.save();
+    canvas.clipRect(band);
+    final yellow = Paint()
+      ..color = const Color(0xFFC9A227).withValues(alpha: 0.75);
+    for (var x = -20.0; x < size.width + 20; x += 24) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(x, band.bottom)
+          ..lineTo(x + 12, band.top)
+          ..lineTo(x + 24, band.top)
+          ..lineTo(x + 12, band.bottom)
+          ..close(),
+        yellow,
+      );
+    }
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _WallSeams o) => false;
+}
+
+/// One half of the blast door: brushed steel, rivets, stencilled warnings -
+/// and in the Upside Down, cold rust and vines.
+class _DoorHalf extends StatelessWidget {
+  const _DoorHalf({required this.left, required this.overgrown});
+
+  final bool left;
+  final double overgrown;
+
+  @override
+  Widget build(BuildContext context) {
+    final steel = Color.lerp(
+      const Color(0xFF3A3F44),
+      const Color(0xFF27303A),
+      overgrown,
+    )!;
+    final stencil = TextStyle(
+      fontFamily: AppText.condensed,
+      fontSize: 9,
+      letterSpacing: 1.6,
+      fontWeight: FontWeight.w600,
+      color: const Color(0xFFC9A227).withValues(alpha: 0.85),
+    );
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment(-0.7, -1),
-          end: Alignment(0.85, 1),
-          colors: [Color(0xFF46331F), Color(0xFF2A1C12), Color(0xFF160E09)],
-          stops: [0, 0.55, 1],
+        gradient: LinearGradient(
+          begin: left ? Alignment.centerLeft : Alignment.centerRight,
+          end: left ? Alignment.centerRight : Alignment.centerLeft,
+          colors: [
+            Color.lerp(steel, Colors.black, 0.45)!,
+            steel,
+            Color.lerp(steel, Colors.white, 0.08)!,
+          ],
         ),
-        borderRadius: BorderRadius.circular(3),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.6),
-            blurRadius: 26,
-            spreadRadius: 3,
-          ),
-        ],
       ),
       child: Stack(
-        fit: StackFit.expand,
         children: [
+          Positioned.fill(
+            child: CustomPaint(painter: _Rivets(left: left)),
+          ),
           Align(
-            alignment: const Alignment(0, -0.86),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2B2A28),
-                borderRadius: BorderRadius.circular(2),
-                border: Border.all(
-                  color: AppColors.hawkinsGold.withValues(alpha: 0.5),
-                ),
-              ),
-              child: const Text(
-                'HAWKINS LAB · SUBLEVEL 3',
-                style: TextStyle(
-                  fontSize: 7,
-                  letterSpacing: 1.2,
-                  color: AppColors.hawkinsGold,
-                  fontWeight: FontWeight.w700,
-                ),
+            alignment: Alignment(left ? 0.4 : -0.4, -0.5),
+            child: RotatedBox(
+              quarterTurns: left ? 3 : 1,
+              child: Text(
+                left
+                    ? 'AUTHORIZED PERSONNEL ONLY'
+                    : 'HAWKINS NATIONAL LABORATORY',
+                style: stencil,
               ),
             ),
           ),
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                panel(height * 0.24),
-                const SizedBox(height: 8),
-                panel(height * 0.3),
-              ],
+          Align(
+            alignment: const Alignment(0, 0.62),
+            child: Text(
+              left ? 'SUBLEVEL' : '3',
+              style: stencil.copyWith(fontSize: left ? 11 : 22),
             ),
           ),
-          Align(
-            alignment: const Alignment(0.74, 0.06),
-            child: Container(
-              width: 16,
-              height: 16,
+          if (overgrown > 0.01)
+            Positioned.fill(
+              child: Opacity(
+                opacity: overgrown.clamp(0.0, 1.0),
+                child: VineOverlay(seed: left ? 3 : 4),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Rivets extends CustomPainter {
+  const _Rivets({required this.left});
+
+  final bool left;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final dot = Paint()..color = Colors.black.withValues(alpha: 0.5);
+    final shine = Paint()..color = Colors.white.withValues(alpha: 0.18);
+    for (final x in [size.width * 0.1, size.width * 0.9]) {
+      for (var y = 14.0; y < size.height - 10; y += 26) {
+        canvas.drawCircle(Offset(x, y), 2.4, dot);
+        canvas.drawCircle(Offset(x - 0.7, y - 0.7), 1, shine);
+      }
+    }
+    // The seal down the middle, where the halves meet.
+    final edge = left ? size.width - 1.5 : 1.5;
+    canvas.drawLine(
+      Offset(edge, 0),
+      Offset(edge, size.height),
+      Paint()
+        ..color = Colors.black.withValues(alpha: 0.75)
+        ..strokeWidth = 3,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _Rivets o) => o.left != left;
+}
+
+/// The door's frame, with the warning lamp over it that strobes once the
+/// seal breaks.
+class _Frame extends StatelessWidget {
+  const _Frame({required this.alarm, required this.t});
+
+  final bool alarm;
+  final double t;
+
+  @override
+  Widget build(BuildContext context) {
+    final strobe = alarm && (t * 6).floor().isEven;
+    final lamp = alarm ? AppColors.stRed : const Color(0xFF3A1414);
+    return IgnorePointer(
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const RadialGradient(
-                  colors: [Color(0xFFFFE08A), Color(0xFFB8860B), Color(0xFF6B4A00)],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.hawkinsGold.withValues(alpha: 0.5),
-                    blurRadius: 6,
-                  ),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFF55595E), width: 8),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black87, blurRadius: 18),
                 ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: -14,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                width: 34,
+                height: 12,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(6),
+                  color: strobe ? lamp : Color.lerp(lamp, Colors.black, 0.5),
+                  boxShadow: [
+                    if (strobe)
+                      BoxShadow(color: lamp, blurRadius: 18, spreadRadius: 2),
+                  ],
+                ),
               ),
             ),
           ),

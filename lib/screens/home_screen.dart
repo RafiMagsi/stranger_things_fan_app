@@ -3,8 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/media/app_video.dart';
 import '../core/media/art.dart';
-import '../core/media/asset_media.dart';
-import '../core/media/billboard.dart';
 import '../core/media/poster_image.dart';
 import '../core/state/app_state.dart';
 import '../core/theme/app_colors.dart';
@@ -19,28 +17,24 @@ import '../core/widgets/st_scaffold.dart';
 import '../core/widgets/world_fx.dart';
 import '../core/widgets/world_toggle.dart';
 import '../data/characters.dart' as cast_data;
+import '../data/moments.dart';
 import '../data/quotes.dart';
 import '../data/seasons.dart';
 import '../models/character.dart';
+import '../models/moment.dart';
 import '../models/season.dart';
 import 'bestiary_screen.dart';
 import 'cast_screen.dart';
 import 'character_detail_screen.dart';
 import 'credits_screen.dart';
-import 'gate_screen.dart';
-import 'locations_screen.dart';
 import 'moments_screen.dart';
-import 'quiz_screen.dart';
 import 'quotes_screen.dart';
-import 'reel_screen.dart';
 import 'season_detail_screen.dart';
 import 'seasons_screen.dart';
 import 'story_screen.dart';
 import 'settings_sheet.dart';
-import 'soundboard_screen.dart';
 import 'timeline_screen.dart';
 import 'trailer_player_screen.dart';
-import 'transmissions_screen.dart';
 
 /// The hub: a feed of cards for exploring Hawkins. The finale up top, where
 /// you are in the series, the Party, the seasons, Joyce's wall, every
@@ -135,9 +129,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             '/trailer',
                           ),
-                          previews: ref
-                              .watch(settingsProvider)
-                              .autoplayPreviews,
                         ),
                       ),
                     ),
@@ -153,6 +144,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ? () => _open(const MomentsScreen(), '/moments')
                               : () => _watch(next.$1, next.$2),
                         ),
+                      ),
+                    ),
+
+                    // The series at a glance, and the four doors fans use most.
+                    const SliverToBoxAdapter(child: _StatsRow()),
+                    SliverToBoxAdapter(
+                      child: _QuickAccess(
+                        onTimeline: () => _open(const TimelineScreen(), '/timeline'),
+                        onMonsters: () => _open(const BestiaryScreen(), '/bestiary'),
+                        onCharacters: () => _open(const CastScreen(), '/cast'),
+                        onEpisodes: () => _open(const SeasonsScreen(), '/seasons'),
                       ),
                     ),
 
@@ -202,6 +204,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
 
                     SectionHeader(
+                      title: 'Latest Twists',
+                      trailing: _SeeAll(
+                        onTap: () => _open(const MomentsScreen(), '/moments'),
+                      ),
+                    ).sliver,
+                    SliverToBoxAdapter(
+                      child: _TwistRow(
+                        shield: ref.watch(settingsProvider).spoilerShield,
+                        watched: watched,
+                        onTap: () => _open(const MomentsScreen(), '/moments'),
+                      ),
+                    ),
+
+                    SectionHeader(
                       title: 'The Seasons',
                       trailing: _SeeAll(
                         onTap: () => _open(const SeasonsScreen(), '/seasons'),
@@ -246,58 +262,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 (_wallMessage + 1) % _wallMessages.length,
                           ),
                         ),
-                      ),
-                    ),
-
-                    const SliverToBoxAdapter(
-                      child: SectionHeader(title: 'Explore'),
-                    ),
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      sliver: SliverGrid.count(
-                        // Three across when a tablet gives us the room.
-                        crossAxisCount: MediaQuery.sizeOf(context).width >= 600
-                            ? 3
-                            : 2,
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 0.96,
-                        children: [
-                          // The door itself, looping live on the tile.
-                          _HubTile(
-                            file: 1,
-                            title: 'The Gate',
-                            subtitle: 'Press the door · cross worlds',
-                            icon: Icons.door_sliding,
-                            color: AppColors.stRed,
-                            photo: null,
-                            videoKey: 'gate_finale',
-                            onTap: () => _open(const GateScreen(), '/gate'),
-                          ),
-                          // The screening room, also alive on its tile.
-                          _HubTile(
-                            file: 2,
-                            title: 'The Reel',
-                            subtitle: 'Screening room · captured clips',
-                            icon: Icons.movie,
-                            color: AppColors.udSpore,
-                            photo: null,
-                            videoKey: 'adventure',
-                            onTap: () => _open(const ReelScreen(), '/reel'),
-                          ),
-                          for (final (i, tile) in _tiles.indexed)
-                            _HubTile(
-                              file: i + 2,
-                              title: tile.title,
-                              subtitle: tile.subtitle,
-                              icon: tile.icon,
-                              photo: tile.photo,
-                              // The grid glows in Joyce's Christmas-bulb colours.
-                              color:
-                                  AppColors.bulbs[i % AppColors.bulbs.length],
-                              onTap: () => _open(tile.page(), tile.route),
-                            ),
-                        ],
                       ),
                     ),
 
@@ -379,99 +343,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 }
-
-typedef _Tile = ({
-  String title,
-  String subtitle,
-  IconData icon,
-  String route,
-  Widget Function() page,
-  // The real-world thing the section is about; null = the cast mosaic.
-  String? photo,
-});
-
-final List<_Tile> _tiles = [
-  (
-    title: 'Seasons',
-    subtitle: 'Watch guide · 42 chapters',
-    icon: Icons.live_tv,
-    route: '/seasons',
-    page: () => const SeasonsScreen(),
-    photo: 'events/tv',
-  ),
-  (
-    title: 'The Cast',
-    subtitle: 'Every dossier',
-    icon: Icons.badge,
-    route: '/cast',
-    page: () => const CastScreen(),
-    photo: null,
-  ),
-  (
-    title: 'Transmissions',
-    subtitle: 'Official trailers & radio',
-    icon: Icons.play_circle,
-    route: '/transmissions',
-    page: () => const TransmissionsScreen(),
-    photo: 'events/walkie',
-  ),
-  (
-    title: 'Timeline',
-    subtitle: '1959 to 1989, in order',
-    icon: Icons.timeline,
-    route: '/timeline',
-    page: () => const TimelineScreen(),
-    photo: 'events/lights',
-  ),
-  (
-    title: 'Hawkins Map',
-    subtitle: 'Places & filming locations',
-    icon: Icons.map,
-    route: '/locations',
-    page: () => const LocationsScreen(),
-    photo: 'filming/downtown_hawkins',
-  ),
-  (
-    title: 'Bestiary',
-    subtitle: 'Creatures of the Upside Down',
-    icon: Icons.filter_vintage, // the Demogorgon's petal head
-    route: '/bestiary',
-    page: () => const BestiaryScreen(),
-    photo: 'events/flytrap',
-  ),
-  (
-    title: 'Moments',
-    subtitle: 'Twists, reveals & ironies',
-    icon: Icons.local_fire_department,
-    route: '/moments',
-    page: () => const MomentsScreen(),
-    photo: 'events/polaroid',
-  ),
-  (
-    title: 'Quotes',
-    subtitle: 'Lines every fan knows',
-    icon: Icons.format_quote,
-    route: '/quotes',
-    page: () => const QuotesScreen(),
-    photo: 'events/typewriter',
-  ),
-  (
-    title: 'Trivia',
-    subtitle: 'Prove you\'re Hawkins-ready',
-    icon: Icons.lightbulb,
-    route: '/quiz',
-    page: () => const QuizScreen(),
-    photo: 'events/dice',
-  ),
-  (
-    title: 'Soundboard',
-    subtitle: 'Synth cues & SFX',
-    icon: Icons.graphic_eq,
-    route: '/soundboard',
-    page: () => const SoundboardScreen(),
-    photo: 'events/synth',
-  ),
-];
 
 extension on SectionHeader {
   Widget get sliver => SliverToBoxAdapter(child: this);
@@ -563,16 +434,12 @@ class _FeaturedBanner extends StatelessWidget {
     required this.playLabel,
     required this.onWatch,
     required this.onTrailer,
-    required this.previews,
   });
 
   final VoidCallback onOpen;
   final String playLabel;
   final VoidCallback onWatch;
   final VoidCallback onTrailer;
-
-  /// Let the official trailer play silently behind the banner.
-  final bool previews;
 
   @override
   Widget build(BuildContext context) {
@@ -613,27 +480,8 @@ class _FeaturedBanner extends StatelessWidget {
                   ],
                 ),
               ),
-              // The bundled finale edit, silent, like a streaming
-              // billboard; the official YouTube trailer previews only
-              // when no local clip is bundled.
-              FutureBuilder<bool>(
-                future: AssetMedia.hasVideo('gate_finale'),
-                builder: (context, snap) {
-                  if (snap.data == true) {
-                    return Positioned.fill(
-                      child: ClipLoop(
-                        videoKey: 'gate_finale',
-                        placeholder: const SizedBox.shrink(),
-                      ),
-                    );
-                  }
-                  if (!snap.hasData) return const SizedBox.shrink();
-                  return TrailerBillboard(
-                    trailer: Seasons.s5.trailers.last,
-                    enabled: previews,
-                  );
-                },
-              ),
+              // The finale edit, silent, like a streaming billboard.
+              const ClipLoop(videoKey: 'hero_finale', placeholder: SizedBox.shrink()),
               // Legibility: dark end under the text, bottom-left.
               const DecoratedBox(
                 decoration: BoxDecoration(
@@ -1188,157 +1036,6 @@ class _WallCard extends StatelessWidget {
   }
 }
 
-/// Grid tile into a section, filed like a lab case: a real photo of the
-/// thing the section is about, graded into the world, under a scrim that
-/// keeps the words legible.
-class _HubTile extends StatelessWidget {
-  const _HubTile({
-    required this.file,
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-    this.photo,
-    this.videoKey,
-  });
-
-  final int file;
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  /// Null shows the cast mosaic.
-  final String? photo;
-
-  /// A bundled clip to loop behind the tile; falls back to [photo]/mosaic.
-  final String? videoKey;
-
-  /// The tile's still: the cast mosaic, or the graded event photo.
-  Widget _art() => photo == null
-      ? CastMosaic(characters: _castCover, accent: color)
-      // A lighter grade than the event cards: tiles keep more of
-      // each photo's own colour, so night shots stay readable.
-      : EventArt(
-          photo: photo,
-          accent: color,
-          icon: icon,
-          grade: 0.42,
-        );
-
-  static const _castCover = [
-    cast_data.Cast.eleven,
-    cast_data.Cast.mike,
-    cast_data.Cast.dustin,
-    cast_data.Cast.lucas,
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final world = WorldPalette.of(context);
-    // In the Upside Down the Christmas bulbs go cold.
-    final color = world.tint(this.color);
-    return NeonCard(
-      onTap: onTap,
-      glow: this.color,
-      vineSeed: file * 31,
-      padding: EdgeInsets.zero,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          videoKey == null
-              ? _art()
-              : ClipLoop(videoKey: videoKey!, placeholder: _art()),
-          // Dark end under the text; a little colour left at the top.
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.25),
-                  Colors.black.withValues(alpha: 0.45),
-                  world.card.withValues(alpha: 0.97),
-                ],
-                stops: const [0, 0.45, 0.82],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      // Opaque centre: a translucent fill would let the halo
-                      // bleed through and read as a solid disc.
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color.lerp(world.card, color, 0.14),
-                        border: Border.all(
-                          color: color.withValues(alpha: 0.75),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withValues(alpha: 0.4),
-                            blurRadius: 12,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        icon,
-                        color: color,
-                        size: 20,
-                        shadows: [Shadow(color: color, blurRadius: 8)],
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      color: Colors.black.withValues(alpha: 0.45),
-                      child: Text(
-                        'FILE ${file.toString().padLeft(2, '0')}',
-                        style: AppText.dossier(
-                          Colors.white.withValues(alpha: 0.85),
-                          size: 10.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                Text(
-                  title,
-                  style: AppText.h2(world.ink).copyWith(fontSize: 17),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: AppText.body(
-                    world.ink.withValues(alpha: 0.72),
-                    size: 11.5,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// A line from the wall of quotes, changing daily.
 class _QuoteOfTheDay extends StatelessWidget {
   const _QuoteOfTheDay({required this.onTap});
@@ -1403,6 +1100,180 @@ class _Footer extends StatelessWidget {
             child: Text('CREDITS & SOURCES', style: AppText.label(accent)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// The series at a glance, like the back of a box set.
+class _StatsRow extends StatelessWidget {
+  const _StatsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final world = WorldPalette.of(context);
+    final stats = [
+      ('${Seasons.all.length}', 'SEASONS'),
+      ('${Seasons.totalEpisodes}', 'CHAPTERS'),
+      ('${cast_data.Cast.all.length}', 'DOSSIERS'),
+      ('${Moments.all.length}', 'MOMENTS'),
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: NeonCard(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            for (final (i, (n, label)) in stats.indexed) ...[
+              if (i > 0) Container(width: 1, height: 34, color: world.accent.withValues(alpha: 0.2)),
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      n,
+                      style: AppText.headline(world.ink, size: 24, weight: 700, letterSpacing: 0).copyWith(
+                        shadows: [Shadow(color: world.accent.withValues(alpha: 0.6), blurRadius: 10)],
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(label, style: AppText.label(world.muted).copyWith(fontSize: 9.5)),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Four round doors into the sections fans open most.
+class _QuickAccess extends StatelessWidget {
+  const _QuickAccess({
+    required this.onTimeline,
+    required this.onMonsters,
+    required this.onCharacters,
+    required this.onEpisodes,
+  });
+
+  final VoidCallback onTimeline;
+  final VoidCallback onMonsters;
+  final VoidCallback onCharacters;
+  final VoidCallback onEpisodes;
+
+  @override
+  Widget build(BuildContext context) {
+    final world = WorldPalette.of(context);
+    final items = [
+      (Icons.timeline, 'TIMELINE', onTimeline),
+      (Icons.filter_vintage, 'MONSTERS', onMonsters),
+      (Icons.badge_outlined, 'CHARACTERS', onCharacters),
+      (Icons.live_tv, 'EPISODES', onEpisodes),
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+      child: Row(
+        children: [
+          for (final (icon, label, onTap) in items)
+            Expanded(
+              child: GestureDetector(
+                key: ValueKey('quick-${label.toLowerCase()}'),
+                behavior: HitTestBehavior.opaque,
+                onTap: onTap,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 58,
+                      height: 58,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: world.card,
+                        border: Border.all(color: world.accent.withValues(alpha: 0.7), width: 1.4),
+                        boxShadow: [BoxShadow(color: world.accent.withValues(alpha: 0.3), blurRadius: 14)],
+                      ),
+                      child: Icon(icon, color: world.accent, size: 25, shadows: [Shadow(color: world.accent, blurRadius: 8)]),
+                    ),
+                    const SizedBox(height: 7),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(label, style: AppText.headline(world.ink, size: 11, weight: 500, letterSpacing: 0.1)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The series' turns as glowing case cards; behind the spoiler shield the
+/// ones you haven't reached stay classified.
+class _TwistRow extends StatelessWidget {
+  const _TwistRow({required this.shield, required this.watched, required this.onTap});
+
+  final bool shield;
+  final Set<String> watched;
+  final VoidCallback onTap;
+
+  static IconData _icon(MomentKind k) => switch (k) {
+    MomentKind.twist => Icons.autorenew,
+    MomentKind.reveal => Icons.visibility,
+    MomentKind.irony => Icons.theater_comedy,
+    MomentKind.sacrifice => Icons.favorite,
+    MomentKind.betrayal => Icons.heart_broken,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final world = WorldPalette.of(context);
+    final twists = [
+      for (final m in Moments.all)
+        if (m.kind == MomentKind.twist || m.kind == MomentKind.reveal) m,
+    ];
+    return SizedBox(
+      height: 168,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: twists.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        itemBuilder: (context, i) {
+          final m = twists[i];
+          final hidden = shield && Seasons.isAhead(m.season, m.episode, watched);
+          final c = world.tint(m.kind.color);
+          final titleStyle = AppText.headline(world.ink, size: 14.5, letterSpacing: 0.04);
+          return SizedBox(
+            width: 148,
+            child: NeonCard(
+              onTap: onTap,
+              glow: m.kind.color,
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    hidden ? Icons.lock : _icon(m.kind),
+                    color: c,
+                    size: 30,
+                    shadows: [Shadow(color: c, blurRadius: 12)],
+                  ),
+                  const Spacer(),
+                  Text(m.kind.label.toUpperCase(), style: AppText.label(c).copyWith(fontSize: 9.5)),
+                  const SizedBox(height: 3),
+                  if (hidden)
+                    RedactedText(m.title, style: titleStyle, maxLines: 2)
+                  else
+                    Text(m.title.toUpperCase(), maxLines: 2, overflow: TextOverflow.ellipsis, style: titleStyle),
+                  const SizedBox(height: 4),
+                  Text(m.chapterLabel, style: AppText.dossier(world.muted, size: 11)),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

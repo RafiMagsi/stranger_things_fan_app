@@ -6,6 +6,7 @@ import '../core/theme/world_palette.dart';
 import '../core/widgets/neon_card.dart';
 import '../core/widgets/st_scaffold.dart';
 import '../data/credits.dart';
+import '../data/fan_media.dart';
 import '../models/media_credit.dart';
 
 /// Where every image, video and sound comes from. The Creative Commons
@@ -50,13 +51,14 @@ class CreditsScreen extends StatelessWidget {
                 ),
                 _Line(
                   icon: Icons.graphic_eq,
-                  text: 'Every sound is an original synth cue generated for this app '
-                      '(tool/generate_audio.py). No recordings from the show.',
+                  text: 'The score and sound effects are original synth cues generated '
+                      'for this app (tool/generate_audio.py). The soundboard\'s captures '
+                      'come from the fan-media pack below.',
                 ),
                 _Line(
                   icon: Icons.brush,
                   text: 'Logos, gates, lightning, vines and the alphabet wall are drawn '
-                      'in code. Fonts: Grenze, Space Grotesk and Special Elite '
+                      'in code. Fonts: Grenze, Oswald, Space Grotesk and Special Elite '
                       '(open-licence Google Fonts).',
                 ),
               ],
@@ -84,6 +86,18 @@ class CreditsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           for (final c in events) _CreditTile(credit: c, onTap: () => _open(c.source)),
+          const SectionHeader(title: 'Fan media pack', padding: EdgeInsets.fromLTRB(0, 28, 0, 6)),
+          Text(
+            'The Reel, the fan-art wall, the motion clips and the soundboard captures '
+            'are other fans\' work around Netflix\'s footage, added for a personal '
+            'build. They belong to their creators and Netflix; strip them before '
+            'publishing (python3 tool/build_fan_media.py --clean).',
+            style: AppText.dossier(world.muted, size: 12),
+          ),
+          const SizedBox(height: 12),
+          for (final c in FanMedia.reel) _FanLine(title: c.title, credit: c.note == null ? c.credit : '${c.credit} · ${c.note}'),
+          const SizedBox(height: 8),
+          for (final a in FanMedia.art) _FanLine(title: a.title, credit: a.credit),
           const SizedBox(height: 12),
           Text(
             'All photos via Wikimedia Commons, resized for the app and colour-graded '
@@ -158,6 +172,30 @@ class _CreditTile extends StatelessWidget {
             Icon(Icons.open_in_new, size: 16, color: world.muted),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// One fan work and who made it.
+class _FanLine extends StatelessWidget {
+  const _FanLine({required this.title, required this.credit});
+
+  final String title;
+  final String credit;
+
+  @override
+  Widget build(BuildContext context) {
+    final world = WorldPalette.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(flex: 5, child: Text(title, style: AppText.body(world.ink, size: 12.5, bold: true))),
+          const SizedBox(width: 10),
+          Expanded(flex: 6, child: Text(credit, style: AppText.body(world.muted, size: 12))),
+        ],
       ),
     );
   }
