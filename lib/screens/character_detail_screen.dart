@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/audio/sfx.dart';
+import '../core/media/app_video.dart';
 import '../core/media/art.dart';
+import '../core/media/asset_media.dart';
 import '../core/state/app_state.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
@@ -86,7 +88,12 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
     final upsideDown = ref.watch(worldModeProvider);
     final photo = MediaCredits.castPhoto(c.id);
     final credit = photo == null ? null : MediaCredits.forAsset(photo);
-    final art = CharacterArt(character: c, iconSize: 220);
+    // The portrait — or the captured footage of them, when a clip of this
+    // character is bundled (it loops silently under the dossier chrome).
+    final art = ClipLoop(
+      videoKey: 'char_${c.id}',
+      placeholder: CharacterArt(character: c, iconSize: 220),
+    );
     // The character's colour, as it looks in the current world.
     final accent = world.tint(c.accent);
 
@@ -134,6 +141,51 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                             ],
                             stops: [0, 0.35, 1],
                           ),
+                        ),
+                      ),
+                      // When footage of them exists, offer it with sound.
+                      Positioned(
+                        top: 56,
+                        right: 14,
+                        child: FutureBuilder<bool>(
+                          future: AssetMedia.hasVideo('char_${c.id}'),
+                          builder: (context, snap) {
+                            if (snap.data != true) {
+                              return const SizedBox.shrink();
+                            }
+                            return Material(
+                              color: Colors.black.withValues(alpha: 0.55),
+                              child: InkWell(
+                                onTap: () => ClipPlayer.open(
+                                  context,
+                                  videoKey: 'char_${c.id}',
+                                  title: c.name,
+                                  subtitle: 'Field footage · fan capture',
+                                ),
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 5),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.play_arrow,
+                                          size: 15, color: Colors.white),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'CLIP',
+                                        style: TextStyle(
+                                          fontSize: 10.5,
+                                          letterSpacing: 1.6,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
                       // The dossier's subject, observed: creatures animate

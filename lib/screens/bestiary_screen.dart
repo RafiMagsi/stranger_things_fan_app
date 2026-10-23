@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/audio/sfx.dart';
+import '../core/media/app_video.dart';
 import '../core/media/art.dart';
 import '../core/media/poster_image.dart';
 import '../core/theme/app_colors.dart';
@@ -116,22 +117,27 @@ class _MonsterCardState extends ConsumerState<_MonsterCard>
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      PosterImage(
-                        assetKey: 'monster_${m.id}',
-                        // A real-world look-alike when there is one (a Venus
-                        // flytrap for the petal-faced Demogorgon), else key art.
-                        fallback: m.photo == null
-                            ? KeyArt(
-                                accent: m.accent,
-                                icon: m.icon,
-                                iconSize: 110,
-                                iconAlignment: const Alignment(0.8, 0),
-                              )
-                            : EventArt(
-                                photo: m.photo,
-                                accent: m.accent,
-                                icon: m.icon,
-                              ),
+                      // Captured footage of the creature when a clip is
+                      // bundled, else the still, else procedural key art.
+                      ClipLoop(
+                        videoKey: 'monster_${m.id}',
+                        placeholder: PosterImage(
+                          assetKey: 'monster_${m.id}',
+                          // A real-world look-alike when there is one (a Venus
+                          // flytrap for the petal-faced Demogorgon), else key art.
+                          fallback: m.photo == null
+                              ? KeyArt(
+                                  accent: m.accent,
+                                  icon: m.icon,
+                                  iconSize: 110,
+                                  iconAlignment: const Alignment(0.8, 0),
+                                )
+                              : EventArt(
+                                  photo: m.photo,
+                                  accent: m.accent,
+                                  icon: m.icon,
+                                ),
+                        ),
                       ),
                       // The creature, alive: its signature animation layered
                       // over the art (maw breathing, shadow churning, ...).

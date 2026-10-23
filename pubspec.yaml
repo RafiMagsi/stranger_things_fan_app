@@ -15,6 +15,8 @@ dependencies:
 
   # Audio: soundboard + teaser stingers
   audioplayers: ^6.1.0
+  # Local clip playback (drop-in trailers + capture clips in assets/video)
+  video_player: ^2.10.0
   youtube_player_iframe: ^6.0.2
   url_launcher: ^6.3.3
   shared_preferences: ^2.5.6
@@ -31,6 +33,8 @@ flutter:
 
   assets:
     - assets/audio/
+    # Audio captured from the bundled fan clips (soundboard section).
+    - assets/audio/captures/
     - assets/images/
     # Licensed photos (see lib/data/credits.dart); asset dirs aren't recursive.
     - assets/images/cast/

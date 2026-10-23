@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/media/app_video.dart';
 import '../core/media/art.dart';
+import '../core/media/asset_media.dart';
 import '../core/media/billboard.dart';
 import '../core/media/poster_image.dart';
 import '../core/state/app_state.dart';
@@ -25,10 +27,12 @@ import 'bestiary_screen.dart';
 import 'cast_screen.dart';
 import 'character_detail_screen.dart';
 import 'credits_screen.dart';
+import 'gate_screen.dart';
 import 'locations_screen.dart';
 import 'moments_screen.dart';
 import 'quiz_screen.dart';
 import 'quotes_screen.dart';
+import 'reel_screen.dart';
 import 'season_detail_screen.dart';
 import 'seasons_screen.dart';
 import 'story_screen.dart';
@@ -259,9 +263,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         crossAxisSpacing: 12,
                         childAspectRatio: 0.96,
                         children: [
+                          // The door itself, looping live on the tile.
+                          _HubTile(
+                            file: 1,
+                            title: 'The Gate',
+                            subtitle: 'Press the door · cross worlds',
+                            icon: Icons.door_sliding,
+                            color: AppColors.stRed,
+                            photo: null,
+                            videoKey: 'gate_finale',
+                            onTap: () => _open(const GateScreen(), '/gate'),
+                          ),
+                          // The screening room, also alive on its tile.
+                          _HubTile(
+                            file: 2,
+                            title: 'The Reel',
+                            subtitle: 'Screening room · captured clips',
+                            icon: Icons.movie,
+                            color: AppColors.udSpore,
+                            photo: null,
+                            videoKey: 'adventure',
+                            onTap: () => _open(const ReelScreen(), '/reel'),
+                          ),
                           for (final (i, tile) in _tiles.indexed)
                             _HubTile(
-                              file: i + 1,
+                              file: i + 2,
                               title: tile.title,
                               subtitle: tile.subtitle,
                               icon: tile.icon,
@@ -587,11 +613,26 @@ class _FeaturedBanner extends StatelessWidget {
                   ],
                 ),
               ),
-              // The official trailer, silent, like a streaming billboard;
-              // invisible until it's actually playing.
-              TrailerBillboard(
-                trailer: Seasons.s5.trailers.last,
-                enabled: previews,
+              // The bundled finale edit, silent, like a streaming
+              // billboard; the official YouTube trailer previews only
+              // when no local clip is bundled.
+              FutureBuilder<bool>(
+                future: AssetMedia.hasVideo('gate_finale'),
+                builder: (context, snap) {
+                  if (snap.data == true) {
+                    return Positioned.fill(
+                      child: ClipLoop(
+                        videoKey: 'gate_finale',
+                        placeholder: const SizedBox.shrink(),
+                      ),
+                    );
+                  }
+                  if (!snap.hasData) return const SizedBox.shrink();
+                  return TrailerBillboard(
+                    trailer: Seasons.s5.trailers.last,
+                    enabled: previews,
+                  );
+                },
               ),
               // Legibility: dark end under the text, bottom-left.
               const DecoratedBox(
@@ -1159,6 +1200,7 @@ class _HubTile extends StatelessWidget {
     required this.color,
     required this.onTap,
     this.photo,
+    this.videoKey,
   });
 
   final int file;
@@ -1170,6 +1212,21 @@ class _HubTile extends StatelessWidget {
 
   /// Null shows the cast mosaic.
   final String? photo;
+
+  /// A bundled clip to loop behind the tile; falls back to [photo]/mosaic.
+  final String? videoKey;
+
+  /// The tile's still: the cast mosaic, or the graded event photo.
+  Widget _art() => photo == null
+      ? CastMosaic(characters: _castCover, accent: color)
+      // A lighter grade than the event cards: tiles keep more of
+      // each photo's own colour, so night shots stay readable.
+      : EventArt(
+          photo: photo,
+          accent: color,
+          icon: icon,
+          grade: 0.42,
+        );
 
   static const _castCover = [
     cast_data.Cast.eleven,
@@ -1191,16 +1248,9 @@ class _HubTile extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          photo == null
-              ? CastMosaic(characters: _castCover, accent: this.color)
-              // A lighter grade than the event cards: tiles keep more of
-              // each photo's own colour, so night shots stay readable.
-              : EventArt(
-                  photo: photo,
-                  accent: this.color,
-                  icon: icon,
-                  grade: 0.42,
-                ),
+          videoKey == null
+              ? _art()
+              : ClipLoop(videoKey: videoKey!, placeholder: _art()),
           // Dark end under the text; a little colour left at the top.
           DecoratedBox(
             decoration: BoxDecoration(

@@ -6,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/audio/sfx.dart';
+import '../core/media/app_video.dart';
+import '../core/media/asset_media.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
 import '../core/theme/world_palette.dart';
@@ -190,12 +192,28 @@ class _TransmissionsScreenState extends ConsumerState<TransmissionsScreen> {
               index: i,
               child: TrailerCard(
                 trailer: trailers[i],
-                onTap: () {
+                onTap: () async {
                   // Don't talk over the trailer.
                   if (_playingIndex != null) _toggle(_playingIndex!);
+                  // A bundled capture for this season plays first (it
+                  // works offline); otherwise the official upload.
+                  final t = trailers[i];
+                  final local =
+                      await AssetMedia.hasVideo('s${t.season}_teaser');
+                  if (!context.mounted) return;
+                  if (local) {
+                    await ClipPlayer.open(
+                      context,
+                      videoKey: 's${t.season}_teaser',
+                      title: 'SEASON ${t.season} TEASER',
+                      subtitle: '${t.title} · bundled capture',
+                    );
+                    return;
+                  }
+                  if (!context.mounted) return;
                   RiftPageRoute.push(
                     context,
-                    TrailerPlayerScreen(trailer: trailers[i]),
+                    TrailerPlayerScreen(trailer: t),
                     name: '/trailer',
                   );
                 },

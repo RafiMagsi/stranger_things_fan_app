@@ -307,9 +307,21 @@ Run it: `flutter run` on a device (trailers need a network connection).
 > Unofficial fan work, not affiliated with or endorsed by Netflix. Built for
 > personal/educational use.
 
-
 ## 10. Videos & Images
-Now use the videos and images from the docs folder and use it anywhere fits, you can use character image from the videos and also audios, apply the vidoes and images accordingly and make the app wonderful
+Now use the videos and images from the docs folder and use it anywhere fits, you can use character image from the videos and also audios, apply the vidoes and images accordingly and make the app wonderful, and rotate all the videos like "[4K] Stranger Things Finale Edit... Follow me @samedits.fx for more!.. [stranger things finale", to landscape because they are landscape videos so they can look proper, again take images from the videos and clips from the videos as required in the app
+
+• TODOs
+☐  Inspect docs videos/images: dimensions, orientation, durations
+☐  Transcode chosen videos (compress, portrait-fit) + slice segments into assets/video
+☐  Extract character/scene stills from videos into assets/images drop-in keys
+☐  Add video_player dep + AppVideo widgets (loop bg, full player, test fallback)
+☐  Wire videos/images into Home hero, Gate screen, Cast/Character, Bestiary, Moments
+☐  Add Gate entry point on Home
+☐  Extract audio clips from videos into soundboard
+☐  Run flutter analyze + full test suite, verify
 
 ## 11. Improvements
 Imorove the app, use more animations for visual effects same in the series, the doors to upside down, and other effects from the series do properly in this app, make it more good
+
+## 12. Themes
+Check theme folder in docs and try making the app better, if you find something better in these themes then apply on the app in wonderful way.

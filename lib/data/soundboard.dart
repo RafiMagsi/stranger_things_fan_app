@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../models/sound_clip.dart';
 
-/// Original procedurally-synthesized cues (see tool/generate_audio.py).
-/// No copyrighted recordings - all homage, none of the real score.
+/// Original procedurally-synthesized cues (see tool/generate_audio.py),
+/// plus a few captures cut from the fan clips bundled in docs/videos
+/// (assets/audio/captures). The synth cues are all homage, none of the
+/// real score; the captures are the fan edits' own sound.
 class Soundboard {
   Soundboard._();
 
@@ -103,6 +105,39 @@ class Soundboard {
       asset: 'audio/vines.wav',
       accent: Color(0xFF6D4BC3),
       icon: Icons.grass,
+    ),
+    // Captured straight from the bundled fan clips (docs/videos).
+    SoundClip(
+      id: 'cap_finale',
+      label: 'Finale Stinger',
+      caption: 'The finale cut, straight from the reel.',
+      asset: 'audio/captures/finale.wav',
+      accent: Color(0xFFE50914),
+      icon: Icons.local_fire_department,
+    ),
+    SoundClip(
+      id: 'cap_ticking',
+      label: 'The Ticking',
+      caption: 'Tock. Tock. You know what it means.',
+      asset: 'audio/captures/ticking.wav',
+      accent: Color(0xFF8E4585),
+      icon: Icons.timer,
+    ),
+    SoundClip(
+      id: 'cap_1987',
+      label: 'Fall of 1987',
+      caption: 'One last adventure begins.',
+      asset: 'audio/captures/fall1987.wav',
+      accent: Color(0xFFF5C518),
+      icon: Icons.campaign,
+    ),
+    SoundClip(
+      id: 'cap_hill',
+      label: 'That Hill',
+      caption: 'One song saved Max. You know the one.',
+      asset: 'audio/captures/that_hill.wav',
+      accent: Color(0xFFF09CB8),
+      icon: Icons.music_note,
     ),
   ];
 }
