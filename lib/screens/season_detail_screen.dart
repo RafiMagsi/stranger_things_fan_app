@@ -18,6 +18,7 @@ import '../data/seasons.dart';
 import '../data/timeline.dart';
 import '../models/moment.dart';
 import '../models/season.dart';
+import 'story_screen.dart';
 import 'trailer_player_screen.dart';
 
 /// One season as a watch guide: the key art, its official trailers, and
@@ -179,6 +180,18 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
                             .setAll(keys, watched: done != keys.length),
                         child: Text(done == keys.length ? 'RESET' : 'MARK ALL'),
                       ),
+                      const SizedBox(width: 4),
+                      // Watch the season as a story, from its title card.
+                      FilledButton.icon(
+                        key: const ValueKey('play-season'),
+                        onPressed: () => RiftPageRoute.push(
+                          context,
+                          StoryScreen(season: s.number, onlySeason: true),
+                          name: '/story',
+                        ),
+                        icon: const Icon(Icons.play_arrow, size: 18),
+                        label: const Text('PLAY'),
+                      ),
                     ],
                   ),
                 ),
@@ -236,6 +249,11 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
                                 HapticFeedback.lightImpact();
                                 ref.read(watchProgressProvider.notifier).toggle(s.keyFor(e));
                               },
+                              onPlay: () => RiftPageRoute.push(
+                                context,
+                                StoryScreen(season: s.number, episode: e.number, onlySeason: true),
+                                name: '/story',
+                              ),
                             ),
                           ),
                         ),
@@ -274,6 +292,7 @@ class _ChapterCard extends StatelessWidget {
     required this.watched,
     required this.focused,
     required this.onToggle,
+    required this.onPlay,
   });
 
   final Season season;
@@ -281,6 +300,9 @@ class _ChapterCard extends StatelessWidget {
   final bool watched;
   final bool focused;
   final VoidCallback onToggle;
+
+  /// Watch this chapter in Story mode.
+  final VoidCallback onPlay;
 
   @override
   Widget build(BuildContext context) {
@@ -294,6 +316,7 @@ class _ChapterCard extends StatelessWidget {
         .where((e) => e.season == season.number && e.episode == episode.number)
         .toList();
     return NeonCard(
+      onTap: onPlay,
       // NeonCard tints its own glow; pass the raw colour.
       glow: focused ? AppColors.hawkinsGold : season.accent,
       padding: const EdgeInsets.fromLTRB(16, 16, 10, 16),

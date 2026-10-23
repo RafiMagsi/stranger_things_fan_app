@@ -43,22 +43,38 @@ class AppSettings {
   const AppSettings({
     this.spoilerShield = false,
     this.soundEffects = true,
+    this.music = true,
+    this.autoplayPreviews = true,
     this.reduceEffects = false,
   });
 
   /// Hide timeline beats and moments from chapters you haven't watched.
   final bool spoilerShield;
 
-  /// Sound cues on big moments (the world flip).
+  /// Sound cues on big moments (the world flip, creatures, dice).
   final bool soundEffects;
+
+  /// The synth score behind the title sequence and Story mode.
+  final bool music;
+
+  /// Official trailers play silently behind the home banner.
+  final bool autoplayPreviews;
 
   /// No flashes, flicker or big motion - on top of the system setting.
   final bool reduceEffects;
 
-  AppSettings copyWith({bool? spoilerShield, bool? soundEffects, bool? reduceEffects}) =>
+  AppSettings copyWith({
+    bool? spoilerShield,
+    bool? soundEffects,
+    bool? music,
+    bool? autoplayPreviews,
+    bool? reduceEffects,
+  }) =>
       AppSettings(
         spoilerShield: spoilerShield ?? this.spoilerShield,
         soundEffects: soundEffects ?? this.soundEffects,
+        music: music ?? this.music,
+        autoplayPreviews: autoplayPreviews ?? this.autoplayPreviews,
         reduceEffects: reduceEffects ?? this.reduceEffects,
       );
 }
@@ -67,12 +83,16 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _shield = 'spoiler_shield';
   static const _sound = 'sound_effects';
   static const _reduce = 'reduce_effects';
+  static const _music = 'music';
+  static const _previews = 'autoplay_previews';
 
   @override
   AppSettings build() {
     _pref((p) async => AppSettings(
           spoilerShield: p.getBool(_shield) ?? false,
           soundEffects: p.getBool(_sound) ?? true,
+          music: p.getBool(_music) ?? true,
+          autoplayPreviews: p.getBool(_previews) ?? true,
           reduceEffects: p.getBool(_reduce) ?? false,
         )).then((saved) {
       if (saved != null) state = saved;
@@ -88,6 +108,16 @@ class SettingsNotifier extends Notifier<AppSettings> {
   void setSoundEffects(bool v) {
     state = state.copyWith(soundEffects: v);
     _pref((p) => p.setBool(_sound, v));
+  }
+
+  void setMusic(bool v) {
+    state = state.copyWith(music: v);
+    _pref((p) => p.setBool(_music, v));
+  }
+
+  void setAutoplayPreviews(bool v) {
+    state = state.copyWith(autoplayPreviews: v);
+    _pref((p) => p.setBool(_previews, v));
   }
 
   void setReduceEffects(bool v) {

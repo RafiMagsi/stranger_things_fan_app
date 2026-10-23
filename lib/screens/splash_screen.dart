@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/audio/sfx.dart';
 import '../core/state/app_state.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
@@ -12,10 +13,11 @@ import '../core/widgets/st_effects.dart';
 import '../core/widgets/st_logo.dart';
 import 'home_screen.dart';
 
-/// Splash: the show's title sequence, rebuilt. Hollow red letters start
-/// scattered and dim, drift together as the camera "settles", and the bars
-/// light once they lock into the logotype — over a slow red bloom, embers,
-/// and tube-TV scanlines. Tapping anywhere skips to the hub.
+/// Splash: the show's title sequence, rebuilt. Like the real opening it
+/// starts in extreme close-up - fragments of glowing red letters drifting
+/// across the frame - and slowly pulls back as the letters lock together
+/// and the bars light, over the synth score, a red bloom and embers.
+/// Tapping anywhere skips to the hub.
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -27,22 +29,29 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 3600),
+    duration: const Duration(milliseconds: 4400),
   );
 
   Timer? _navTimer;
+  Timer? _scoreTimer;
   bool _left = false;
 
   @override
   void initState() {
     super.initState();
     _controller.forward();
-    _navTimer = Timer(const Duration(milliseconds: 4600), _goHome);
+    _navTimer = Timer(const Duration(milliseconds: 5300), _goHome);
+    // The theme comes in with the letters (a beat later, once saved
+    // settings have loaded, so a muted score stays muted).
+    _scoreTimer = Timer(const Duration(milliseconds: 150), () {
+      if (mounted && ref.read(settingsProvider).music) Score.start();
+    });
   }
 
   @override
   void dispose() {
     _navTimer?.cancel();
+    _scoreTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -51,6 +60,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted || _left) return;
     _left = true;
     _navTimer?.cancel();
+    // The score drifts out as the Gate opens onto Hawkins.
+    Score.stop(fade: const Duration(milliseconds: 2600));
     Navigator.of(context).pushReplacement(
       RiftPageRoute<void>(page: const HomeScreen(), name: '/home'),
     );
@@ -76,8 +87,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   center: const Alignment(0, -0.1),
                   radius: 1.1,
                   colors: upsideDown
-                      ? const [AppColors.udFogHi, AppColors.udVoid, Colors.black]
-                      : const [Color(0xFF2A0709), Color(0xFF0E0304), Colors.black],
+                      ? const [
+                          AppColors.udFogHi,
+                          AppColors.udVoid,
+                          Colors.black,
+                        ]
+                      : const [
+                          Color(0xFF2A0709),
+                          Color(0xFF0E0304),
+                          Colors.black,
+                        ],
                 ),
               ),
             ),
@@ -121,16 +140,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 animation: _controller,
                 builder: (context, _) {
                   final t = _controller.value;
+                  final reduce = MediaQuery.disableAnimationsOf(context);
                   final converge = Curves.easeOutCubic.transform(
-                    (t / 0.78).clamp(0.0, 1.0),
+                    (t / 0.72).clamp(0.0, 1.0),
                   );
                   // Glow swells as letters lock, then holds steady.
-                  final glow = 0.35 + 0.65 * Curves.easeIn.transform(converge);
+                  final glow = 0.45 + 0.55 * Curves.easeIn.transform(converge);
                   final fade = Curves.easeIn.transform(
-                    ((t - 0.6) / 0.3).clamp(0.0, 1.0),
+                    ((t - 0.7) / 0.25).clamp(0.0, 1.0),
                   );
-                  // A slow push-in, like the camera drifting toward the logo.
-                  final scale = 1.18 - 0.18 * Curves.easeOutCubic.transform(t);
+                  // The camera pulls back from an extreme close-up of the
+                  // letters, drifting as it goes - the real opening.
+                  final pull = reduce
+                      ? 1.0
+                      : Curves.easeInOutCubic.transform(
+                          (t / 0.8).clamp(0.0, 1.0),
+                        );
+                  final scale = 4.2 - 3.2 * pull;
+                  final drift = Offset(80, 34) * (1 - pull);
 
                   return Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -141,14 +168,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                         padding: const EdgeInsets.symmetric(horizontal: 24),
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
-                          child: Transform.scale(
-                            scale: scale,
-                            child: Opacity(
-                              opacity: (0.25 + 0.75 * converge).clamp(0.0, 1.0),
-                              child: STLogo(
-                                size: 46,
-                                spread: 1 - converge,
-                                glow: glow,
+                          child: Transform.translate(
+                            offset: drift,
+                            child: Transform.scale(
+                              scale: scale,
+                              child: Opacity(
+                                opacity: (0.35 + 0.65 * converge).clamp(
+                                  0.0,
+                                  1.0,
+                                ),
+                                child: STLogo(
+                                  size: 46,
+                                  spread: 0.5 * (1 - converge),
+                                  glow: glow,
+                                ),
                               ),
                             ),
                           ),

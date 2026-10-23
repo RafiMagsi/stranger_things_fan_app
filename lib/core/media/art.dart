@@ -196,3 +196,16 @@ class CastMosaic extends StatelessWidget {
     );
   }
 }
+
+/// A chapter's still if it has one, else its season's key art.
+class SeasonOrEventArt extends StatelessWidget {
+  const SeasonOrEventArt({super.key, required this.season, required this.photo});
+
+  final Season season;
+  final String? photo;
+
+  @override
+  Widget build(BuildContext context) => MediaCredits.photo(photo) == null
+      ? SeasonArt(season: season)
+      : EventArt(photo: photo, accent: season.accent, grade: 0.5);
+}

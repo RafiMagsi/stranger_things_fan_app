@@ -387,16 +387,45 @@ class DuotonePhoto extends StatelessWidget {
     ];
   }
 
+  /// The long edge to decode at for a [box]: the smallest bucket that still
+  /// covers it (cover-fit crops one axis, hence the headroom), or null for
+  /// full size. Buckets, not exact sizes, so a hero flight re-decodes a
+  /// couple of times rather than every frame.
+  static int? _decodeEdge(Size box, double dpr) {
+    final need = box.longestSide * dpr * 1.3;
+    if (!need.isFinite) return null;
+    for (final bucket in const [480, 960]) {
+      if (need <= bucket) return bucket;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final dpr = MediaQuery.devicePixelRatioOf(context);
     return ColorFiltered(
       colorFilter: ColorFilter.matrix(_matrix(tint, grade)),
-      child: Image.asset(
-        asset,
-        fit: BoxFit.cover,
-        alignment: alignment,
-        gaplessPlayback: true,
-        errorBuilder: (_, _, _) => KeyArt(accent: tint),
+      child: LayoutBuilder(
+        builder: (context, box) {
+          // Story mode wants the full 1400px still; a small tile doesn't
+          // need to hold one in the image cache.
+          final edge = _decodeEdge(box.biggest, dpr);
+          final ImageProvider image = edge == null
+              ? AssetImage(asset)
+              : ResizeImage(
+                  AssetImage(asset),
+                  width: edge,
+                  height: edge,
+                  policy: ResizeImagePolicy.fit,
+                );
+          return Image(
+            image: image,
+            fit: BoxFit.cover,
+            alignment: alignment,
+            gaplessPlayback: true,
+            errorBuilder: (_, _, _) => KeyArt(accent: tint),
+          );
+        },
       ),
     );
   }
@@ -431,7 +460,8 @@ class _GateArtState extends State<GateArt> with SingleTickerProviderStateMixin {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // The Gate breathes, unless effects are reduced.
-    final still = !widget.animate || _kTest || MediaQuery.disableAnimationsOf(context);
+    final still =
+        !widget.animate || _kTest || MediaQuery.disableAnimationsOf(context);
     if (still) {
       _c.stop();
     } else if (!_c.isAnimating) {

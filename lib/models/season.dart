@@ -8,6 +8,7 @@ class Episode {
     required this.number,
     required this.title,
     required this.synopsis,
+    this.photo,
   });
 
   final int number;
@@ -15,6 +16,10 @@ class Episode {
 
   /// A short, spoiler-light "previously on" for the watch guide.
   final String synopsis;
+
+  /// The still behind this chapter's title card in Story mode (see
+  /// `MediaCredits.photo`), e.g. `'events/rink'` for Rink-O-Mania.
+  final String? photo;
 
   /// "CHAPTER ONE" — how the show itself titles every episode.
   String get chapterLabel => 'CHAPTER ${numberWord(number)}';

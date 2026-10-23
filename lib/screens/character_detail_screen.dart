@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/audio/sfx.dart';
 import '../core/media/art.dart';
 import '../core/state/app_state.dart';
 import '../core/theme/app_colors.dart';
@@ -43,6 +44,33 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
     vsync: this,
     duration: const Duration(milliseconds: 1400),
   )..forward();
+
+  // Some files announce themselves: Vecna's clock, a creature's cry.
+  static const _openingCue = {
+    'vecna': 'audio/clock.wav',
+    'demogorgon': 'audio/screech.wav',
+    'mind_flayer': 'audio/heartbeat.wav',
+  };
+
+  // The night each season's tape starts rolling.
+  static final _tapeStart = {
+    1: DateTime(1983, 11, 6, 21, 14),
+    2: DateTime(1984, 10, 31, 19, 2),
+    3: DateTime(1985, 7, 4, 20, 41),
+    4: DateTime(1986, 3, 21, 22, 9),
+    5: DateTime(1987, 11, 6, 23, 47),
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    final cue = _openingCue[widget.character.id];
+    if (cue != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Sfx.cue(ref, cue, volume: 0.6);
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -107,6 +135,14 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                           opacity: 0.9,
                         ),
                       const CrtOverlay(opacity: 0.12, animate: false),
+                      // Observed, not just read: the lab's camera on them.
+                      SurveillanceOverlay(
+                        // Stable per character (String.hashCode isn't).
+                        camera: 'CAM ${(c.id.codeUnits.fold(0, (a, b) => a + b) % 8 + 1).toString().padLeft(2, '0')} · HAWKINS NATIONAL LABORATORY',
+                        subject: c.isCreature ? 'SPECIMEN' : 'SUBJECT ${c.name.toUpperCase()}',
+                        since: _tapeStart[c.seasons.first] ?? DateTime(1983, 11, 6),
+                        topInset: MediaQuery.paddingOf(context).top + 60,
+                      ),
                       // Beside the name, clear of the face.
                       Positioned(
                         bottom: 126,

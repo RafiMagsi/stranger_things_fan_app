@@ -10,6 +10,7 @@ import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/particles.dart';
 import 'core/widgets/rift_route.dart';
+import 'core/widgets/world_fx.dart';
 import 'core/widgets/world_toggle.dart';
 import 'screens/splash_screen.dart';
 
@@ -218,6 +219,8 @@ class _WorldStackState extends ConsumerState<_WorldStack>
                         ),
                 ),
               ),
+              // Film stock over everything: grain and a lens vignette.
+              const FilmGrain(),
               IgnorePointer(
                 child: RiftFlash(controller: _storm, seed: _strikes),
               ),

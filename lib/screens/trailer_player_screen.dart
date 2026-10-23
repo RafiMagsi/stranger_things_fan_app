@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
+import '../core/media/youtube_embed.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
 import '../core/theme/world_palette.dart';
@@ -27,19 +30,68 @@ class TrailerPlayerScreen extends StatefulWidget {
 }
 
 class _TrailerPlayerScreenState extends State<TrailerPlayerScreen> {
-  late final YoutubePlayerController _controller =
-      YoutubePlayerController.fromVideoId(
-    videoId: widget.trailer.youtubeId,
-    autoPlay: true,
-    params: const YoutubePlayerParams(
-      showFullscreenButton: true,
-      strictRelatedVideos: true,
-    ),
-  );
+  late YoutubePlayerController _controller;
+  StreamSubscription<YoutubePlayerValue>? _sub;
+  Timer? _deadline;
+  TrailerFailure? _failure;
+  YoutubeError _error = YoutubeError.none;
+  int _attempt = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _connect();
+  }
+
+  void _connect() {
+    _controller = YoutubePlayerController.fromVideoId(
+      videoId: widget.trailer.youtubeId,
+      autoPlay: true,
+      params: YoutubeEmbed.identify(
+        const YoutubePlayerParams(
+          showFullscreenButton: true,
+          strictRelatedVideos: true,
+        ),
+      ),
+    );
+    _sub = _controller.stream.listen((v) {
+      // Any state at all means the player loaded.
+      if (v.playerState != PlayerState.unknown) _deadline?.cancel();
+      final failure = TrailerFailure.fromError(v.error);
+      if (failure != null && _failure == null && mounted) {
+        setState(() {
+          _failure = failure;
+          _error = v.error;
+        });
+      }
+    });
+    // An IFrame API that never answers means YouTube is out of reach.
+    _deadline = Timer(const Duration(seconds: 15), () {
+      if (mounted && _failure == null) {
+        setState(() => _failure = TrailerFailure.unreachable);
+      }
+    });
+  }
+
+  void _disconnect() {
+    _deadline?.cancel();
+    _sub?.cancel();
+    _controller.close();
+  }
+
+  void _retry() {
+    _disconnect();
+    setState(() {
+      _failure = null;
+      _error = YoutubeError.none;
+      _attempt++;
+      _connect();
+    });
+  }
 
   @override
   void dispose() {
-    _controller.close();
+    _disconnect();
     super.dispose();
   }
 
@@ -62,7 +114,8 @@ class _TrailerPlayerScreenState extends State<TrailerPlayerScreen> {
     final season = Seasons.all[t.season - 1];
     final accent = world.tint(season.accent);
     final others = [
-      for (final s in Seasons.all) ...s.trailers.where((o) => o.youtubeId != t.youtubeId),
+      for (final s in Seasons.all)
+        ...s.trailers.where((o) => o.youtubeId != t.youtubeId),
     ];
 
     return STScaffold(
@@ -73,7 +126,20 @@ class _TrailerPlayerScreenState extends State<TrailerPlayerScreen> {
         children: [
           _VcrFrame(
             accent: accent,
-            child: YoutubePlayer(controller: _controller, aspectRatio: 16 / 9),
+            child: switch (_failure) {
+              null => YoutubePlayer(
+                key: ValueKey(_attempt),
+                controller: _controller,
+                aspectRatio: 16 / 9,
+              ),
+              final failure => TrailerUnavailable(
+                failure: failure,
+                errorCode: _error == YoutubeError.none ? null : _error.code,
+                accent: accent,
+                onWatchOnYouTube: _openInYouTube,
+                onRetry: failure == TrailerFailure.unreachable ? _retry : null,
+              ),
+            },
           ),
           const SizedBox(height: 18),
           Text(
@@ -85,17 +151,24 @@ class _TrailerPlayerScreenState extends State<TrailerPlayerScreen> {
           const SizedBox(height: 10),
           Row(
             children: [
-              GlowBadge(text: 'Official · ${t.channel}', color: AppColors.safeGreen, icon: Icons.verified),
+              GlowBadge(
+                text: 'Official · ${t.channel}',
+                color: AppColors.safeGreen,
+                icon: Icons.verified,
+              ),
               const SizedBox(width: 8),
               GlowBadge(text: season.setting, color: world.muted),
             ],
           ),
-          const SizedBox(height: 16),
-          OutlinedButton.icon(
-            onPressed: _openInYouTube,
-            icon: const Icon(Icons.open_in_new, size: 18),
-            label: const Text('OPEN IN YOUTUBE'),
-          ),
+          // The dead-channel panel already offers YouTube when it's showing.
+          if (_failure == null) ...[
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: _openInYouTube,
+              icon: const Icon(Icons.open_in_new, size: 18),
+              label: const Text('OPEN IN YOUTUBE'),
+            ),
+          ],
           const SizedBox(height: 14),
           Text(
             'Streamed from ${t.channel}\'s official YouTube channel. This fan app '
@@ -118,13 +191,104 @@ class _TrailerPlayerScreenState extends State<TrailerPlayerScreen> {
                   child: TrailerCard(
                     trailer: others[i],
                     onTap: () => Navigator.of(context).pushReplacement(
-                      RiftPageRoute<void>(page: TrailerPlayerScreen(trailer: others[i])),
+                      RiftPageRoute<void>(
+                        page: TrailerPlayerScreen(trailer: others[i]),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// What sits in the VCR when YouTube won't play: a dead channel saying why,
+/// and the way out. A refused embed still plays in the YouTube app, so that
+/// is the first thing offered.
+class TrailerUnavailable extends StatelessWidget {
+  const TrailerUnavailable({
+    super.key,
+    required this.failure,
+    required this.accent,
+    required this.onWatchOnYouTube,
+    this.errorCode,
+    this.onRetry,
+  });
+
+  final TrailerFailure failure;
+  final Color accent;
+  final VoidCallback onWatchOnYouTube;
+
+  /// YouTube's own error number, shown small for anyone reporting it.
+  final int? errorCode;
+
+  /// Offered only when trying again could help (offline).
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final code = errorCode;
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const ColoredBox(color: Colors.black),
+          const CrtOverlay(opacity: 0.3),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            // Small phones: shrink the panel rather than overflow the frame.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: SizedBox(
+                width: 320,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.tv_off, color: accent, size: 28),
+                    const SizedBox(height: 6),
+                    Text(
+                      failure.title,
+                      textAlign: TextAlign.center,
+                      style: AppText.neon(size: 20, color: accent),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      code == null
+                          ? failure.message
+                          : '${failure.message}  (error $code)',
+                      textAlign: TextAlign.center,
+                      style: AppText.body(Colors.white70, size: 12.5),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 10,
+                      runSpacing: 8,
+                      children: [
+                        FilledButton.icon(
+                          key: const ValueKey('trailer-watch-on-youtube'),
+                          onPressed: onWatchOnYouTube,
+                          icon: const Icon(Icons.open_in_new, size: 16),
+                          label: const Text('WATCH ON YOUTUBE'),
+                        ),
+                        if (onRetry != null)
+                          OutlinedButton(
+                            key: const ValueKey('trailer-retry'),
+                            onPressed: onRetry,
+                            child: const Text('TRY AGAIN'),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -141,14 +305,18 @@ class _VcrFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final osd = AppText.label(Colors.white.withValues(alpha: 0.8)).copyWith(fontSize: 10.5);
+    final osd = AppText.label(
+      Colors.white.withValues(alpha: 0.8),
+    ).copyWith(fontSize: 10.5);
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
       decoration: BoxDecoration(
         color: const Color(0xFF0B0B0D),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: accent.withValues(alpha: 0.6)),
-        boxShadow: [BoxShadow(color: accent.withValues(alpha: 0.3), blurRadius: 24)],
+        boxShadow: [
+          BoxShadow(color: accent.withValues(alpha: 0.3), blurRadius: 24),
+        ],
       ),
       child: Column(
         children: [
@@ -159,7 +327,10 @@ class _VcrFrame extends StatelessWidget {
                 Container(
                   width: 8,
                   height: 8,
-                  decoration: const BoxDecoration(color: AppColors.stRed, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                    color: AppColors.stRed,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Text('PLAY ▶', style: osd),
@@ -200,7 +371,11 @@ class TrailerCard extends StatelessWidget {
             child: Image.network(
               trailer.thumbnailUrl,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => KeyArt(accent: season.accent, icon: Icons.videocam, iconSize: 70),
+              errorBuilder: (_, _, _) => KeyArt(
+                accent: season.accent,
+                icon: Icons.videocam,
+                iconSize: 70,
+              ),
             ),
           ),
           const CrtOverlay(opacity: 0.18, animate: false),
@@ -221,9 +396,18 @@ class TrailerCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: Colors.black.withValues(alpha: 0.4),
                 border: Border.all(color: accent, width: 2),
-                boxShadow: [BoxShadow(color: accent.withValues(alpha: 0.7), blurRadius: 16)],
+                boxShadow: [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.7),
+                    blurRadius: 16,
+                  ),
+                ],
               ),
-              child: const Icon(Icons.play_arrow, color: Colors.white, size: 28),
+              child: const Icon(
+                Icons.play_arrow,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
           ),
           Positioned(
@@ -233,7 +417,10 @@ class TrailerCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('SEASON ${trailer.season}', style: AppText.chapter(accent, size: 10)),
+                Text(
+                  'SEASON ${trailer.season}',
+                  style: AppText.chapter(accent, size: 10),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   trailer.title,

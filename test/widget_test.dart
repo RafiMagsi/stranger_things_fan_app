@@ -1,16 +1,20 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
+import 'package:stranger_things_fan_app/core/media/youtube_embed.dart';
 import 'package:stranger_things_fan_app/core/state/app_state.dart';
 import 'package:stranger_things_fan_app/core/theme/app_colors.dart';
 import 'package:stranger_things_fan_app/core/theme/app_theme.dart';
 import 'package:stranger_things_fan_app/core/theme/world_palette.dart';
 import 'package:stranger_things_fan_app/core/widgets/neon_card.dart';
 import 'package:stranger_things_fan_app/core/widgets/rift_route.dart';
+import 'package:stranger_things_fan_app/core/widgets/st_effects.dart';
 import 'package:stranger_things_fan_app/core/widgets/st_logo.dart';
 import 'package:stranger_things_fan_app/core/widgets/world_fx.dart';
 import 'package:stranger_things_fan_app/data/characters.dart' as cast_data;
@@ -31,7 +35,9 @@ import 'package:stranger_things_fan_app/screens/quotes_screen.dart';
 import 'package:stranger_things_fan_app/screens/season_detail_screen.dart';
 import 'package:stranger_things_fan_app/screens/seasons_screen.dart';
 import 'package:stranger_things_fan_app/screens/soundboard_screen.dart';
+import 'package:stranger_things_fan_app/screens/story_screen.dart';
 import 'package:stranger_things_fan_app/screens/timeline_screen.dart';
+import 'package:stranger_things_fan_app/screens/trailer_player_screen.dart';
 
 Widget _wrap({required Widget child}) =>
     ProviderScope(child: MaterialApp(theme: AppTheme.hawkins, home: child));
@@ -51,6 +57,13 @@ Widget _worldWrap({required Widget child}) => ProviderScope(
         },
       ),
     );
+
+/// Plays the title sequence through and lets the Gate open fully onto Home.
+Future<void> _throughSplash(WidgetTester tester) async {
+  await tester.pump(const Duration(milliseconds: 5400));
+  await tester.pump(); // the Gate's ticker starts on this frame
+  await tester.pump(const Duration(milliseconds: 900));
+}
 
 /// Scrolls the first scrollable on screen until [finder] is built and visible.
 Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
@@ -178,6 +191,106 @@ void main() {
     expect(find.text('The Vanishing of Will Byers'), findsOneWidget);
     expect(find.text('The Upside Down'), findsOneWidget);
     expect(find.text('CHAPTER EIGHT'), findsOneWidget);
+  });
+
+  testWidgets('The hero play button starts, resumes, or rewatches', (tester) async {
+    usePhoneSize(tester);
+    final everything = [for (final (s, e) in Seasons.watchOrder) s.keyFor(e)];
+    for (final (watched, label) in [
+      (<String>[], 'START WATCHING'),
+      (['S1E1', 'S1E2', 'S1E3'], 'RESUME S1 · E4'),
+      (everything, 'WATCH AGAIN'),
+    ]) {
+      SharedPreferences.setMockInitialValues({'watched_episodes': watched});
+      await tester.pumpWidget(const SizedBox()); // a fresh ProviderScope
+      await tester.pumpWidget(_wrap(child: const HomeScreen()));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text(label), findsOneWidget, reason: label);
+    }
+  });
+
+  testWidgets('Photos decode near the size they are drawn at', (tester) async {
+    usePhoneSize(tester);
+    Future<ImageProvider> providerAt(Size size) async {
+      await tester.pumpWidget(Center(
+        child: SizedBox.fromSize(
+          size: size,
+          child: const DuotonePhoto(asset: 'assets/images/events/rink.jpg', tint: AppColors.stRed),
+        ),
+      ));
+      return tester.widget<Image>(find.byType(Image)).image;
+    }
+
+    // A small tile holds a small decode, not the full still...
+    final tile = await providerAt(const Size(110, 80));
+    expect(tile, isA<ResizeImage>());
+    expect((tile as ResizeImage).width, 480);
+    // ...while a full-screen story card gets every pixel.
+    expect(await providerAt(const Size(390, 700)), isA<AssetImage>());
+  });
+
+  test('The YouTube embed identifies itself with the real app ids', () {
+    // YouTube rejects embeds without a valid app identity (error 153), so
+    // these must track the native projects.
+    final ios = File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();
+    final android = File('android/app/build.gradle.kts').readAsStringSync();
+    expect(ios, contains('PRODUCT_BUNDLE_IDENTIFIER = ${YoutubeEmbed.iosAppId};'));
+    expect(android, contains('applicationId = "${YoutubeEmbed.androidAppId}"'));
+
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    for (final (platform, origin) in [
+      (TargetPlatform.iOS, 'https://com.hawkins.strangerthingsfanapp'),
+      (TargetPlatform.android, 'https://com.hawkins.stranger_things_fan_app'),
+    ]) {
+      debugDefaultTargetPlatformOverride = platform;
+      final params = YoutubeEmbed.identify(const YoutubePlayerParams(mute: true));
+      expect(params.origin, origin, reason: '$platform');
+      expect(params.toMap()['widget_referrer'], origin, reason: '$platform');
+      expect(params.mute, isTrue, reason: 'identify keeps the caller\'s params');
+    }
+  });
+
+  test('Player errors map to what the viewer is told', () {
+    expect(TrailerFailure.fromError(YoutubeError.none), isNull);
+    expect(TrailerFailure.fromError(YoutubeError.videoNotFound), TrailerFailure.removed);
+    for (final refused in [
+      YoutubeError.notEmbeddable,
+      YoutubeError.sameAsNotEmbeddable,
+      YoutubeError.sameAsNotEmbeddable2,
+      YoutubeError.unknown, // e.g. 153, which the package doesn't name
+    ]) {
+      expect(TrailerFailure.fromError(refused), TrailerFailure.refused, reason: '$refused');
+    }
+  });
+
+  testWidgets('A blocked trailer offers YouTube instead of a frozen frame', (tester) async {
+    var opened = 0;
+    var retried = 0;
+    Future<void> show(TrailerFailure failure, {int? code}) => tester.pumpWidget(
+          _wrap(
+            child: Scaffold(
+              body: TrailerUnavailable(
+                failure: failure,
+                errorCode: code,
+                accent: AppColors.stRed,
+                onWatchOnYouTube: () => opened++,
+                onRetry: failure == TrailerFailure.unreachable ? () => retried++ : null,
+              ),
+            ),
+          ),
+        );
+
+    await show(TrailerFailure.refused, code: 150);
+    expect(find.text('TRANSMISSION BLOCKED'), findsOneWidget);
+    expect(find.textContaining('(error 150)'), findsOneWidget);
+    expect(find.byKey(const ValueKey('trailer-retry')), findsNothing);
+    await tester.tap(find.byKey(const ValueKey('trailer-watch-on-youtube')));
+    expect(opened, 1);
+
+    await show(TrailerFailure.unreachable);
+    expect(find.text('NO SIGNAL'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('trailer-retry')));
+    expect(retried, 1);
   });
 
   testWidgets('Marking a chapter watched moves "next up" forward',
@@ -358,9 +471,8 @@ void main() {
     usePhoneSize(tester);
     SharedPreferences.setMockInitialValues({'sound_effects': false});
     await tester.pumpWidget(const ProviderScope(child: StrangerThingsApp()));
-    // Splash, then the Gate opens onto Home.
-    await tester.pump(const Duration(milliseconds: 4700));
-    await tester.pump(const Duration(milliseconds: 800));
+    // The title sequence, then the Gate opens onto Home.
+    await _throughSplash(tester);
     expect(find.byType(HomeScreen), findsOneWidget);
 
     final container = ProviderScope.containerOf(
@@ -435,8 +547,7 @@ void main() {
     usePhoneSize(tester);
     SharedPreferences.setMockInitialValues({'sound_effects': false, 'reduce_effects': true});
     await tester.pumpWidget(const ProviderScope(child: StrangerThingsApp()));
-    await tester.pump(const Duration(milliseconds: 4700));
-    await tester.pump(const Duration(milliseconds: 800));
+    await _throughSplash(tester);
 
     final container = ProviderScope.containerOf(
       tester.element(find.byType(HomeScreen)),
@@ -537,6 +648,50 @@ void main() {
     expect(find.text('Barb is taken'), findsOneWidget);
   });
 
+  testWidgets('Story mode plays chapters, steps with taps, and marks watched',
+      (tester) async {
+    usePhoneSize(tester);
+    await tester.pumpWidget(_wrap(child: const StoryScreen(season: 1, episode: 1)));
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(find.text('CHAPTER ONE'), findsOneWidget);
+    expect(find.text('THE VANISHING OF WILL BYERS'), findsOneWidget);
+
+    // Tap the right side: next chapter.
+    await tester.tapAt(const Offset(300, 400));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1200));
+    expect(find.text('THE WEIRDO ON MAPLE STREET'), findsOneWidget);
+
+    // Tap the left edge: back again.
+    await tester.tapAt(const Offset(30, 400));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1200));
+    expect(find.text('THE VANISHING OF WILL BYERS'), findsOneWidget);
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(StoryScreen)),
+      listen: false,
+    );
+    await tester.tap(find.byKey(const ValueKey('story-watched')));
+    await tester.pump();
+    expect(container.read(watchProgressProvider), contains('S1E1'));
+  });
+
+  testWidgets('A season opens on its title card, then runs into chapter one',
+      (tester) async {
+    usePhoneSize(tester);
+    await tester.pumpWidget(_wrap(child: const StoryScreen(season: 2, onlySeason: true)));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(find.byType(STLogo), findsOneWidget);
+    expect(find.text('2'), findsOneWidget);
+
+    // The title card runs ~6.5s, then the first chapter begins by itself.
+    await tester.pump(const Duration(milliseconds: 7000));
+    await tester.pump(const Duration(milliseconds: 1200));
+    expect(find.text('MADMAX'), findsOneWidget);
+  });
+
   group('Series data', () {
     test('every chapter of all five seasons is in the watch guide', () {
       expect(Seasons.all.map((s) => s.episodes.length), [8, 9, 8, 9, 8]);
@@ -582,6 +737,12 @@ void main() {
       }
       // Every timeline beat has one; most moments do.
       expect(STTimeline.events.every((e) => e.photo != null), isTrue);
+    });
+
+    test('every chapter has a credited Story-mode still', () {
+      for (final (s, e) in Seasons.watchOrder) {
+        expect(MediaCredits.photo(e.photo), isNotNull, reason: s.keyFor(e));
+      }
     });
 
     test('every character has a real, trimmed alias', () {

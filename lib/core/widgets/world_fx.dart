@@ -1,4 +1,6 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'dart:ui' show PathMetric;
 
 import 'package:flutter/material.dart';
@@ -414,4 +416,273 @@ class ClassifiedBanner extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Film stock over the whole app: fine grain that shifts at 24 frames a
+/// second, like the show's photography, and a soft lens vignette. One small
+/// noise texture is made once and tiled at a new offset each frame, so it
+/// costs almost nothing. Freezes under reduced effects.
+class FilmGrain extends StatefulWidget {
+  const FilmGrain({super.key, this.opacity = 0.055});
+
+  final double opacity;
+
+  @override
+  State<FilmGrain> createState() => _FilmGrainState();
+}
+
+class _FilmGrainState extends State<FilmGrain> with SingleTickerProviderStateMixin {
+  static ui.Image? _noise; // shared: one texture for the app's lifetime
+
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 1),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (_noise == null) {
+      const n = 128;
+      final rng = math.Random(1983);
+      final px = Uint8List(n * n * 4);
+      for (var i = 0; i < n * n; i++) {
+        final v = rng.nextInt(256);
+        px[i * 4] = v;
+        px[i * 4 + 1] = v;
+        px[i * 4 + 2] = v;
+        px[i * 4 + 3] = 255;
+      }
+      ui.decodeImageFromPixels(px, n, n, ui.PixelFormat.rgba8888, (img) {
+        _noise = img;
+        if (mounted) setState(() {});
+      });
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _c.stop();
+    } else if (!_c.isAnimating) {
+      _c.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _c,
+              builder: (context, _) => CustomPaint(
+                painter: _GrainPainter(
+                  noise: _noise,
+                  frame: (_c.value * 24).floor(),
+                  opacity: widget.opacity,
+                ),
+                size: Size.infinite,
+              ),
+            ),
+          ),
+          // The lens: edges fall off into the dark.
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                radius: 1.05,
+                colors: [Color(0x00000000), Color(0x00000000), Color(0x73000000)],
+                stops: [0, 0.62, 1],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GrainPainter extends CustomPainter {
+  const _GrainPainter({required this.noise, required this.frame, required this.opacity});
+
+  final ui.Image? noise;
+  final int frame;
+  final double opacity;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final img = noise;
+    if (img == null || size.isEmpty) return;
+    final rng = math.Random(frame);
+    final shift = Matrix4.translationValues(rng.nextDouble() * 128, rng.nextDouble() * 128, 0);
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()
+        ..shader = ImageShader(img, TileMode.repeated, TileMode.repeated, shift.storage)
+        ..color = Colors.white.withValues(alpha: opacity),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _GrainPainter old) =>
+      old.frame != frame || old.noise != noise || old.opacity != opacity;
+}
+
+/// Hawkins Lab is always watching. A CCTV feed laid over a subject's file:
+/// viewfinder brackets, a blinking REC light, a timecode running from the
+/// night they were first seen, and the camera's label. In the Upside Down
+/// the feed tears every few seconds. Steady (no blink, no tear) under
+/// reduced effects.
+class SurveillanceOverlay extends StatefulWidget {
+  const SurveillanceOverlay({
+    super.key,
+    required this.camera,
+    required this.subject,
+    required this.since,
+    this.topInset = 88,
+  });
+
+  /// E.g. "CAM 03 · HAWKINS NATIONAL LABORATORY".
+  final String camera;
+
+  /// E.g. "SUBJECT 011".
+  final String subject;
+
+  /// When the tape starts.
+  final DateTime since;
+  final double topInset;
+
+  @override
+  State<SurveillanceOverlay> createState() => _SurveillanceOverlayState();
+}
+
+class _SurveillanceOverlayState extends State<SurveillanceOverlay>
+    with SingleTickerProviderStateMixin {
+  late final _ticker = createTicker(_onTick);
+  Duration _elapsed = Duration.zero;
+
+  static const _months = [
+    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker.start();
+  }
+
+  // Repaint only when something visible changes: twice a second.
+  void _onTick(Duration elapsed) {
+    if (elapsed.inMilliseconds ~/ 500 != _elapsed.inMilliseconds ~/ 500) {
+      setState(() => _elapsed = elapsed);
+    }
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  String _two(int v) => v.toString().padLeft(2, '0');
+
+  @override
+  Widget build(BuildContext context) {
+    final world = WorldPalette.of(context);
+    final reduce = MediaQuery.disableAnimationsOf(context);
+    final now = widget.since.add(_elapsed);
+    final stamp = '${_months[now.month - 1]} ${_two(now.day)} ${now.year}  '
+        '${_two(now.hour)}:${_two(now.minute)}:${_two(now.second)}';
+    final rec = reduce || (_elapsed.inMilliseconds ~/ 500).isEven;
+    // The Upside Down interferes with the signal.
+    final tearing = !reduce && world.depth > 0.5 && _elapsed.inSeconds % 6 == 5 && _elapsed.inMilliseconds % 1000 < 500;
+    final osd = AppText.label(Colors.white.withValues(alpha: 0.82)).copyWith(fontSize: 10.5, letterSpacing: 1.4);
+
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CustomPaint(painter: _ViewfinderPainter(top: widget.topInset, tearing: tearing)),
+          Positioned(
+            top: widget.topInset + 10,
+            left: 26,
+            child: Row(
+              children: [
+                AnimatedOpacity(
+                  opacity: rec ? 1 : 0.15,
+                  duration: const Duration(milliseconds: 120),
+                  child: Container(
+                    width: 9,
+                    height: 9,
+                    decoration: const BoxDecoration(color: AppColors.stRedGlow, shape: BoxShape.circle),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text('REC  $stamp', style: osd),
+              ],
+            ),
+          ),
+          Positioned(
+            top: widget.topInset + 28,
+            left: 26,
+            child: Text('${widget.camera}\n${widget.subject} · OBSERVATION', style: osd.copyWith(fontSize: 9.5, color: Colors.white60)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ViewfinderPainter extends CustomPainter {
+  const _ViewfinderPainter({required this.top, required this.tearing});
+
+  final double top;
+  final bool tearing;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = Colors.white.withValues(alpha: 0.7);
+    const arm = 22.0;
+    final r = Rect.fromLTRB(14, top, size.width - 14, size.height - 14);
+    for (final (c, dx, dy) in [
+      (r.topLeft, 1.0, 1.0),
+      (r.topRight, -1.0, 1.0),
+      (r.bottomLeft, 1.0, -1.0),
+      (r.bottomRight, -1.0, -1.0),
+    ]) {
+      canvas.drawLine(c, c + Offset(arm * dx, 0), p);
+      canvas.drawLine(c, c + Offset(0, arm * dy), p);
+    }
+    // Centre crosshair, faint.
+    final mid = r.center;
+    final faint = Paint()
+      ..strokeWidth = 1
+      ..color = Colors.white.withValues(alpha: 0.25);
+    canvas.drawLine(mid - const Offset(10, 0), mid + const Offset(10, 0), faint);
+    canvas.drawLine(mid - const Offset(0, 10), mid + const Offset(0, 10), faint);
+
+    if (tearing) {
+      final rng = math.Random(DateTime.now().millisecondsSinceEpoch ~/ 120);
+      final tear = Paint()..color = Colors.white.withValues(alpha: 0.18);
+      for (var i = 0; i < 5; i++) {
+        final y = rng.nextDouble() * size.height;
+        canvas.drawRect(Rect.fromLTWH(0, y, size.width, 1 + rng.nextDouble() * 3), tear);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ViewfinderPainter old) => old.tearing != tearing || tearing || old.top != top;
 }

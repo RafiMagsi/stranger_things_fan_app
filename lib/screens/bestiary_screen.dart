@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/audio/sfx.dart';
 import '../core/media/art.dart';
 import '../core/media/poster_image.dart';
 import '../core/theme/app_colors.dart';
@@ -32,17 +34,31 @@ class BestiaryScreen extends StatelessWidget {
   }
 }
 
-class _MonsterCard extends StatelessWidget {
+class _MonsterCard extends ConsumerWidget {
   const _MonsterCard({required this.m});
 
   final Monster m;
 
+  // What each thing sounds like when you get too close.
+  static const _cries = {
+    'demogorgon': 'audio/screech.wav',
+    'demodog': 'audio/squelch.wav',
+    'mind_flayer': 'audio/heartbeat.wav',
+    'vecna': 'audio/clock.wav',
+    'demo_bat': 'audio/screech.wav',
+    'the_flayed': 'audio/vines.wav',
+  };
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final world = WorldPalette.of(context);
     final accent = world.tint(m.accent);
     return NeonCard(
       glow: m.accent,
+      onTap: () {
+        final cry = _cries[m.id];
+        if (cry != null) Sfx.cue(ref, cry, volume: 0.6);
+      },
       padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

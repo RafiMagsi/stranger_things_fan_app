@@ -25,6 +25,30 @@ it's Stranger Things.** So every screen is built from the show's own signals:
 - **Hawkins Lab dossiers** — character pages are stamped CLASSIFIED; the hub
   tiles are filed as FILE 01…10, glowing in Christmas-bulb colours.
 - **Tube-TV texture** — faint CRT scanlines over every screen.
+- **A film, not a UI** — a shared film-grain and vignette layer sits over the
+  whole app (`FilmGrain`, 24fps), so every screen reads as footage.
+
+### Watching, not browsing
+A catalogue of cards tells you *about* the show; the app should feel like
+*watching* it. So the series itself is the main way in:
+
+- **Story mode** (`StoryScreen`) — the whole series, chapter by chapter,
+  full-screen and letterboxed. Each season opens on a bare title card (the
+  logo converging, the season number catching like neon); each chapter's
+  "CHAPTER THREE" card burns in over a slowly drifting still, the show's
+  date caption types itself out, the synopsis runs as a subtitle, and the
+  synth score plays underneath. Tap right for next, left edge for back,
+  hold to pause, swipe down to leave; a progress segment per card; mark a
+  chapter watched without leaving. The gesture hint shows once, then fades.
+- **Entry points** — Home's hero button reads START WATCHING / RESUME S1 · E4
+  / WATCH AGAIN from your progress; the Next-up card, a season's PLAY button
+  and every chapter card open the story at that point.
+- **Billboard** — the Home hero plays the official final-season trailer
+  muted behind the title (fades in once playing, pauses off-screen, loops);
+  off in tests, with reduce effects, or via the "Trailer previews" setting.
+- **Observing** — character dossiers are a Hawkins Lab surveillance feed:
+  REC light, running timecode from the season's date, camera and subject
+  labels, viewfinder brackets, and tape tearing in the Upside Down.
 
 Both worlds are near-black; the toggle swaps the light:
 
@@ -74,23 +98,28 @@ through `fontVariations` (see `lib/core/theme/text_styles.dart`).
 
 ```text
 lib/
-│── main.dart                      # ProviderScope, dual theme, world shell (tap origin, ash, storm)
+│── main.dart                      # ProviderScope, dual theme, world shell (tap origin, grain, ash, storm)
 ├── core/
-│   ├── theme/   app_colors · app_theme · text_styles · world_palette
-│   ├── state/   app_state (worldMode, audioEnabled, watchProgress → shared_preferences)
-│   ├── widgets/ neon_card (NeonCard, NeonTube, GlowBadge, SectionHeader, FlickerIn)
-│   │            world_fx (WorldGrade, CardVines, NeonIgnite, TypewriterText, STHero)
-│   │            st_logo · st_scaffold (STScaffold, WorldAtmosphere, NeonBackButton)
-│   │            st_effects (CRT, ChristmasLights, KeyArt, DuotonePhoto, GateArt,
-│   │                        VineOverlay, AlphabetWall)
-│   │            rift_route (Gate transition, lightning storm) · world_toggle · particles
-│   └── media/   asset_media · poster_image · art (CharacterArt, SeasonArt, LocationArt)
-├── models/      character · season (+Episode) · trailer · moment · media_credit · quiz_question · sound_clip
-├── data/        characters · seasons · timeline · moments · locations · bestiary
-│                quotes · quiz · soundboard · credits
-└── screens/     splash · home · seasons · season_detail · trailer_player · cast ·
-                 character_detail · timeline · locations · bestiary · moments ·
-                 quotes · quiz · soundboard · transmissions · credits
+│   ├── theme/    app_colors · app_theme · text_styles · world_palette
+│   ├── state/    app_state (worldMode, settings, watchProgress → shared_preferences)
+│   ├── audio/    sfx (Sfx cues, looping Score with fades)
+│   ├── platform/ test_env (isFlutterTest: no audio/webview under test)
+│   ├── widgets/  neon_card (NeonCard, NeonTube, GlowBadge, SectionHeader, FlickerIn)
+│   │             world_fx (WorldGrade, CardVines, NeonIgnite, TypewriterText, STHero,
+│   │                       RedactedText, ClassifiedBanner, FilmGrain, SurveillanceOverlay)
+│   │             st_logo · st_scaffold (STScaffold, WorldAtmosphere, NeonBackButton)
+│   │             st_effects (CRT, ChristmasLights, KeyArt, DuotonePhoto, GateArt,
+│   │                         VineOverlay, AlphabetWall)
+│   │             rift_route (Gate transition, lightning storm) · world_toggle · particles
+│   └── media/    asset_media · poster_image · billboard (muted trailer behind Home)
+│                 youtube_embed (app identity for the player, failure messages)
+│                 art (CharacterArt, SeasonArt, LocationArt, EventArt)
+├── models/       character · season (+Episode) · trailer · moment · media_credit · quiz_question · sound_clip
+├── data/         characters · seasons · timeline · moments · locations · bestiary
+│                 quotes · quiz · soundboard · credits
+└── screens/      splash · home · story · seasons · season_detail · trailer_player · cast ·
+                  character_detail · timeline · locations · bestiary · moments ·
+                  quotes · quiz · soundboard · transmissions · credits · settings_sheet
 ```
 
 ---
@@ -105,6 +134,18 @@ OK to re-host them inside an app. So the app uses three legitimate sources:
    player with an "Open in YouTube" fallback. Nothing is downloaded or
    re-hosted. Every id was verified with YouTube's oEmbed endpoint to confirm
    the uploader is an official Netflix channel.
+   - **Embedder identity** (`YoutubeEmbed`) — YouTube requires app WebViews
+     to identify themselves: the player page's base URL / Referer is
+     `https://<app id>` (iOS: lower-cased bundle id; Android: applicationId),
+     per YouTube's Required Minimum Functionality. Without it YouTube
+     answers *Error 153*. A test keeps the ids in step with the native
+     projects.
+   - **When YouTube won't play** — YouTube can still refuse an embed
+     (error 150/152), most often when it wants the network to "confirm
+     you're not a bot", which an anonymous embedded player can't do. The
+     VCR then shows a dead channel (TRANSMISSION BLOCKED / TAPE MISSING /
+     NO SIGNAL after 15s of silence) with **Watch on YouTube**, which opens
+     the YouTube app; the Home billboard just stays hidden.
 2. **Freely-licensed photos, bundled** — 13 cast portraits, 3 filming
    locations (Gwinnett Place Mall = Starcourt, Lukiškės Prison = the Kamchatka
    prison, Jackson GA = downtown Hawkins) from Wikimedia Commons under CC0 /
@@ -116,7 +157,10 @@ OK to re-host them inside an app. So the app uses three legitimate sources:
    volcano, Eddie's guitar, D&D dice... Every timeline beat, 33 of 34
    moments, four creatures and every Explore card carry one, graded into
    the show's look. Never frames from the show; all licence-checked
-   (CC0 / CC BY / CC BY-SA / public domain only).
+   (CC0 / CC BY / CC BY-SA / public domain only). Every chapter has one
+   too (`Episode.photo`), behind its Story-mode title card; those stills
+   are bundled at up to 1400px so they hold up full-screen, and
+   `DuotonePhoto` decodes small tiles at 480/960px so lists stay light.
    Attribution lives in `lib/data/credits.dart`, on each dossier/location
    card, and on the **Credits** screen (required by the licences).
 3. **Procedural key art** — Gate, lightning, vines, the alphabet wall and
@@ -172,6 +216,13 @@ No copyrighted recordings. `tool/generate_audio.py` synthesizes the WAV cues
 (theme, screech, static, dice, squelch, portal, chime, coin, power, clock,
 heartbeat, vines). Re-run it to regenerate or extend.
 
+- **Score** — the synth theme loops under the title sequence and Story mode,
+  fading in and out (`Score.start` / `Score.stop`).
+- **Cues in context** — crossing worlds (portal + chime), opening a villain's
+  dossier (Vecna's clock, the Demogorgon's screech, the Mind Flayer's
+  heartbeat), tapping a creature, rolling the dice to start Trivia, tuning
+  into Transmissions. All gated by the Sound effects setting.
+
 ---
 
 ## 6. Animation & special effects (implemented)
@@ -205,8 +256,14 @@ heartbeat, vines). Re-run it to regenerate or extend.
   door; a right answer throws sparks.
 - **VHS tune-in** — spoiler reveals split into red/cyan ghosts that jitter and
   snap together, like a tape finding its tracking.
-- **Splash** — the title sequence: scattered hollow letters converge, the
-  bars light, the camera pushes in over a red bloom with embers.
+- **Splash** — the title sequence: it opens in extreme close-up on the
+  hollow red letters and slowly pulls back and drifts until the logo
+  settles, the bars light and the score plays; then the Christmas lights
+  and "tap to enter".
+- **Film layer** — grain re-rolls 24 times a second under a soft vignette,
+  across every screen; Story mode adds letterbox bars and a Ken Burns drift.
+- **Surveillance feed** — dossiers record: blinking REC, live timecode,
+  viewfinder brackets, tape tearing in the Upside Down.
 - **Living art** — the Gate breathes, Christmas lights chase, ash drifts in
   the Upside Down, the stats radar draws on with a neon edge.
 
@@ -214,13 +271,16 @@ heartbeat, vines). Re-run it to regenerate or extend.
 
 ## 7. Settings, accessibility & platform polish
 
-- **Settings** (the dial on Home): spoiler shield, sound effects (a synth cue
-  as you cross worlds), reduce effects, watch-progress reset. All persisted,
-  as is the world you were in.
+- **Settings** (the dial on Home): spoiler shield, score, sound effects,
+  trailer previews, reduce effects, watch-progress reset. All persisted, as
+  is the world you were in.
 - **Reduce effects / photosensitivity** — the system's Reduce Motion or the
   in-app switch folds into `MediaQuery.disableAnimations` at the shell, and
-  every effect honours it: no lightning, sky flashes, flicker, VHS glitch or
-  typewriter; the Gate becomes a fade and the world flip a crossfade.
+  every effect honours it: no lightning, sky flashes, flicker, VHS glitch,
+  typewriter, film grain, Ken Burns drift or billboard trailer; the Gate
+  becomes a fade, the world flip a crossfade, and the splash skips the
+  pull-back.
+- **Story mode** hides the system bars (immersive) and restores them on exit.
 - **Tablets** — content capped at a comfortable width (`kMaxContentWidth`),
   Explore goes three-across.
 - **App identity** — an original neon "ST" icon (all platforms, Android
@@ -237,7 +297,7 @@ All important, twisting and ironic moments of the series are in the
 
 ```bash
 flutter analyze   # No issues found
-flutter test      # 32/32 pass (widgets, world flip, shield, settings, data integrity)
+flutter test      # 40/40 pass (widgets, world flip, shield, settings, story mode, trailers, data integrity)
 flutter build web --release
 flutter build ios --debug --no-codesign
 ```

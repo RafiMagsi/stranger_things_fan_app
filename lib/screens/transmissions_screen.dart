@@ -3,7 +3,9 @@ import 'dart:math' as math;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/audio/sfx.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
 import '../core/theme/world_palette.dart';
@@ -17,11 +19,11 @@ import 'trailer_player_screen.dart';
 /// Transmissions from Hawkins: every official trailer (streamed from
 /// Netflix's own YouTube channels) and a bank of original synth "radio
 /// signals" with an animated title card and waveform that work offline.
-class TransmissionsScreen extends StatefulWidget {
+class TransmissionsScreen extends ConsumerStatefulWidget {
   const TransmissionsScreen({super.key});
 
   @override
-  State<TransmissionsScreen> createState() => _TransmissionsScreenState();
+  ConsumerState<TransmissionsScreen> createState() => _TransmissionsScreenState();
 }
 
 class _Transmission {
@@ -78,7 +80,7 @@ const _transmissions = <_Transmission>[
   ),
 ];
 
-class _TransmissionsScreenState extends State<TransmissionsScreen> {
+class _TransmissionsScreenState extends ConsumerState<TransmissionsScreen> {
   final _player = AudioPlayer();
   int? _playingIndex;
   Duration _position = Duration.zero;
@@ -92,6 +94,10 @@ class _TransmissionsScreenState extends State<TransmissionsScreen> {
   @override
   void initState() {
     super.initState();
+    // Tuning in: a burst of static as the receiver warms up.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Sfx.cue(ref, 'audio/static.wav', volume: 0.3);
+    });
     _posSub = _player.onPositionChanged.listen((p) {
       if (mounted) setState(() => _position = p);
     });

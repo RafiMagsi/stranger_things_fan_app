@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/media/art.dart';
+import '../core/media/billboard.dart';
 import '../core/media/poster_image.dart';
 import '../core/state/app_state.dart';
 import '../core/theme/app_colors.dart';
@@ -29,6 +30,7 @@ import 'quiz_screen.dart';
 import 'quotes_screen.dart';
 import 'season_detail_screen.dart';
 import 'seasons_screen.dart';
+import 'story_screen.dart';
 import 'settings_sheet.dart';
 import 'soundboard_screen.dart';
 import 'timeline_screen.dart';
@@ -81,6 +83,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     '/season/${s.number}',
   );
 
+  /// Story mode from [season]/[episode] (the very start when null).
+  void _watch(Season? season, Episode? episode) => _open(
+    StoryScreen(season: season?.number, episode: episode?.number),
+    '/story',
+  );
+
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
@@ -108,12 +116,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: FlickerIn(
                         child: _FeaturedBanner(
                           onOpen: () => _openSeason(Seasons.s5),
-                          onPlay: () => _open(
+                          // Watch the story from wherever you are.
+                          playLabel: switch (next) {
+                            null => 'WATCH AGAIN',
+                            _ when watched.isEmpty => 'START WATCHING',
+                            (final s, final e) =>
+                              'RESUME S${s.number} · E${e.number}',
+                          },
+                          onWatch: () => _watch(next?.$1, next?.$2),
+                          onTrailer: () => _open(
                             TrailerPlayerScreen(
                               trailer: Seasons.s5.trailers.first,
                             ),
                             '/trailer',
                           ),
+                          previews: ref
+                              .watch(settingsProvider)
+                              .autoplayPreviews,
                         ),
                       ),
                     ),
@@ -127,10 +146,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           watched: watched.length,
                           onTap: next == null
                               ? () => _open(const MomentsScreen(), '/moments')
-                              : () => _openSeason(
-                                  next.$1,
-                                  focusEpisode: next.$2.number,
-                                ),
+                              : () => _watch(next.$1, next.$2),
                         ),
                       ),
                     ),
@@ -515,10 +531,21 @@ class _SeeAll extends StatelessWidget {
 
 /// The big banner at the top of the hub: the Gate breathing in the dark.
 class _FeaturedBanner extends StatelessWidget {
-  const _FeaturedBanner({required this.onOpen, required this.onPlay});
+  const _FeaturedBanner({
+    required this.onOpen,
+    required this.playLabel,
+    required this.onWatch,
+    required this.onTrailer,
+    required this.previews,
+  });
 
   final VoidCallback onOpen;
-  final VoidCallback onPlay;
+  final String playLabel;
+  final VoidCallback onWatch;
+  final VoidCallback onTrailer;
+
+  /// Let the official trailer play silently behind the banner.
+  final bool previews;
 
   @override
   Widget build(BuildContext context) {
@@ -558,6 +585,12 @@ class _FeaturedBanner extends StatelessWidget {
                     const GateArt(color: AppColors.stRed, seed: 1987),
                   ],
                 ),
+              ),
+              // The official trailer, silent, like a streaming billboard;
+              // invisible until it's actually playing.
+              TrailerBillboard(
+                trailer: Seasons.s5.trailers.last,
+                enabled: previews,
               ),
               // Legibility: dark end under the text, bottom-left.
               const DecoratedBox(
@@ -602,12 +635,15 @@ class _FeaturedBanner extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Row(
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 8,
                       children: [
                         FilledButton.icon(
-                          onPressed: onPlay,
+                          key: const ValueKey('play-story'),
+                          onPressed: onWatch,
                           icon: const Icon(Icons.play_arrow, size: 18),
-                          label: const Text('TRAILER'),
+                          label: Text(playLabel),
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.stRed,
                             foregroundColor: Colors.white,
@@ -617,9 +653,8 @@ class _FeaturedBanner extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 10),
                         OutlinedButton(
-                          onPressed: onOpen,
+                          onPressed: onTrailer,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: Colors.white,
                             side: const BorderSide(color: Colors.white54),
@@ -628,7 +663,7 @@ class _FeaturedBanner extends StatelessWidget {
                               vertical: 10,
                             ),
                           ),
-                          child: const Text('EPISODES'),
+                          child: const Text('TRAILER'),
                         ),
                       ],
                     ),
@@ -750,7 +785,7 @@ class _NextUpCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            Icon(Icons.chevron_right, color: world.muted),
+            Icon(Icons.play_circle_outline, color: accent, size: 30),
           ],
         ),
       ),
@@ -1149,7 +1184,12 @@ class _HubTile extends StatelessWidget {
               ? CastMosaic(characters: _castCover, accent: this.color)
               // A lighter grade than the event cards: tiles keep more of
               // each photo's own colour, so night shots stay readable.
-              : EventArt(photo: photo, accent: this.color, icon: icon, grade: 0.42),
+              : EventArt(
+                  photo: photo,
+                  accent: this.color,
+                  icon: icon,
+                  grade: 0.42,
+                ),
           // Dark end under the text; a little colour left at the top.
           DecoratedBox(
             decoration: BoxDecoration(

@@ -4,7 +4,10 @@ import 'dart:math' as math;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/audio/sfx.dart';
+import '../core/state/app_state.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
 import '../core/theme/world_palette.dart';
@@ -16,14 +19,15 @@ import '../models/quiz_question.dart';
 
 /// Trivia game: shuffled questions across all five seasons, animated
 /// correct/wrong feedback, running score, and a rank at the end.
-class QuizScreen extends StatefulWidget {
+class QuizScreen extends ConsumerStatefulWidget {
   const QuizScreen({super.key});
 
   @override
-  State<QuizScreen> createState() => _QuizScreenState();
+  ConsumerState<QuizScreen> createState() => _QuizScreenState();
 }
 
-class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
+class _QuizScreenState extends ConsumerState<QuizScreen>
+    with TickerProviderStateMixin {
   late List<QuizQuestion> _questions;
   int _index = 0;
   int _score = 0;
@@ -46,6 +50,10 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _questions = [...Quiz.bank]..shuffle(math.Random(2016));
+    // Dice hit the table: the campaign begins.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Sfx.cue(ref, 'audio/dice.wav', volume: 0.5);
+    });
   }
 
   @override
@@ -84,6 +92,8 @@ class _QuizScreenState extends State<QuizScreen> with TickerProviderStateMixin {
       }
     });
 
+    // Answer cues follow the sound-effects setting.
+    if (!ref.read(settingsProvider).soundEffects) return;
     try {
       await _player.stop();
       await _player.play(

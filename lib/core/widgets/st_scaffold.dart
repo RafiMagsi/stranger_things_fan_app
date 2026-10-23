@@ -91,7 +91,7 @@ class STScaffold extends StatelessWidget {
               child: body,
             ),
           ),
-          const CrtOverlay(opacity: 0.07, animate: false),
+          const CrtOverlay(opacity: 0.045, animate: false),
         ],
       ),
     );
