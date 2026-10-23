@@ -306,3 +306,10 @@ Run it: `flutter run` on a device (trailers need a network connection).
 
 > Unofficial fan work, not affiliated with or endorsed by Netflix. Built for
 > personal/educational use.
+
+
+## 10. Videos & Images
+Now use the videos and images from the docs folder and use it anywhere fits, you can use character image from the videos and also audios, apply the vidoes and images accordingly and make the app wonderful
+
+## 11. Improvements
+Imorove the app, use more animations for visual effects same in the series, the doors to upside down, and other effects from the series do properly in this app, make it more good

@@ -118,14 +118,28 @@ class _GateTransition extends StatelessWidget {
                   ),
                 ),
                 IgnorePointer(
-                  child: CustomPaint(
-                    painter: _GateRimPainter(
-                      center: center,
-                      radius: maxR * open,
-                      seed: seed,
-                      t: opening ? t : 1,
-                      depth: depth,
-                    ),
+                  child: Stack(
+                    children: [
+                      CustomPaint(
+                        painter: _GateRimPainter(
+                          center: center,
+                          radius: maxR * open,
+                          seed: seed,
+                          t: opening ? t : 1,
+                          depth: depth,
+                        ),
+                      ),
+                      if (opening)
+                        CustomPaint(
+                          painter: _GateHeatHaze(
+                            center: center,
+                            radius: maxR * open,
+                            seed: seed,
+                            t: t,
+                            depth: depth,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
@@ -285,6 +299,71 @@ class _GateRimPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _GateRimPainter old) =>
       old.radius != radius || old.t != t || old.center != center || old.depth != depth;
+}
+
+/// Heat-haze swirl around a living gate: light from the page bends as if
+/// passing through warm air above a tear — the show's portal always shimmers
+/// rather than sitting still.
+class _GateHeatHaze extends CustomPainter {
+  const _GateHeatHaze({
+    required this.center,
+    required this.radius,
+    required this.seed,
+    required this.t,
+    required this.depth,
+  });
+
+  final Offset center;
+  final double radius;
+  final double seed;
+  final double t;
+  final double depth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (t >= 1 || radius <= 0) return;
+    final fade = 1 - Curves.easeIn.transform(t);
+    final rng = math.Random(seed.floor());
+    final bandCount = 6 + (rng.nextDouble() * 4).floor();
+    final bandPitch = radius / bandCount;
+
+    for (var b = 0; b < bandCount; b++) {
+      final baseR = (b + 0.5) * bandPitch;
+      final theta = t * 0.004 + b * 0.3 + seed / 1000;
+      final shift = 6.0 * math.sin(theta) * (1 - b / bandCount);
+      final r = baseR + shift;
+      if (r <= 0) continue;
+      final ring = Path();
+      for (var i = 0; i <= 64; i++) {
+        final a = i / 64 * math.pi * 2;
+        final wobble = 1 + 0.04 * math.sin(a * 3 + theta) + 0.02 * math.sin(a * 7 - theta);
+        final start = center + Offset(math.cos(a) * r * wobble, math.sin(a) * r * wobble);
+        ring.moveTo(start.dx, start.dy);
+        for (var j = 1; j <= 4; j++) {
+          final ja = (i + j) / 64 * math.pi * 2;
+          final next = center + Offset(math.cos(ja) * r * wobble, math.sin(ja) * r * wobble);
+          ring.lineTo(next.dx, next.dy);
+        }
+      }
+      ring.close();
+      final alpha = (0.06 + 0.04 * (1 - b / bandCount)) * fade;
+      canvas.drawPath(
+        ring,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.4 * (1 - b / bandCount)
+          ..color = (depth > 0.5
+                  ? Color.lerp(AppColors.udGlow, AppColors.udLightning, 0.4)!
+                  : AppColors.stRedGlow)
+              .withValues(alpha: alpha)
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2.0 * (1 - b / bandCount)),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GateHeatHaze old) =>
+      old.t != t || old.radius != radius || old.seed != seed || old.depth != depth;
 }
 
 /// The world-flip storm: fired each time Hawkins ⇄ the Upside Down is

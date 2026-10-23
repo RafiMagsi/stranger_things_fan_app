@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/media/art.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
+import '../core/widgets/monster_fx.dart';
 import '../core/widgets/neon_card.dart';
 import '../core/widgets/rift_route.dart';
 import '../core/widgets/st_scaffold.dart';
@@ -20,14 +21,17 @@ class CastScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final groups = <String, List<Character>>{};
     for (final c in cast_data.Cast.all) {
-      final group = c.isCreature || c.role == 'Villain' ? 'From the Upside Down' : (c.role ?? 'Hawkins');
+      final group = c.isCreature || c.role == 'Villain'
+          ? 'From the Upside Down'
+          : (c.role ?? 'Hawkins');
       groups.putIfAbsent(group, () => []).add(c);
     }
 
     var index = 0;
     return STScaffold(
       title: 'THE CAST',
-      subtitle: '${cast_data.Cast.all.length} dossiers · Hawkins National Laboratory',
+      subtitle:
+          '${cast_data.Cast.all.length} dossiers · Hawkins National Laboratory',
       body: CustomScrollView(
         slivers: [
           for (final entry in groups.entries) ...[
@@ -79,7 +83,20 @@ class _DossierCard extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          STHero(tag: heroTag, radius: 18, child: CharacterArt(character: c, iconSize: 110)),
+          STHero(
+            tag: heroTag,
+            radius: 18,
+            child: CharacterArt(character: c, iconSize: 110),
+          ),
+          // Creatures never sit still in their file.
+          if (c.isCreature)
+            Positioned.fill(
+              child: MonsterFx(
+                monsterId: c.id,
+                accent: c.accent,
+                intensity: 0.8,
+              ),
+            ),
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -106,7 +123,10 @@ class _DossierCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   c.actor ?? c.alias,
-                  style: AppText.dossier(Colors.white.withValues(alpha: 0.7), size: 11.5),
+                  style: AppText.dossier(
+                    Colors.white.withValues(alpha: 0.7),
+                    size: 11.5,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

@@ -9,11 +9,12 @@ import '../core/state/app_state.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
 import '../core/theme/world_palette.dart';
+import '../core/widgets/monster_fx.dart';
 import '../core/widgets/neon_card.dart';
 import '../core/widgets/particles.dart';
 import '../core/widgets/st_effects.dart';
-import '../core/widgets/st_scaffold.dart';
 import '../core/widgets/world_fx.dart';
+import '../core/widgets/st_scaffold.dart';
 import '../core/widgets/world_toggle.dart';
 import '../data/credits.dart';
 import '../models/character.dart';
@@ -113,18 +114,46 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      widget.heroTag == null ? art : STHero(tag: widget.heroTag!, radius: 24, child: art),
+                      widget.heroTag == null
+                          ? art
+                          : STHero(
+                              tag: widget.heroTag!,
+                              radius: 24,
+                              child: art,
+                            ),
                       // Scrim so the name stays legible over any still.
                       const DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [Color(0x66000000), Color(0x00000000), Color(0xF2000000)],
+                            colors: [
+                              Color(0x66000000),
+                              Color(0x00000000),
+                              Color(0xF2000000),
+                            ],
                             stops: [0, 0.35, 1],
                           ),
                         ),
                       ),
+                      // The dossier's subject, observed: creatures animate
+                      // in both worlds (the file always shows it alive).
+                      if (c.isCreature)
+                        Positioned.fill(
+                          child: MonsterFx(
+                            monsterId: c.id,
+                            accent: c.accent,
+                            intensity: 1.1,
+                          ),
+                        ),
+                      // Vecna gets the room: clock, rain, gold light, door.
+                      if (c.id == 'vecna')
+                        Positioned.fill(
+                          child: VecnaScene(
+                            accent: c.accent,
+                            story: false,
+                          ),
+                        ),
                       if (c.isCreature && upsideDown)
                         ParticleField(
                           color: c.accent,
@@ -138,9 +167,14 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                       // Observed, not just read: the lab's camera on them.
                       SurveillanceOverlay(
                         // Stable per character (String.hashCode isn't).
-                        camera: 'CAM ${(c.id.codeUnits.fold(0, (a, b) => a + b) % 8 + 1).toString().padLeft(2, '0')} · HAWKINS NATIONAL LABORATORY',
-                        subject: c.isCreature ? 'SPECIMEN' : 'SUBJECT ${c.name.toUpperCase()}',
-                        since: _tapeStart[c.seasons.first] ?? DateTime(1983, 11, 6),
+                        camera:
+                            'CAM ${(c.id.codeUnits.fold(0, (a, b) => a + b) % 8 + 1).toString().padLeft(2, '0')} · HAWKINS NATIONAL LABORATORY',
+                        subject: c.isCreature
+                            ? 'SPECIMEN'
+                            : 'SUBJECT ${c.name.toUpperCase()}',
+                        since:
+                            _tapeStart[c.seasons.first] ??
+                            DateTime(1983, 11, 6),
                         topInset: MediaQuery.paddingOf(context).top + 60,
                       ),
                       // Beside the name, clear of the face.
@@ -159,11 +193,14 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                           children: [
                             Text(
                               c.name.toUpperCase(),
-                              style: AppText.h1(Colors.white, heavy: true).copyWith(
-                                fontSize: 40,
-                                letterSpacing: 1.2,
-                                shadows: [Shadow(color: accent, blurRadius: 22)],
-                              ),
+                              style: AppText.h1(Colors.white, heavy: true)
+                                  .copyWith(
+                                    fontSize: 40,
+                                    letterSpacing: 1.2,
+                                    shadows: [
+                                      Shadow(color: accent, blurRadius: 22),
+                                    ],
+                                  ),
                             ),
                             const SizedBox(height: 8),
                             Wrap(
@@ -173,7 +210,9 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                                 GlowBadge(
                                   text: c.alias,
                                   color: Colors.white70,
-                                  icon: c.isCreature ? Icons.warning : Icons.person,
+                                  icon: c.isCreature
+                                      ? Icons.warning
+                                      : Icons.person,
                                 ),
                                 GlowBadge(text: c.seasonLabel, color: c.accent),
                               ],
@@ -182,7 +221,10 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                               const SizedBox(height: 8),
                               Text(
                                 'played by ${c.actor}',
-                                style: AppText.dossier(Colors.white.withValues(alpha: 0.8), size: 13),
+                                style: AppText.dossier(
+                                  Colors.white.withValues(alpha: 0.8),
+                                  size: 13,
+                                ),
                               ),
                             ],
                           ],
@@ -204,13 +246,24 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            c.role == null ? 'SUBJECT FILE' : 'SUBJECT FILE · ${c.role!.toUpperCase()}',
+                            c.role == null
+                                ? 'SUBJECT FILE'
+                                : 'SUBJECT FILE · ${c.role!.toUpperCase()}',
                             style: AppText.chapter(accent, size: 11),
                           ),
                           const SizedBox(height: 10),
-                          Text(c.tagline, style: AppText.h2(world.ink).copyWith(fontSize: 20)),
+                          Text(
+                            c.tagline,
+                            style: AppText.h2(world.ink).copyWith(fontSize: 20),
+                          ),
                           const SizedBox(height: 10),
-                          Text(c.bio, style: AppText.body(world.ink.withValues(alpha: 0.85), size: 14.5)),
+                          Text(
+                            c.bio,
+                            style: AppText.body(
+                              world.ink.withValues(alpha: 0.85),
+                              size: 14.5,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -218,7 +271,9 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SectionHeader(title: 'Field Stats')),
+              const SliverToBoxAdapter(
+                child: SectionHeader(title: 'Field Stats'),
+              ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -234,7 +289,9 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                             animation: _controller,
                             builder: (context, _) => _StatsRadar(
                               stats: c.stats,
-                              progress: Curves.easeOutCubic.transform(_controller.value),
+                              progress: Curves.easeOutCubic.transform(
+                                _controller.value,
+                              ),
                               color: accent,
                             ),
                           ),
@@ -245,7 +302,9 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SectionHeader(title: 'Known For')),
+              const SliverToBoxAdapter(
+                child: SectionHeader(title: 'Known For'),
+              ),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -255,14 +314,27 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                     children: [
                       for (final s in c.skills)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(8),
                             color: accent.withValues(alpha: 0.12),
-                            border: Border.all(color: accent.withValues(alpha: 0.5)),
-                            boxShadow: [BoxShadow(color: accent.withValues(alpha: 0.18), blurRadius: 10)],
+                            border: Border.all(
+                              color: accent.withValues(alpha: 0.5),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accent.withValues(alpha: 0.18),
+                                blurRadius: 10,
+                              ),
+                            ],
                           ),
-                          child: Text(s, style: AppText.body(world.ink, size: 13)),
+                          child: Text(
+                            s,
+                            style: AppText.body(world.ink, size: 13),
+                          ),
                         ),
                     ],
                   ),
@@ -290,7 +362,9 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                               decoration: BoxDecoration(
                                 color: accent,
                                 borderRadius: BorderRadius.circular(3),
-                                boxShadow: [BoxShadow(color: accent, blurRadius: 8)],
+                                boxShadow: [
+                                  BoxShadow(color: accent, blurRadius: 8),
+                                ],
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -298,7 +372,10 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                               child: TypewriterText(
                                 '"${c.line}"',
                                 delay: const Duration(milliseconds: 700),
-                                style: AppText.dossier(world.ink.withValues(alpha: 0.9), size: 16),
+                                style: AppText.dossier(
+                                  world.ink.withValues(alpha: 0.9),
+                                  size: 16,
+                                ),
                               ),
                             ),
                           ],
@@ -317,7 +394,10 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                       : Text(
                           'Portrait: ${credit.subject} by ${credit.author}, ${credit.license}, '
                           'via Wikimedia Commons. Colour-graded for the app.',
-                          style: AppText.body(world.muted.withValues(alpha: 0.8), size: 11),
+                          style: AppText.body(
+                            world.muted.withValues(alpha: 0.8),
+                            size: 11,
+                          ),
                         ),
                 ),
               ),
@@ -348,10 +428,10 @@ class _ClassifiedStamp extends StatelessWidget {
         ),
         child: Text(
           creature ? 'HOSTILE' : 'CLASSIFIED',
-          style: AppText.dossier(red.withValues(alpha: 0.9), size: 15).copyWith(
-            letterSpacing: 3,
-            fontWeight: FontWeight.w700,
-          ),
+          style: AppText.dossier(
+            red.withValues(alpha: 0.9),
+            size: 15,
+          ).copyWith(letterSpacing: 3, fontWeight: FontWeight.w700),
         ),
       ),
     );
