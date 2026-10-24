@@ -30,7 +30,8 @@ class WatchScreen extends ConsumerWidget {
     final watched = ref.watch(watchProgressProvider);
     final next = Seasons.nextUp(watched);
     final featured = FanMedia.clip('finale')!;
-    void open(Widget page, String name) => RiftPageRoute.push(context, page, name: name);
+    void open(Widget page, String name) =>
+        RiftPageRoute.push(context, page, name: name);
 
     return STScaffold(
       title: 'WATCH',
@@ -49,11 +50,16 @@ class WatchScreen extends ConsumerWidget {
                   _ when watched.isEmpty => 'START WATCHING',
                   (final s, final e) => 'RESUME S${s.number} · E${e.number}',
                 },
-                chapter: next == null ? 'Every chapter watched' : 'S${next.$1.number} · ${next.$2.chapterLabel}',
+                chapter: next == null
+                    ? 'Every chapter watched'
+                    : 'S${next.$1.number} · ${next.$2.chapterLabel}',
                 title: next?.$2.title ?? 'Friends don\'t lie',
                 seasonArt: next == null ? null : SeasonArt(season: next.$1),
                 onPlay: () => open(
-                  StoryScreen(season: next?.$1.number, episode: next?.$2.number),
+                  StoryScreen(
+                    season: next?.$1.number,
+                    episode: next?.$2.number,
+                  ),
                   '/story',
                 ),
               ),
@@ -69,7 +75,11 @@ class WatchScreen extends ConsumerWidget {
                 key: const ValueKey('watch-featured'),
                 clip: featured,
                 large: true,
-                onTap: () => playReel(context, FanMedia.reel, FanMedia.reel.indexOf(featured)),
+                onTap: () => playReel(
+                  context,
+                  FanMedia.reel,
+                  FanMedia.reel.indexOf(featured),
+                ),
               ),
             ),
           ),
@@ -77,7 +87,9 @@ class WatchScreen extends ConsumerWidget {
           for (final shelf in ReelShelf.values) ...[
             SectionHeader(
               title: shelf.title,
-              trailing: _SeeAll(onTap: () => open(ReelScreen(shelf: shelf), '/reel')),
+              trailing: _SeeAll(
+                onTap: () => open(ReelScreen(shelf: shelf), '/reel'),
+              ),
             ),
             SizedBox(
               height: 210,
@@ -90,7 +102,10 @@ class WatchScreen extends ConsumerWidget {
                   final clips = FanMedia.onShelf(shelf);
                   return SizedBox(
                     width: 156,
-                    child: ReelCard(clip: clips[i], onTap: () => playReel(context, clips, i)),
+                    child: ReelCard(
+                      clip: clips[i],
+                      onTap: () => playReel(context, clips, i),
+                    ),
                   );
                 },
               ),
@@ -99,22 +114,30 @@ class WatchScreen extends ConsumerWidget {
 
           SectionHeader(
             title: 'Official Trailers',
-            trailing: _SeeAll(onTap: () => open(const TransmissionsScreen(), '/transmissions')),
+            trailing: _SeeAll(
+              onTap: () => open(const TransmissionsScreen(), '/transmissions'),
+            ),
           ),
           SizedBox(
             height: 140,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: Seasons.all.fold<int>(0, (n, s) => n + s.trailers.length),
+              itemCount: Seasons.all.fold<int>(
+                0,
+                (n, s) => n + s.trailers.length,
+              ),
               separatorBuilder: (_, _) => const SizedBox(width: 12),
               itemBuilder: (context, i) {
-                final t = [for (final s in Seasons.all.reversed) ...s.trailers][i];
+                final t = [
+                  for (final s in Seasons.all.reversed) ...s.trailers,
+                ][i];
                 return SizedBox(
                   width: 220,
                   child: TrailerCard(
                     trailer: t,
-                    onTap: () => open(TrailerPlayerScreen(trailer: t), '/trailer'),
+                    onTap: () =>
+                        open(TrailerPlayerScreen(trailer: t), '/trailer'),
                   ),
                 );
               },
@@ -123,7 +146,9 @@ class WatchScreen extends ConsumerWidget {
 
           SectionHeader(
             title: 'Fan Art',
-            trailing: _SeeAll(onTap: () => open(const GalleryScreen(), '/gallery')),
+            trailing: _SeeAll(
+              onTap: () => open(const GalleryScreen(), '/gallery'),
+            ),
           ),
           SizedBox(
             height: 190,
@@ -170,7 +195,12 @@ class _SeeAll extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Text('SEE ALL', style: AppText.label(WorldPalette.of(context).muted).copyWith(fontSize: 11)),
+      child: Text(
+        'SEE ALL',
+        style: AppText.label(
+          WorldPalette.of(context).muted,
+        ).copyWith(fontSize: 11),
+      ),
     );
   }
 }
@@ -207,13 +237,20 @@ class _StorySoFar extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            ClipLoop(videoKey: 'bikes_night', placeholder: seasonArt ?? const SizedBox.shrink()),
+            ClipLoop(
+              videoKey: 'bikes_night',
+              placeholder: seasonArt ?? const SizedBox.shrink(),
+            ),
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0x33000000), Color(0x66000000), Color(0xF2000000)],
+                  colors: [
+                    Color(0x33000000),
+                    Color(0x66000000),
+                    Color(0xF2000000),
+                  ],
                   stops: [0, 0.4, 1],
                 ),
               ),
@@ -225,15 +262,26 @@ class _StorySoFar extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('THE STORY SO FAR', style: AppText.chapter(world.accent, size: 11)),
+                  Text(
+                    'THE STORY SO FAR',
+                    style: AppText.chapter(world.accent, size: 11),
+                  ),
                   const SizedBox(height: 6),
-                  Text(chapter, style: AppText.dossier(Colors.white70, size: 12)),
+                  Text(
+                    chapter,
+                    style: AppText.dossier(Colors.white70, size: 12),
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     title.toUpperCase(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppText.headline(Colors.white, size: 26, weight: 700, letterSpacing: 0.04),
+                    style: AppText.headline(
+                      Colors.white,
+                      size: 26,
+                      weight: 700,
+                      letterSpacing: 0.04,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Row(
@@ -246,7 +294,10 @@ class _StorySoFar extends StatelessWidget {
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.stRed,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -266,7 +317,9 @@ class _StorySoFar extends StatelessWidget {
                             const SizedBox(height: 5),
                             Text(
                               '$watched / ${Seasons.totalEpisodes} chapters',
-                              style: AppText.label(Colors.white70).copyWith(fontSize: 10),
+                              style: AppText.label(
+                                Colors.white70,
+                              ).copyWith(fontSize: 10),
                             ),
                           ],
                         ),

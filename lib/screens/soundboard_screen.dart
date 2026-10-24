@@ -5,6 +5,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../core/audio/sfx.dart';
 import '../core/theme/text_styles.dart';
 import '../core/theme/world_palette.dart';
 import '../core/widgets/neon_card.dart';
@@ -22,7 +23,8 @@ class SoundboardScreen extends StatefulWidget {
   State<SoundboardScreen> createState() => _SoundboardScreenState();
 }
 
-class _SoundboardScreenState extends State<SoundboardScreen> {
+class _SoundboardScreenState extends State<SoundboardScreen>
+    with SoundtrackClaimMixin {
   final _player = AudioPlayer();
   StreamSubscription<void>? _completeSub;
   String? _playingId;
@@ -198,20 +200,27 @@ class _SoundTileState extends State<_SoundTile> {
                             accent.withValues(alpha: 0.2),
                             world.card,
                           ]
-                        : [
-                            accent.withValues(alpha: 0.16),
-                            world.card,
-                          ],
-                    stops: widget.isPlaying ? const [0, 0.45, 1] : const [0, 0.7],
+                        : [accent.withValues(alpha: 0.16), world.card],
+                    stops: widget.isPlaying
+                        ? const [0, 0.45, 1]
+                        : const [0, 0.7],
                   ),
                   border: Border.all(
-                    color: accent.withValues(alpha: widget.isPlaying ? 0.9 : 0.35),
+                    color: accent.withValues(
+                      alpha: widget.isPlaying ? 0.9 : 0.35,
+                    ),
                     width: widget.isPlaying ? 1.6 : 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: accent.withValues(alpha: widget.isPlaying ? 0.35 + widget.level * 0.25 : 0.1),
-                      blurRadius: widget.isPlaying ? 18 + widget.level * 12 : 16,
+                      color: accent.withValues(
+                        alpha: widget.isPlaying
+                            ? 0.35 + widget.level * 0.25
+                            : 0.1,
+                      ),
+                      blurRadius: widget.isPlaying
+                          ? 18 + widget.level * 12
+                          : 16,
                       spreadRadius: widget.isPlaying ? 1 : 0,
                     ),
                   ],
@@ -228,10 +237,21 @@ class _SoundTileState extends State<_SoundTile> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: accent.withValues(alpha: 0.15),
-                            border: Border.all(color: accent.withValues(alpha: 0.8)),
-                            boxShadow: [BoxShadow(color: accent.withValues(alpha: 0.5), blurRadius: 10)],
+                            border: Border.all(
+                              color: accent.withValues(alpha: 0.8),
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: accent.withValues(alpha: 0.5),
+                                blurRadius: 10,
+                              ),
+                            ],
                           ),
-                          child: Icon(widget.clip.icon, color: accent, size: 20),
+                          child: Icon(
+                            widget.clip.icon,
+                            color: accent,
+                            size: 20,
+                          ),
                         ),
                         const Spacer(),
                         Icon(
@@ -244,7 +264,10 @@ class _SoundTileState extends State<_SoundTile> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(widget.clip.label, style: AppText.h2(world.ink).copyWith(fontSize: 15)),
+                        Text(
+                          widget.clip.label,
+                          style: AppText.h2(world.ink).copyWith(fontSize: 15),
+                        ),
                         const SizedBox(height: 4),
                         // Amplitude bars animate while playing.
                         SizedBox(
@@ -252,7 +275,10 @@ class _SoundTileState extends State<_SoundTile> {
                           child: widget.isPlaying
                               ? CustomPaint(
                                   size: const Size(double.infinity, 30),
-                                  painter: _BarsPainter(color: accent, level: widget.level),
+                                  painter: _BarsPainter(
+                                    color: accent,
+                                    level: widget.level,
+                                  ),
                                 )
                               : Text(
                                   widget.clip.caption,

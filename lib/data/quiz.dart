@@ -8,10 +8,17 @@ class Quiz {
   static const List<QuizQuestion> bank = [
     // ---- Season 1 ----
     QuizQuestion(
-      question: 'What monster attacks the Party in Mike\'s campaign in the very first scene?',
-      options: ['The Mind Flayer', 'The Demogorgon', 'Vecna', 'The Thessalhydra'],
+      question:
+          'What monster attacks the Party in Mike\'s campaign in the very first scene?',
+      options: [
+        'The Mind Flayer',
+        'The Demogorgon',
+        'Vecna',
+        'The Thessalhydra',
+      ],
       correctIndex: 1,
-      fact: 'Will rolls a seven and the Demogorgon gets him - so the boys name the real creature after it.',
+      fact:
+          'Will rolls a seven and the Demogorgon gets him - so the boys name the real creature after it.',
     ),
     QuizQuestion(
       question: 'Where do the boys first find Eleven?',
@@ -22,13 +29,16 @@ class Quiz {
         'The Byers\' shed',
       ],
       correctIndex: 2,
-      fact: 'Mike, Lucas and Dustin find her soaked in the rain-dark woods while out looking for Will.',
+      fact:
+          'Mike, Lucas and Dustin find her soaked in the rain-dark woods while out looking for Will.',
     ),
     QuizQuestion(
-      question: 'What does the alphabet wall spell when Joyce asks Will where he is?',
+      question:
+          'What does the alphabet wall spell when Joyce asks Will where he is?',
       options: ['HELP', 'RIGHT HERE', 'COME HOME', 'GO AWAY'],
       correctIndex: 1,
-      fact: 'R-I-G-H-T H-E-R-E. Her next question gets a scarier answer: R-U-N.',
+      fact:
+          'R-I-G-H-T H-E-R-E. Her next question gets a scarier answer: R-U-N.',
     ),
     QuizQuestion(
       question: 'Which song does Will sing to stay brave in the Upside Down?',
@@ -39,13 +49,15 @@ class Quiz {
         'Atmosphere',
       ],
       correctIndex: 0,
-      fact: 'The Clash song Jonathan shared with him - with Eleven\'s help, the Party hears him singing it through the static.',
+      fact:
+          'The Clash song Jonathan shared with him - with Eleven\'s help, the Party hears him singing it through the static.',
     ),
     QuizQuestion(
       question: 'Which food is Eleven\'s unofficial survival ration?',
       options: ['Eggo waffles', 'Pop-Tarts', 'Candy corn', 'Cheerios'],
       correctIndex: 0,
-      fact: 'Eggos. She steals them from Bradley\'s Big Buy, and Hopper leaves them in the woods for her.',
+      fact:
+          'Eggos. She steals them from Bradley\'s Big Buy, and Hopper leaves them in the woods for her.',
     ),
 
     // ---- Season 2 ----
@@ -53,7 +65,8 @@ class Quiz {
       question: 'What is the name of Dustin\'s pet from the Upside Down?',
       options: ['Dartagnan', 'Barb', 'Chester', 'Mews'],
       correctIndex: 0,
-      fact: 'D\'Artagnan - "Dart" - after the Three Musketeers. Mews was the cat it ate.',
+      fact:
+          'D\'Artagnan - "Dart" - after the Three Musketeers. Mews was the cat it ate.',
     ),
     QuizQuestion(
       question: 'What name is on the birth certificate Hopper gets for Eleven?',
@@ -65,7 +78,8 @@ class Quiz {
       question: 'Who closes the Gate at the end of Season 2?',
       options: ['Hopper', 'Eleven', 'Will', 'Mike'],
       correctIndex: 1,
-      fact: 'Eleven seals it from the lab with Hopper beside her, while Joyce burns the Mind Flayer out of Will.',
+      fact:
+          'Eleven seals it from the lab with Hopper beside her, while Joyce burns the Mind Flayer out of Will.',
     ),
     QuizQuestion(
       question: 'What is Hopper\'s job in Hawkins?',
@@ -89,19 +103,29 @@ class Quiz {
         'Food court cook',
       ],
       correctIndex: 0,
-      fact: 'Scoops Ahoy - where Robin cracks the Russian code and the whole plot starts.',
+      fact:
+          'Scoops Ahoy - where Robin cracks the Russian code and the whole plot starts.',
     ),
     QuizQuestion(
-      question: 'What does Dustin call the giant radio tower he builds at camp?',
+      question:
+          'What does Dustin call the giant radio tower he builds at camp?',
       options: ['Cerebro', 'Suzie', 'Skynet', 'The Beacon'],
       correctIndex: 0,
-      fact: 'Cerebro, after the X-Men machine. Suzie is the girlfriend on the other end.',
+      fact:
+          'Cerebro, after the X-Men machine. Suzie is the girlfriend on the other end.',
     ),
     QuizQuestion(
-      question: 'Which song do Dustin and Suzie sing over the radio at the worst possible moment?',
-      options: ['Take On Me', 'The NeverEnding Story', 'Africa', 'Ghostbusters'],
+      question:
+          'Which song do Dustin and Suzie sing over the radio at the worst possible moment?',
+      options: [
+        'Take On Me',
+        'The NeverEnding Story',
+        'Africa',
+        'Ghostbusters',
+      ],
       correctIndex: 1,
-      fact: 'The NeverEnding Story - while everyone waits for Suzie to recite Planck\'s constant.',
+      fact:
+          'The NeverEnding Story - while everyone waits for Suzie to recite Planck\'s constant.',
     ),
     QuizQuestion(
       question: 'What does the Party fight in the Starcourt finale?',
@@ -112,7 +136,8 @@ class Quiz {
         'Vecna himself',
       ],
       correctIndex: 1,
-      fact: 'The Mind Flayer\'s flesh body - built from the flayed people of Hawkins.',
+      fact:
+          'The Mind Flayer\'s flesh body - built from the flayed people of Hawkins.',
     ),
 
     // ---- Season 4 ----
@@ -125,13 +150,20 @@ class Quiz {
         'Heroes',
       ],
       correctIndex: 2,
-      fact: 'Kate Bush\'s 1985 track - it became a number-one hit all over again in 2022.',
+      fact:
+          'Kate Bush\'s 1985 track - it became a number-one hit all over again in 2022.',
     ),
     QuizQuestion(
       question: 'Who runs the Hellfire Club at Hawkins High?',
-      options: ['Mike Wheeler', 'Eddie Munson', 'Dustin Henderson', 'Lucas Sinclair'],
+      options: [
+        'Mike Wheeler',
+        'Eddie Munson',
+        'Dustin Henderson',
+        'Lucas Sinclair',
+      ],
       correctIndex: 1,
-      fact: 'Eddie Munson - Hellfire\'s Dungeon Master, in his third senior year.',
+      fact:
+          'Eddie Munson - Hellfire\'s Dungeon Master, in his third senior year.',
     ),
     QuizQuestion(
       question: 'What does Eddie play on his guitar to draw the demobats away?',
@@ -142,7 +174,8 @@ class Quiz {
         'Should I Stay or Should I Go',
       ],
       correctIndex: 0,
-      fact: 'Metallica\'s "Master of Puppets", played on the roof of his trailer in the Upside Down.',
+      fact:
+          'Metallica\'s "Master of Puppets", played on the roof of his trailer in the Upside Down.',
     ),
     QuizQuestion(
       question: 'Who was Vecna before he became Vecna?',
@@ -171,7 +204,12 @@ class Quiz {
     ),
     QuizQuestion(
       question: 'What is the final chapter of the series called?',
-      options: ['The Crawl', 'The Bridge', 'The Rightside Up', 'The Turnbow Trap'],
+      options: [
+        'The Crawl',
+        'The Bridge',
+        'The Rightside Up',
+        'The Turnbow Trap',
+      ],
       correctIndex: 2,
       fact: 'Chapter Eight: The Rightside Up - released New Year\'s Eve 2025.',
     ),

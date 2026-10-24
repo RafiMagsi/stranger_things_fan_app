@@ -806,10 +806,9 @@ class _Frame extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(6),
+                // No shadow: a box shadow fills the whole rect and would
+                // black out the doorway behind it.
                 border: Border.all(color: const Color(0xFF55595E), width: 8),
-                boxShadow: const [
-                  BoxShadow(color: Colors.black87, blurRadius: 18),
-                ],
               ),
             ),
           ),

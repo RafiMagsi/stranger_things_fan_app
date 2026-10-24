@@ -8,7 +8,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
+import 'package:stranger_things_fan_app/core/audio/sfx.dart';
+import 'package:stranger_things_fan_app/data/soundboard.dart';
 import 'package:stranger_things_fan_app/core/media/asset_media.dart';
+import 'package:stranger_things_fan_app/core/media/app_video.dart';
 import 'package:stranger_things_fan_app/core/media/youtube_embed.dart';
 import 'package:stranger_things_fan_app/core/state/app_state.dart';
 import 'package:stranger_things_fan_app/core/theme/app_colors.dart';
@@ -89,8 +92,9 @@ Future<void> _scrollTo(WidgetTester tester, Finder finder) async {
 
 void main() {
   setUp(() {
-    // Each case resolves media in its own zone.
+    // Each case resolves media in its own zone, with a quiet soundtrack.
     AssetMedia.debugReset();
+    Soundtrack.debugReset();
     SharedPreferences.setMockInitialValues({});
   });
 
@@ -310,8 +314,30 @@ void main() {
         reason: key,
       );
     }
+    for (final MapEntry(key: id, value: slug) in FanMedia.momentReel.entries) {
+      expect(Moments.all.any((m) => m.id == id), isTrue, reason: id);
+      expect(FanMedia.clip(slug), isNotNull, reason: slug);
+    }
     for (final slug in FanMedia.characterReel.values) {
       expect(FanMedia.clip(slug), isNotNull, reason: slug);
+    }
+    for (final key in FanMedia.sourcedKeys) {
+      for (final slug in FanMedia.clipSourcesOf(key)) {
+        expect(FanMedia.clip(slug), isNotNull, reason: '$key <- $slug');
+      }
+    }
+    // Every dossier has footage of its own.
+    for (final c in cast_data.Cast.all) {
+      expect(
+        exists('assets/images/char_${c.id}.jpg'),
+        isTrue,
+        reason: 'still: ${c.id}',
+      );
+      expect(
+        exists('assets/video/char_${c.id}.mp4'),
+        isTrue,
+        reason: 'loop: ${c.id}',
+      );
     }
     expect(
       FanMedia.sourceLine('char_will'),
@@ -333,6 +359,71 @@ void main() {
       'assets/video/hero_finale.mp4',
     );
     expect(await AssetMedia.image('no_such_still'), isNull);
+  });
+
+  test('The soundtrack stacks: claims win, releases fall back to the bed', () {
+    Soundtrack.setAmbient(Soundtrack.hill);
+    expect(Soundtrack.wanted?.asset, Soundtrack.hill);
+    final story = Soundtrack.claim(Soundtrack.storyTheme);
+    expect(Soundtrack.wanted?.asset, Soundtrack.storyTheme);
+    // A trailer silences everything, then hands the theme back.
+    final trailer = Soundtrack.claim(null);
+    expect(Soundtrack.wanted, isNull);
+    Soundtrack.release(trailer);
+    expect(Soundtrack.wanted?.asset, Soundtrack.storyTheme);
+    Soundtrack.release(story);
+    expect(Soundtrack.wanted?.asset, Soundtrack.hill);
+    // Crossing over swaps the bed for its drowned twin.
+    Soundtrack.setAmbient(Soundtrack.hillUpsideDown);
+    expect(Soundtrack.wanted?.asset, Soundtrack.hillUpsideDown);
+    Soundtrack.setEnabled(false);
+    expect(Soundtrack.wanted, isNull);
+    Soundtrack.setEnabled(true);
+    Soundtrack.setForeground(false);
+    expect(Soundtrack.wanted, isNull);
+  });
+
+  test('Every sound the app plays is bundled', () {
+    final assets = [
+      Soundtrack.title,
+      Soundtrack.storyTheme,
+      Soundtrack.hill,
+      Soundtrack.hillUpsideDown,
+      for (final c in Soundboard.clips) c.asset,
+    ];
+    for (final a in assets) {
+      expect(File('assets/$a').existsSync(), isTrue, reason: a);
+    }
+  });
+
+  test('Every official trailer has a fan cut for when YouTube refuses', () {
+    for (final s in Seasons.all) {
+      for (final t in s.trailers) {
+        final cut = FanMedia.clip(FanMedia.trailerCut[t.youtubeId] ?? '');
+        expect(cut, isNotNull, reason: '${t.title} (S${t.season})');
+        expect(File('assets/video/${cut!.videoKey}.mp4').existsSync(), isTrue, reason: cut.slug);
+      }
+    }
+    // And the opening titles are bundled for the landing page.
+    expect(File('assets/video/intro.mp4').existsSync(), isTrue);
+  });
+
+  testWidgets('Vecna\'s room waits under his footage, and WATCH sits by his name', (tester) async {
+    usePhoneSize(tester);
+    await tester.pumpWidget(_wrap(child: CharacterDetailScreen(character: cast_data.Cast.vecna)));
+    await tester.pump(const Duration(milliseconds: 500));
+    // The room is the loop's placeholder - never painted over the video.
+    expect(
+      find.descendant(of: find.byType(ClipLoop), matching: find.byType(VecnaScene)),
+      findsOneWidget,
+    );
+    expect(find.byType(VecnaScene), findsOneWidget);
+    // WATCH is down with the name and badges, well clear of the toolbar
+    // and the world switch.
+    final watch = find.byKey(const ValueKey('dossier-watch'));
+    expect(watch, findsOneWidget);
+    expect(tester.getTopLeft(watch).dy, greaterThan(250));
+    expect(tester.getCenter(watch).dy, closeTo(tester.getCenter(find.text('S4 · S5')).dy, 30));
   });
 
   test('Every gate points at a real chapter', () {
@@ -397,7 +488,7 @@ void main() {
     );
   });
 
-  testWidgets('A dossier without fan footage credits its licensed portrait', (
+  testWidgets('A dossier credits every edit its footage came from', (
     tester,
   ) async {
     usePhoneSize(tester);
@@ -405,8 +496,13 @@ void main() {
       _wrap(child: CharacterDetailScreen(character: cast_data.Cast.dustin)),
     );
     await tester.pump(const Duration(milliseconds: 500));
-    // The portrait is credited, as its licence requires.
-    await _scrollTo(tester, find.textContaining('Portrait: Gaten Matarazzo'));
+    await _scrollTo(
+      tester,
+      find.text(
+        'Footage: From "The Series", fan edit by @onexpiiece and '
+        '"The Wait Is Over", a fan edit. Personal fan-media pack.',
+      ),
+    );
   });
 
   testWidgets('Seasons lists all five and tears open into a watch guide', (

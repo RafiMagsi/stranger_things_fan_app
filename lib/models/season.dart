@@ -62,8 +62,17 @@ class Season {
 /// Spelled-out numbers for chapter and season title cards.
 String numberWord(int n) {
   const words = [
-    'ZERO', 'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT',
-    'NINE', 'TEN',
+    'ZERO',
+    'ONE',
+    'TWO',
+    'THREE',
+    'FOUR',
+    'FIVE',
+    'SIX',
+    'SEVEN',
+    'EIGHT',
+    'NINE',
+    'TEN',
   ];
   return n >= 0 && n < words.length ? words[n] : '$n';
 }

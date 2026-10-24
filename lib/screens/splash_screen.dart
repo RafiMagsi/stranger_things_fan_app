@@ -41,10 +41,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     super.initState();
     _controller.forward();
     _navTimer = Timer(const Duration(milliseconds: 5300), _goHome);
-    // The theme comes in with the letters (a beat later, once saved
-    // settings have loaded, so a muted score stays muted).
+    // The main title comes in with the letters and plays itself out,
+    // across the Gate and into Hawkins, before Running Up That Hill takes
+    // over. (A beat late, once saved settings have loaded, so muted music
+    // stays muted.)
     _scoreTimer = Timer(const Duration(milliseconds: 150), () {
-      if (mounted && ref.read(settingsProvider).music) Score.start();
+      if (mounted) Soundtrack.claim(Soundtrack.title, volume: 0.7, loop: false);
     });
   }
 
@@ -60,8 +62,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     if (!mounted || _left) return;
     _left = true;
     _navTimer?.cancel();
-    // The score drifts out as the Gate opens onto Hawkins.
-    Score.stop(fade: const Duration(milliseconds: 2600));
     Navigator.of(context).pushReplacement(
       RiftPageRoute<void>(page: const MainShell(), name: '/home'),
     );

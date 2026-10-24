@@ -49,6 +49,8 @@ SRC = {
     4: '#strangerthings #netflix.mp4',
     5: 'AQPy7SVM2u1z',
     6: 'Am I dreaming',
+    22: 'Stranger things #strangerthings.mp4',
+    32: 'Will Byers x Running Up That Hill',
     7: 'Filming credit- @beitman.ae',
     8: 'Four time(s)',
     10: 'I don’t wanna say goodbye',
@@ -92,7 +94,6 @@ LOOPS = {
     'ud_red': dict(parts=[(1, 0.8, 5.6)]),
     'bikes_night': dict(parts=[(3, 2.9, 5.2)]),
     'clock_loop': dict(parts=[(42, 0.0, 6.4)]),
-    'vinyl_loop': dict(parts=[(5, 2.0, 6.0)]),
     'char_eleven': dict(parts=[(28, 4.8, 7.6)]),
     'char_will': dict(parts=[(33, 4.6, 8.2)]),
     'char_mike': dict(parts=[(39, 0.3, 4.5)]),
@@ -103,6 +104,14 @@ LOOPS = {
     'char_vecna': dict(parts=[(38, 4.5, 8.6)]),
     'char_demogorgon': dict(parts=[(33, 15.6, 18.6)]),
     'char_mind_flayer': dict(parts=[(13, 0.0, 3.8)]),
+    'char_joyce': dict(parts=[(35, 18.0, 19.0), (2, 4.2, 4.9)], boomerang=True),
+    'char_eddie': dict(parts=[(35, 5.2, 6.05), (7, 13.4, 14.15)], boomerang=True),
+    'char_billy': dict(parts=[(6, 7.7, 9.3)]),
+    'char_dustin': dict(parts=[(31, 11.35, 12.1)], boomerang=True),
+    'char_lucas': dict(parts=[(30, 30.5, 31.6)], boomerang=True),
+    # Group shots, cropped to 3:4 around one face (cx: 0..1 across).
+    'char_robin': dict(parts=[(20, 21.75, 23.1)], cx=0.84),
+    'char_jonathan': dict(parts=[(35, 15.1, 16.0)], cx=0.2, boomerang=True),
     'monster_demogorgon': dict(parts=[(33, 9.4, 12.4)]),
     'monster_mind_flayer': dict(parts=[(13, 4.0, 8.6)]),
     'monster_vecna': dict(parts=[(12, 4.2, 7.2)]),
@@ -156,6 +165,13 @@ FRAMES = {
     'char_vecna': (12, 5.7, ('portrait', 0.50)),
     'char_demogorgon': (33, 16.1, ('portrait', 0.60)),
     'char_mind_flayer': (37, 1.6, ('portrait', 0.50)),
+    'char_joyce': (35, 18.4, ('portrait', 0.62)),
+    'char_eddie': (7, 13.9, ('portrait', 0.50)),
+    'char_billy': (6, 8.5, ('portrait', 0.50)),
+    'char_dustin': (29, 4.8, ('portrait', 0.69)),
+    'char_lucas': (29, 4.8, ('portrait', 0.27)),
+    'char_robin': (20, 22.6, ('portrait', 0.84)),
+    'char_jonathan': (35, 15.3, ('portrait', 0.18)),
     'monster_demogorgon': (33, 9.9, ('full', None)),
     'monster_mind_flayer': (13, 8.7, ('full', None)),
     'monster_vecna': (38, 6.3, ('full', None)),
@@ -201,14 +217,26 @@ FAN_KEYS = {
     'henry_creel': 'henry_creel',
 }
 
-# Soundboard captures: key -> (source, start, end).
+# The opening titles (#22: the Season 1 credits, letterboxed 16:9 in a
+# 9:16 frame - the picture is 2:1): cropped to it, with the theme.
+INTRO = (22, 0.0, 49.0)
+
+# Sound cut from the edits: key -> (source, start, end, extra filters).
+# Identified by analysis, not by ear: the main title is the Cmaj7 arpeggio
+# at ~84 BPM (#22 and #41 carry the same recording); Running Up That Hill is
+# the Ab-Bb-Cm progression at the record's own 108 BPM (#32; the vinyl clip
+# #5 is a sped-up copy); the pumpkin clock edit (#25) ticks at ~0.45 s, then
+# chimes with long decays.
+UPSIDE_DOWN = ('aresample=44100,asetrate=44100*0.84,aresample=44100,lowpass=f=1700,'
+               'aecho=0.8:0.86:280|620:0.38|0.24')
 AUDIO = {
-    'vecna_chimes': (25, 10.2, 20.8),
-    'clock_ticking': (26, 3.0, 10.0),
-    'almost_time': (42, 0.0, 7.0),
-    'running_up_that_hill': (5, 0.0, 16.0),
-    'fall_of_1987': (41, 3.0, 21.0),
-    'finale': (37, 3.3, 13.0),
+    'main_title': (22, 2.6, 26.0, None),
+    'story_theme': (22, 2.9, 46.0, None),
+    'hill': (32, 1.0, 55.5, None),
+    'hill_upside_down': (32, 1.0, 55.5, UPSIDE_DOWN),
+    'vecna_chimes': (25, 12.3, 21.4, None),
+    'clock_ticking': (25, 0.0, 7.6, None),
+    'almost_time': (42, 0.0, 7.0, None),
 }
 
 # Files earlier passes left behind that this pack replaces.
@@ -223,6 +251,8 @@ OBSOLETE = [
     'assets/images/bg_hawkins.jpg', 'assets/images/st_adventure.jpg',
     'assets/audio/captures/ticking.wav', 'assets/audio/captures/that_hill.wav',
     'assets/audio/captures/finale.wav', 'assets/audio/captures/fall1987.wav',
+    'assets/video/vinyl_loop.mp4', 'assets/audio/captures/finale.m4a',
+    'assets/audio/captures/fall_of_1987.m4a', 'assets/audio/captures/running_up_that_hill.m4a',
 ]
 
 
@@ -267,7 +297,17 @@ def build_loop(key, spec):
         cmd += ['-ss', f'{a}', '-t', f'{b - a}', '-i', src_path(i)]
     parts = spec['parts']
     if len(parts) == 1:
-        graph = f'[0:v]{upright(parts[0][0], 960)},fps=30,setpts=PTS-STARTPTS[s]'
+        graph = f'[0:v]{upright(parts[0][0], 960)},fps=30,setpts=PTS-STARTPTS'
+        if spec.get('cx') is not None:
+            w, h = probe(src_path(parts[0][0]))
+            if parts[0][0] in SIDEWAYS:
+                w, h = h, w
+            sh = round(960 * h / w) if w >= h else 960
+            sw = 960 if w >= h else round(960 * w / h)
+            cw = min(sw, round(sh * 3 / 4)) // 2 * 2
+            x = max(0, min(sw - cw, round(spec['cx'] * sw - cw / 2)))
+            graph += f',crop={cw}:{sh // 2 * 2}:{x}:0'
+        graph += '[s]'
     else:
         # Shots from different edits: one 960x540 frame so they join.
         graph = ';'.join(
@@ -290,6 +330,17 @@ def build_thumb(slug, spec):
     run(['ffmpeg', '-v', 'error', '-y', '-ss', f'{thumb_t}', '-i', src_path(i), '-frames:v', '1',
          '-vf', upright(i, 480), '-q:v', '4', thumb])
     return thumb
+
+
+def build_intro():
+    i, a, b = INTRO
+    d = b - a
+    out = os.path.join(OUT_VIDEO, 'intro.mp4')
+    run(['ffmpeg', '-v', 'error', '-y', '-ss', f'{a}', '-t', f'{d}', '-i', src_path(i),
+         '-vf', f'crop=720:360:0:460,fade=t=out:st={d - 1.2:.2f}:d=1.2,setsar=1',
+         '-af', f'afade=t=in:d=0.3,afade=t=out:st={d - 1.5:.2f}:d=1.5',
+         *X264, '-crf', '26', '-g', '60', '-c:a', 'aac', '-b:a', '128k', '-ac', '2', out])
+    return out
 
 
 def build_reel(slug, spec):
@@ -319,8 +370,15 @@ def build_frame(key, spec):
     if mode == 'portrait':
         w, h = im.size
         cw = int(h * 3 / 4)
-        left = max(0, min(w - cw, int(cx * w - cw / 2)))
-        im = im.crop((left, 0, left + cw, h))
+        if cw <= w:
+            left = max(0, min(w - cw, int(cx * w - cw / 2)))
+            im = im.crop((left, 0, left + cw, h))
+        else:
+            # Already taller than 3:4 (a phone-shot edit): trim the height,
+            # keeping the face in the upper part of the frame.
+            ch = int(w * 4 / 3)
+            top = int((h - ch) * 0.3)
+            im = im.crop((0, top, w, top + ch))
     im.thumbnail((1280, 1280), Image.LANCZOS)
     out = os.path.join(OUT_IMAGES, f'{key}.jpg')
     im.save(out, 'JPEG', quality=86, optimize=True, progressive=True)
@@ -389,12 +447,20 @@ def build_fan_art():
 
 
 def build_audio(key, spec):
-    i, a, b = spec
+    i, a, b, extra = spec
     out = os.path.join(OUT_AUDIO, f'{key}.m4a')
     d = b - a
+    # Slowing stretches the cut; fade against its real length.
+    length = d / 0.84 if extra else d
+    chain = ','.join(f for f in [
+        extra,
+        'loudnorm=I=-16:TP=-1.5:LRA=11',
+        'afade=t=in:d=0.6',
+        f'afade=t=out:st={max(0, length - 1.6):.2f}:d=1.6',
+    ] if f)
     run(['ffmpeg', '-v', 'error', '-y', '-ss', f'{a}', '-t', f'{d}', '-i', src_path(i), '-vn',
-         '-af', f'loudnorm=I=-16:TP=-1.5:LRA=11,afade=t=in:d=0.15,afade=t=out:st={max(0, d - 1.2)}:d=1.2',
-         '-c:a', 'aac', '-b:a', '128k', '-ac', '2', '-ar', '44100', '-movflags', '+faststart', out])
+         '-af', chain, '-c:a', 'aac', '-b:a', '128k', '-ac', '2', '-ar', '44100',
+         '-movflags', '+faststart', out])
     return out
 
 
@@ -402,6 +468,7 @@ def clean(everything=False):
     paths = [os.path.join(ROOT, p) for p in OBSOLETE]
     if everything:
         paths += [os.path.join(OUT_VIDEO, f'{k}.mp4') for k in LOOPS]
+        paths += [os.path.join(OUT_VIDEO, 'intro.mp4')]
         paths += [os.path.join(OUT_VIDEO, f'reel_{k}.mp4') for k in REEL]
         paths += [os.path.join(OUT_IMAGES, f'{k}.jpg') for k in list(FRAMES) + list(FAN_KEYS)]
         paths += [os.path.join(OUT_AUDIO, f'{k}.m4a') for k in AUDIO]
@@ -435,6 +502,8 @@ def main():
     if want('audio'):
         for k, s in AUDIO.items():
             print('audio', k, os.path.getsize(build_audio(k, s)) // 1024, 'KB')
+    if want('intro'):
+        print('intro', os.path.getsize(build_intro()) // 1024, 'KB')
     if want('thumbs'):
         for k, s in REEL.items():
             build_thumb(k, s)

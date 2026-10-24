@@ -102,7 +102,8 @@ lib/
 ├── core/
 │   ├── theme/    app_colors · app_theme · text_styles · world_palette
 │   ├── state/    app_state (worldMode, settings, watchProgress → shared_preferences)
-│   ├── audio/    sfx (Sfx cues, looping Score with fades)
+│   ├── audio/    sfx (Sfx cues; Soundtrack: title, Running Up That Hill, its
+│   │             Upside Down twin, Story theme - claims, crossfades, lifecycle)
 │   ├── platform/ test_env (isFlutterTest: no audio/webview under test)
 │   ├── widgets/  neon_card (NeonCard, NeonTube, GlowBadge, SectionHeader, FlickerIn)
 │   │             world_fx (WorldGrade, CardVines, NeonIgnite, TypewriterText, STHero,
@@ -111,15 +112,19 @@ lib/
 │   │             st_effects (CRT, ChristmasLights, KeyArt, DuotonePhoto, GateArt,
 │   │                         VineOverlay, AlphabetWall)
 │   │             rift_route (Gate transition, lightning storm) · world_toggle · particles
-│   └── media/    asset_media · poster_image · billboard (muted trailer behind Home)
+│   │             world_scenery (the Hawkins / Upside Down town behind every screen)
+│   │             monster_fx · gate_wind
+│   └── media/    asset_media · poster_image · decode_size · app_video (ClipLoop, ClipPlayer)
 │                 youtube_embed (app identity for the player, failure messages)
 │                 art (CharacterArt, SeasonArt, LocationArt, EventArt)
 ├── models/       character · season (+Episode) · trailer · moment · media_credit · quiz_question · sound_clip
 ├── data/         characters · seasons · timeline · moments · locations · bestiary
-│                 quotes · quiz · soundboard · credits
-└── screens/      splash · home · story · seasons · season_detail · trailer_player · cast ·
-                  character_detail · timeline · locations · bestiary · moments ·
-                  quotes · quiz · soundboard · transmissions · credits · settings_sheet
+│                 quotes · quiz · soundboard · credits · fan_media · gateways
+└── screens/      splash · main_shell (5 tabs) · home · explore · watch · upside_down · more ·
+                  story · seasons · season_detail · trailer_player · cast · character_detail ·
+                  timeline · locations · bestiary · moments · quotes · quiz · soundboard ·
+                  transmissions · reel · gallery · gate · credits · settings_sheet
+tool/             build_fan_media.py (the fan-media pack from docs/) · generate_audio.py
 ```
 
 ---
@@ -143,9 +148,11 @@ OK to re-host them inside an app. So the app uses three legitimate sources:
    - **When YouTube won't play** — YouTube can still refuse an embed
      (error 150/152), most often when it wants the network to "confirm
      you're not a bot", which an anonymous embedded player can't do. The
-     VCR then shows a dead channel (TRANSMISSION BLOCKED / TAPE MISSING /
-     NO SIGNAL after 15s of silence) with **Watch on YouTube**, which opens
-     the YouTube app; the Home billboard just stays hidden.
+     VCR then plays that season's **fan cut** from the Reel inline, with
+     sound, under a note that says why, with **Watch on YouTube** and
+     **Try YouTube again** (`FanMedia.trailerCut`). Only a trailer without
+     a fan cut shows the dead channel (TRANSMISSION BLOCKED / TAPE MISSING /
+     NO SIGNAL after 15s of silence).
 2. **Freely-licensed photos, bundled** — 13 cast portraits, 3 filming
    locations (Gwinnett Place Mall = Starcourt, Lukiškės Prison = the Kamchatka
    prison, Jackson GA = downtown Hawkins) from Wikimedia Commons under CC0 /
@@ -165,6 +172,11 @@ OK to re-host them inside an app. So the app uses three legitimate sources:
    card, and on the **Credits** screen (required by the licences).
 3. **Procedural key art** — Gate, lightning, vines, the alphabet wall and
    season/creature art are drawn in code, so the app is complete offline.
+4. **The fan-media pack (personal build)** — the edits, fan art and sounds
+   supplied in `docs/`, cut by `tool/build_fan_media.py` (see §10). Unlike
+   the sources above this is other fans' work around Netflix's footage, so
+   it's credited in-app and on the Credits screen, and stripped with
+   `--clean` before any public release.
 
 ### Drop-in slots (your own licensed files)
 The app still prefers any file you drop in, with the above as fallback:
@@ -212,12 +224,14 @@ episode summaries.
 
 ## 5. Audio — original, procedurally synthesized
 
-No copyrighted recordings. `tool/generate_audio.py` synthesizes the WAV cues
+The sound effects are original: `tool/generate_audio.py` synthesizes the WAV cues
 (theme, screech, static, dice, squelch, portal, chime, coin, power, clock,
 heartbeat, vines). Re-run it to regenerate or extend.
 
-- **Score** — the synth theme loops under the title sequence and Story mode,
-  fading in and out (`Score.start` / `Score.stop`).
+- **Soundtrack** — from the fan-media pack (§10): the main title on the
+  landing page, Running Up That Hill under the app (slowed and drowned in
+  the Upside Down), the theme in Story mode; silenced by anything with its
+  own sound (`Soundtrack.claim` / `release`).
 - **Cues in context** — crossing worlds (portal + chime), opening a villain's
   dossier (Vecna's clock, the Demogorgon's screech, the Mind Flayer's
   heartbeat), tapping a creature, rolling the dice to start Trivia, tuning
@@ -297,7 +311,7 @@ All important, twisting and ironic moments of the series are in the
 
 ```bash
 flutter analyze   # No issues found
-flutter test      # 40/40 pass (widgets, world flip, shield, settings, story mode, trailers, data integrity)
+flutter test      # 61/61 pass (widgets, tabs, worlds, soundtrack, fan media on disk, story mode, data)
 flutter build web --release
 flutter build ios --debug --no-codesign
 ```
@@ -311,17 +325,137 @@ Run it: `flutter run` on a device (trailers need a network connection).
 Now use the videos and images from the docs folder and use it anywhere fits, you can use character image from the videos and also audios, apply the vidoes and images accordingly and make the app wonderful, and rotate all the videos like "[4K] Stranger Things Finale Edit... Follow me @samedits.fx for more!.. [stranger things finale", to landscape because they are landscape videos so they can look proper, again take images from the videos and clips from the videos as required in the app
 
 • TODOs
-☐  Inspect docs videos/images: dimensions, orientation, durations
-☐  Transcode chosen videos (compress, portrait-fit) + slice segments into assets/video
-☐  Extract character/scene stills from videos into assets/images drop-in keys
-☐  Add video_player dep + AppVideo widgets (loop bg, full player, test fallback)
-☐  Wire videos/images into Home hero, Gate screen, Cast/Character, Bestiary, Moments
-☐  Add Gate entry point on Home
-☐  Extract audio clips from videos into soundboard
-☐  Run flutter analyze + full test suite, verify
+☑  Inspect docs videos/images: dimensions, orientation, durations
+☑  Transcode chosen videos (compress, rotate sideways ones upright) + slice segments into assets/video
+☑  Extract character/scene stills from videos into assets/images drop-in keys
+☑  Add video_player dep + AppVideo widgets (loop bg, full player, test fallback)
+☑  Wire videos/images into Home hero, Gate screen, Cast/Character, Bestiary, Moments
+☑  Add Gate entry point on Home
+☑  Extract audio clips from videos into soundboard
+☑  Run flutter analyze + full test suite, verify
+
+**Done.** All of it is rebuilt by one script, `tool/build_fan_media.py`, from
+the files in `docs/` (credits for every piece: `lib/data/fan_media.dart`).
+
+- **Rotation** - 22 of the 42 edits are landscape footage recorded sideways
+  in a 9:16 frame (the samedits.fx finale edit among them). Each was checked
+  frame by frame and turned 90° the right way, so they play as widescreen.
+- **The Reel** - 31 edits, upright, with sound, on four shelves (The Party,
+  Vecna's Curse, The Upside Down, Teasers & Countdowns). The fullscreen
+  player has a VCR display, play-all through a shelf, ±10 s, mute, and a
+  *turn sideways* button that rotates the phone for widescreen edits.
+- **Characters** - every one of the 17 dossiers has a still and a silent
+  loop cut from the footage (crop centred on the face; group shots cropped
+  around one person), plus a WATCH button that plays their edit with sound.
+  Eddie Munson and Billy Hargrove were added as new dossiers.
+- **Everywhere else** - the Home hero loops the finale edit; the Upside
+  Down tab, the Gate, the Watch tab, Explore tiles and the Bestiary all run
+  their own loops. Loops are muted, follow the world's colour grade, pause
+  off-screen, and stay still under reduced effects or with Motion clips off.
+- **Fan art** - the 21 screenshots are cropped to the art itself (app chrome
+  removed), turned upright, and hung in a gallery with a pinch-zoom viewer;
+  pieces also serve as season posters and backdrops.
+- **Sound** - identified by analysis, not guesswork: the main title (Cmaj7
+  arpeggio at ~84 BPM), Running Up That Hill (Ab-Bb-Cm at the record's own
+  108 BPM; one clip turned out to be a sped-up copy and wasn't used), the
+  pumpkin-clock edit's tick-tock and chimes. Unidentifiable songs were left
+  out rather than mislabelled.
+- **Soundtrack** - the main title plays on the landing page and runs out
+  into Home; then Running Up That Hill plays under the whole app. Cross into
+  the Upside Down and it crossfades to the same song slowed, muffled and
+  echoing, as if heard from the other side. Story mode switches to the
+  theme; the player, trailers, the soundboard and Transmissions silence it;
+  it sleeps in the background; *Music* in Settings turns it off.
+- **Verified on the iOS simulator** - all 58 videos and 19 sounds were
+  played through the app's own players and every one advanced; the
+  soundtrack was logged switching title -> Hill -> drowned Hill on a flip.
+- **Size** - ~89 MB of assets (67 MB video). It's a personal build: strip
+  the pack with `python3 tool/build_fan_media.py --clean` before publishing
+  anything, since the edits are other fans' work around Netflix's footage.
 
 ## 11. Improvements
 Imorove the app, use more animations for visual effects same in the series, the doors to upside down, and other effects from the series do properly in this app, make it more good
 
+**Done.**
+- **The Gate** - a blast door on Hawkins Lab's Sublevel 3. Hold to force it:
+  the steel halves grind apart, the room shakes harder the longer you hold,
+  the warning lamp strobes, and behind the door a living tear opens - its
+  edge crawling, goo strands bridging it, light and spores pouring out,
+  vines creeping in, the other world's footage inside it. Halfway, the
+  membrane gives with a thud; all the way, a white-out and the whole app
+  turns over into the other world. Let go and it heals shut.
+- **The town behind every screen** - see Themes below.
+- **Portal ring** on the Upside Down tab, pulsing gate lamps, and the
+  existing world flip, Gate transition and lightning storm.
+
 ## 12. Themes
 Check theme folder in docs and try making the app better, if you find something better in these themes then apply on the app in wonderful way.
+
+**Done.** From the four concept boards:
+- **Navigation** - a five-tab neon bar (Home, Explore, Watch, Upside Down,
+  More), the lit tab glowing with a tube over it.
+- **Home** - the series at a glance (seasons, chapters, dossiers, moments),
+  four round quick doors (Timeline, Monsters, Characters, Episodes), and a
+  *Latest Twists* row of glowing case cards (spoiler-shielded).
+- **Explore** - the archive as Hawkins Lab files, filterable by shelf.
+- **Upside Down tab** - "You are entering / now in the Upside Down" over
+  live red lightning, Creatures / Locations / Hive Mind, *A Mirror World*,
+  *Active Gateways* (every gate in the series, open/sealed/destroyed, each
+  linking to its chapter), *Survival Tips*, and Cross over / Return home.
+- **More** - Story mode, the Reel, fan art, sounds, quotes, trivia,
+  settings, credits, about.
+- **Type** - Oswald (condensed, OFL) for poster headlines and section
+  titles, as the boards use.
+
+**Hawkins and the Upside Down, made obvious** (`WorldSceneryPainter`):
+- *Hawkins* - a night skyline along the foot of every screen (and right
+  behind Home's logo): pines, the water tower with HAWKINS on the tank and a
+  blinking red light, a house with its windows lit, telephone wires strung
+  with Christmas bulbs, a moon, stars, fireflies, and the Party riding past
+  on bikes with their headlamps on. Every so often the lights flicker.
+- *The Upside Down* - the same town, dead: dark windows, dead bulbs with a
+  couple sputtering red, vines hanging from the wires and the tower,
+  tendrils climbing out of the ground; storm clouds, the Mind Flayer
+  looming in them and lit red by each lightning strike; spores and broken
+  debris floating upward, a demobat flock crossing the sky - and the town
+  hanging upside down from the top of the screen.
+
+## 13. Fixes - round 2 (Oct 24)
+
+- **YouTube** - still refused on this network: YouTube answers every
+  embedded player from it with "confirm you're not a bot", even Google's
+  own sample video, so no app setting can get past it (on mobile data it
+  plays). The trailer screen now plays the season's fan cut instead of
+  stopping at a dead panel (see §3).
+- **Vecna's dossier** - his video was hidden under the procedural "room"
+  (clock, rain, gold light), which paints a near-opaque wall. The room is
+  now the loop's placeholder: shown until the footage is up, never over it.
+- **WATCH button** - sat 56 pt from the top of the header, inside the
+  notch and toolbar on a real iPhone, under the world switch. It now sits in
+  the badge row beside the name.
+- **Audio on a real iPhone** - the audio session is set explicitly at
+  launch (`Soundtrack.configure`): the playback category, so sound plays
+  with the ring/silent switch on as video does, mixing with other audio so
+  the app's video players and the music don't cut each other off. Cues no
+  longer stop the shared player between sounds, which also switched the
+  session off. On the web, music starts on the first tap (browsers block it
+  before). `--dart-define=AUDIO_LOG=true` prints what the audio is doing.
+- **Opening titles** - the app opens on the show's Season 1 opening credits
+  (`assets/video/intro.mp4`, cropped to the 2:1 picture) with the theme and
+  a Netflix-style SKIP INTRO; at the end the Gate opens onto Hawkins and
+  Running Up That Hill takes over. Settings > Opening titles turns them off
+  (then the rebuilt five-second sequence plays).
+- **Lighter effects**
+  - Every small light (bulbs, embers, spores, fireflies, the moon's halo,
+    storm clouds) is drawn from one pre-rendered glow sprite in a single
+    batched `drawAtlas` call (`GlowBatch`) - no blur filters, no per-light
+    gradients each frame.
+  - The town's static parts are recorded once per world-depth step and
+    replayed; only what moves is drawn each frame.
+  - Sky, scenery, particles and creature animations step at 30 fps.
+  - Video loops load only while visible and give their decoder back two
+    seconds after being hidden (another tab, a page on top).
+  - Fewer shell particles in the Upside Down, where the town already has
+    spores.
+  - Tabs fade up into place when you switch.
+

@@ -124,7 +124,8 @@ class MediaCredits {
       author: 'Kevin Paul',
       license: 'CC BY 4.0',
       licenseUrl: _by4,
-      source: '${_commons}Jamie_Campbell_Bower_at_San_Diego_Comic_Con_2026-1.jpg',
+      source:
+          '${_commons}Jamie_Campbell_Bower_at_San_Diego_Comic_Con_2026-1.jpg',
     ),
 
     // ---- Filming locations ----
@@ -160,15 +161,18 @@ class MediaCredits {
       author: 'Klaus Nahr from Germany',
       license: 'CC BY-SA 2.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Museum_f%C3%BCr_Kommunikation_-_Depot_Heusenstamm_-_Technik_12_-_Flickr_-_KlausNahr.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Museum_f%C3%BCr_Kommunikation_-_Depot_Heusenstamm_-_Technik_12_-_Flickr_-_KlausNahr.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/walkie.jpg',
       subject: 'Walkie-talkies',
       author: 'Wtshymanski',
       license: 'Public domain',
-      licenseUrl: 'https://commons.wikimedia.org/wiki/File:Recreational_Walkie_Talkies.jpg',
-      source: 'https://commons.wikimedia.org/wiki/File:Recreational_Walkie_Talkies.jpg',
+      licenseUrl:
+          'https://commons.wikimedia.org/wiki/File:Recreational_Walkie_Talkies.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Recreational_Walkie_Talkies.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/lights.jpg',
@@ -176,7 +180,8 @@ class MediaCredits {
       author: 'V Smoothe',
       license: 'CC BY 2.0',
       licenseUrl: 'https://creativecommons.org/licenses/by/2.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Christmas_in_Dublin,_CA.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Christmas_in_Dublin,_CA.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/flytrap.jpg',
@@ -184,7 +189,8 @@ class MediaCredits {
       author: 'Noah Elhardt',
       license: 'CC BY-SA 2.5',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.5',
-      source: 'https://commons.wikimedia.org/wiki/File:Venus_Flytrap_showing_trigger_hairs.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Venus_Flytrap_showing_trigger_hairs.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/polaroid.jpg',
@@ -192,7 +198,8 @@ class MediaCredits {
       author: 'Thomas Backa from Turku, Finland',
       license: 'CC0',
       licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
-      source: 'https://commons.wikimedia.org/wiki/File:Polaroid_SX-70_(4462345243).jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Polaroid_SX-70_(4462345243).jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/typewriter.jpg',
@@ -208,7 +215,8 @@ class MediaCredits {
       author: 'Sabbut (derivative work: SharkD)',
       license: 'CC BY-SA 3.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Dados_4_a_20_caras_trans.png',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Dados_4_a_20_caras_trans.png',
     ),
     MediaCredit(
       asset: 'assets/images/events/synth.jpg',
@@ -224,14 +232,16 @@ class MediaCredits {
       author: 'Quentin Melson',
       license: 'CC BY-SA 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Frank_Wheeler_Hotel_in_Freetown,_Indiana.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Frank_Wheeler_Hotel_in_Freetown,_Indiana.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/mkultra.jpg',
       subject: 'Declassified MKUltra document',
       author: 'Central Intelligence Agency',
       license: 'Public domain',
-      licenseUrl: 'https://commons.wikimedia.org/wiki/File:DeclassifiedMKULTRA.jpg',
+      licenseUrl:
+          'https://commons.wikimedia.org/wiki/File:DeclassifiedMKULTRA.jpg',
       source: 'https://commons.wikimedia.org/wiki/File:DeclassifiedMKULTRA.jpg',
     ),
     MediaCredit(
@@ -240,7 +250,8 @@ class MediaCredits {
       author: 'Floatguru',
       license: 'CC BY-SA 3.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Flotation_Tank_Isolation_Tank.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Flotation_Tank_Isolation_Tank.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/bike.jpg',
@@ -248,7 +259,8 @@ class MediaCredits {
       author: 'Amin',
       license: 'CC BY-SA 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Bicycle_lighting_red_back.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Bicycle_lighting_red_back.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/slime.jpg',
@@ -256,7 +268,8 @@ class MediaCredits {
       author: 'Alexis Tinker-Tsavalas',
       license: 'CC BY 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by/4.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Comatricha_nigra_176600092.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Comatricha_nigra_176600092.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/pool.jpg',
@@ -279,8 +292,10 @@ class MediaCredits {
       subject: 'Hazmat suits',
       author: 'U.S. Air Force',
       license: 'Public domain',
-      licenseUrl: 'https://commons.wikimedia.org/wiki/File:091108-F-8594F-797_(4100783730).jpg',
-      source: 'https://commons.wikimedia.org/wiki/File:091108-F-8594F-797_(4100783730).jpg',
+      licenseUrl:
+          'https://commons.wikimedia.org/wiki/File:091108-F-8594F-797_(4100783730).jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:091108-F-8594F-797_(4100783730).jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/waffle.jpg',
@@ -288,7 +303,8 @@ class MediaCredits {
       author: 'Parkerman & Christie from San Diego, USA',
       license: 'CC BY 2.0',
       licenseUrl: 'https://creativecommons.org/licenses/by/2.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Waffles_with_Strawberries.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Waffles_with_Strawberries.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/storm.jpg',
@@ -296,15 +312,18 @@ class MediaCredits {
       author: 'Stefan Klein',
       license: 'CC BY-SA 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Low_Precipitation_Supercell_Thunderstorm.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Low_Precipitation_Supercell_Thunderstorm.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/pumpkin.jpg',
       subject: 'Jack-o\'-lantern',
       author: 'Man vyi',
       license: 'Public domain',
-      licenseUrl: 'https://commons.wikimedia.org/wiki/File:Balle-%C3%A0-leunettes_10.jpg',
-      source: 'https://commons.wikimedia.org/wiki/File:Balle-%C3%A0-leunettes_10.jpg',
+      licenseUrl:
+          'https://commons.wikimedia.org/wiki/File:Balle-%C3%A0-leunettes_10.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Balle-%C3%A0-leunettes_10.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/chicago.jpg',
@@ -312,7 +331,8 @@ class MediaCredits {
       author: 'John Picken (derivative work: Georgfotoart)',
       license: 'CC BY 2.0',
       licenseUrl: 'https://creativecommons.org/licenses/by/2.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Chicago_River_ferry_b.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Chicago_River_ferry_b.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/trs80.jpg',
@@ -320,7 +340,8 @@ class MediaCredits {
       author: 'Rama & Musée Bolo',
       license: 'CC BY-SA 2.0 fr',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.0/fr',
-      source: 'https://commons.wikimedia.org/wiki/File:Radioshack_TRS80-IMG_7206.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Radioshack_TRS80-IMG_7206.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/discoball.jpg',
@@ -328,7 +349,8 @@ class MediaCredits {
       author: 'Catboy69',
       license: 'CC0',
       licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
-      source: 'https://commons.wikimedia.org/wiki/File:Mirrored_Disco_Ball_with_Light_and_Motor.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Mirrored_Disco_Ball_with_Light_and_Motor.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/fireworks.jpg',
@@ -336,7 +358,8 @@ class MediaCredits {
       author: 'Rob Chandler',
       license: 'CC BY-SA 2.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.0',
-      source: 'https://commons.wikimedia.org/wiki/File:New_Year%27s_Eve_on_Sydney_Harbour.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:New_Year%27s_Eve_on_Sydney_Harbour.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/ltd.jpg',
@@ -351,8 +374,10 @@ class MediaCredits {
       subject: 'Klyuchevskaya Sopka, Kamchatka',
       author: 'Tamten',
       license: 'Public domain',
-      licenseUrl: 'https://commons.wikimedia.org/wiki/File:Klju%C4%8Devskaja_za_v%C3%BDchodu_slunce.jpg',
-      source: 'https://commons.wikimedia.org/wiki/File:Klju%C4%8Devskaja_za_v%C3%BDchodu_slunce.jpg',
+      licenseUrl:
+          'https://commons.wikimedia.org/wiki/File:Klju%C4%8Devskaja_za_v%C3%BDchodu_slunce.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Klju%C4%8Devskaja_za_v%C3%BDchodu_slunce.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/trailer.jpg',
@@ -360,7 +385,8 @@ class MediaCredits {
       author: 'Wikideas1',
       license: 'CC0',
       licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
-      source: 'https://commons.wikimedia.org/wiki/File:Mobile_home_with_garage.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Mobile_home_with_garage.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/cassette.jpg',
@@ -376,23 +402,28 @@ class MediaCredits {
       author: 'Daniel Mayer (mav)',
       license: 'CC BY-SA 3.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Death_Valley_-_Mesquite_Flat_Dunes_-_dune_showing_stoss,_brink_and_slip_surfaces.JPG',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Death_Valley_-_Mesquite_Flat_Dunes_-_dune_showing_stoss,_brink_and_slip_surfaces.JPG',
     ),
     MediaCredit(
       asset: 'assets/images/events/pennhurst.jpg',
       subject: 'Pennhurst State School and Hospital, Pennsylvania',
       author: 'Smccphotog',
       license: 'Public domain',
-      licenseUrl: 'https://commons.wikimedia.org/wiki/File:Admin-current-pennhurst.jpg',
-      source: 'https://commons.wikimedia.org/wiki/File:Admin-current-pennhurst.jpg',
+      licenseUrl:
+          'https://commons.wikimedia.org/wiki/File:Admin-current-pennhurst.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Admin-current-pennhurst.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/humvee.jpg',
       subject: 'Humvee',
       author: 'U.S. Marine Corps, Lance Cpl. Olivia G. Ortiz',
       license: 'Public domain',
-      licenseUrl: 'https://commons.wikimedia.org/wiki/File:2015_MCAS_Beaufort_Air_Show_041215-M-CG676-161.jpg',
-      source: 'https://commons.wikimedia.org/wiki/File:2015_MCAS_Beaufort_Air_Show_041215-M-CG676-161.jpg',
+      licenseUrl:
+          'https://commons.wikimedia.org/wiki/File:2015_MCAS_Beaufort_Air_Show_041215-M-CG676-161.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:2015_MCAS_Beaufort_Air_Show_041215-M-CG676-161.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/teddy.jpg',
@@ -400,7 +431,8 @@ class MediaCredits {
       author: 'Smithsonian Museum of Natural History',
       license: 'CC BY-SA 2.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Teddy_bear_early_1900s_-_Smithsonian_Museum_of_Natural_History.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Teddy_bear_early_1900s_-_Smithsonian_Museum_of_Natural_History.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/wormhole.jpg',
@@ -408,7 +440,8 @@ class MediaCredits {
       author: 'MikeRun',
       license: 'CC BY-SA 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Einstein-rosen-bridge-model.png',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Einstein-rosen-bridge-model.png',
     ),
     MediaCredit(
       asset: 'assets/images/events/lightning.jpg',
@@ -416,7 +449,8 @@ class MediaCredits {
       author: 'Maxime Raynal from France',
       license: 'CC BY 2.0',
       licenseUrl: 'https://creativecommons.org/licenses/by/2.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Port_and_lighthouse_overnight_storm_with_lightning_in_Port-la-Nouvelle.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Port_and_lighthouse_overnight_storm_with_lightning_in_Port-la-Nouvelle.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/rainbow.jpg',
@@ -424,7 +458,8 @@ class MediaCredits {
       author: 'Eric Rolph',
       license: 'CC BY-SA 2.5',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/2.5',
-      source: 'https://commons.wikimedia.org/wiki/File:Double-alaskan-rainbow.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Double-alaskan-rainbow.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/blazer.jpg',
@@ -432,7 +467,8 @@ class MediaCredits {
       author: '79k5driver',
       license: 'CC BY-SA 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
-      source: 'https://commons.wikimedia.org/wiki/File:1979_Chevrolet_K5_Blazer_Cheyenne.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:1979_Chevrolet_K5_Blazer_Cheyenne.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/camaro.jpg',
@@ -440,7 +476,8 @@ class MediaCredits {
       author: 'Greg Gjerdingen from Willmar, USA',
       license: 'CC BY 2.0',
       licenseUrl: 'https://creativecommons.org/licenses/by/2.0',
-      source: 'https://commons.wikimedia.org/wiki/File:1970_Chevrolet_Camaro_(27755093943)_(cropped).jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:1970_Chevrolet_Camaro_(27755093943)_(cropped).jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/cinema.jpg',
@@ -456,7 +493,8 @@ class MediaCredits {
       author: 'Joshgod91',
       license: 'CC BY-SA 4.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0',
-      source: 'https://commons.wikimedia.org/wiki/File:A_travelling_Carnival_in_Ararat_Victoria_Australia.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:A_travelling_Carnival_in_Ararat_Victoria_Australia.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/sauna.jpg',
@@ -488,7 +526,8 @@ class MediaCredits {
       author: 'Ian W. Fieggen',
       license: 'CC BY-SA 3.0',
       licenseUrl: 'https://creativecommons.org/licenses/by-sa/3.0',
-      source: 'https://commons.wikimedia.org/wiki/File:20080313_Foggy_Street.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:20080313_Foggy_Street.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/clock.jpg',
@@ -496,7 +535,8 @@ class MediaCredits {
       author: 'Unknown author',
       license: 'CC0',
       licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
-      source: 'https://commons.wikimedia.org/wiki/File:Anonymous_Longcase_clock_01.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Anonymous_Longcase_clock_01.jpg',
     ),
     MediaCredit(
       asset: 'assets/images/events/guitar.jpg',
@@ -504,7 +544,8 @@ class MediaCredits {
       author: 'Fernando García (derivative work)',
       license: 'CC BY 2.0',
       licenseUrl: 'https://creativecommons.org/licenses/by/2.0',
-      source: 'https://commons.wikimedia.org/wiki/File:Gibson_Les_Paul_54_Custom.jpg',
+      source:
+          'https://commons.wikimedia.org/wiki/File:Gibson_Les_Paul_54_Custom.jpg',
     ),
   ];
 

@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/media/app_video.dart';
 import '../core/media/art.dart';
 import '../core/state/app_state.dart';
 import '../core/theme/text_styles.dart';
@@ -11,6 +12,7 @@ import '../core/theme/world_palette.dart';
 import '../core/widgets/neon_card.dart';
 import '../core/widgets/st_scaffold.dart';
 import '../core/widgets/world_fx.dart';
+import '../data/fan_media.dart';
 import '../data/moments.dart';
 import '../data/seasons.dart';
 import '../models/moment.dart';
@@ -220,7 +222,9 @@ class _MomentCardState extends State<_MomentCard> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        world.tint(widget.moment.accent).withValues(alpha: 0.10 * world.depth),
+                        world
+                            .tint(widget.moment.accent)
+                            .withValues(alpha: 0.10 * world.depth),
                         Colors.transparent,
                       ],
                       stops: const [0, 1],
@@ -295,9 +299,17 @@ class _MomentCardState extends State<_MomentCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  RedactedText(widget.moment.title, style: titleStyle, maxLines: 1),
+                  RedactedText(
+                    widget.moment.title,
+                    style: titleStyle,
+                    maxLines: 1,
+                  ),
                   const SizedBox(height: 8),
-                  RedactedText(widget.moment.setup, style: setupStyle, maxLines: 3),
+                  RedactedText(
+                    widget.moment.setup,
+                    style: setupStyle,
+                    maxLines: 3,
+                  ),
                   const SizedBox(height: 12),
                   ClassifiedBanner(unlock: widget.moment.chapterLabel),
                 ],
@@ -354,6 +366,30 @@ class _MomentCardState extends State<_MomentCard> {
                                 size: 14,
                               ),
                             ),
+                            if (FanMedia.clip(
+                                  FanMedia.momentReel[widget.moment.id] ?? '',
+                                )
+                                case final reel?) ...[
+                              const SizedBox(height: 12),
+                              // The edit that shows it - behind the veil
+                              // with the rest of the spoiler.
+                              OutlinedButton.icon(
+                                key: ValueKey(
+                                  'moment-watch-${widget.moment.id}',
+                                ),
+                                onPressed: () => ClipPlayer.play(context, [
+                                  ClipItem.fan(reel),
+                                ]),
+                                icon: const Icon(Icons.play_arrow, size: 18),
+                                label: const Text('WATCH THE EDIT'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: world.ink,
+                                  side: BorderSide(
+                                    color: accent.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 12),
                             // The "why it lands" note.
                             Row(
@@ -412,7 +448,11 @@ class _MomentCardState extends State<_MomentCard> {
 /// Subtle drifting dusk/ash over a header image — Upside Down spores
 /// or warm dust, depending on depth. Static per [seed], fades with [depth].
 class _ArtDrift extends CustomPainter {
-  const _ArtDrift({required this.seed, required this.tint, required this.depth});
+  const _ArtDrift({
+    required this.seed,
+    required this.tint,
+    required this.depth,
+  });
 
   final int seed;
   final Color tint;
@@ -423,8 +463,7 @@ class _ArtDrift extends CustomPainter {
     if (depth <= 0.02 || size.isEmpty) return;
     final rng = math.Random(seed);
     final count = 14 + (seed % 8);
-    final paint = Paint()
-      ..color = tint.withValues(alpha: 0.05 * depth);
+    final paint = Paint()..color = tint.withValues(alpha: 0.05 * depth);
     for (var i = 0; i < count; i++) {
       final x = rng.nextDouble() * size.width;
       final y = rng.nextDouble() * size.height;
@@ -526,7 +565,11 @@ class _SpoilerVeilState extends State<_SpoilerVeil> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.visibility_off, size: 16, color: widget.accent),
+                      Icon(
+                        Icons.visibility_off,
+                        size: 16,
+                        color: widget.accent,
+                      ),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
@@ -630,7 +673,10 @@ class _VhsTuneInState extends State<_VhsTuneIn>
             Positioned.fill(
               child: IgnorePointer(
                 child: CustomPaint(
-                  painter: _VhsScanline(t: t, intensity: (1 - t).clamp(0.0, 1.0)),
+                  painter: _VhsScanline(
+                    t: t,
+                    intensity: (1 - t).clamp(0.0, 1.0),
+                  ),
                 ),
               ),
             ),
@@ -652,8 +698,11 @@ class _VhsScanline extends CustomPainter {
     if (intensity <= 0 || size.isEmpty) return;
     final rng = math.Random((t * 1000).floor());
     final scan = Paint()
-      ..color = Color.lerp(const Color(0xFFFF2D3C), const Color(0xFF29E6FF), 0.5)!
-          .withValues(alpha: 0.25 * intensity);
+      ..color = Color.lerp(
+        const Color(0xFFFF2D3C),
+        const Color(0xFF29E6FF),
+        0.5,
+      )!.withValues(alpha: 0.25 * intensity);
     for (var i = 0; i < 3; i++) {
       final y = rng.nextDouble() * size.height;
       canvas.drawRect(

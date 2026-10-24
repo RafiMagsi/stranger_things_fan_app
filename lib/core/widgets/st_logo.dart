@@ -32,21 +32,25 @@ class STLogo extends StatelessWidget {
     final barThickness = (size * 0.07).clamp(1.5, 5.0);
 
     Widget letter(String ch, double s, int i, int n) => Transform.translate(
-          offset: Offset((i - (n - 1) / 2) * spread * s * 0.75, 0),
-          child: Text(
-            ch,
-            style: AppText.neon(
-              size: s,
-              color: color,
-              glow: glow,
-              letterSpacing: 0.015,
-            ),
-          ),
-        );
+      offset: Offset((i - (n - 1) / 2) * spread * s * 0.75, 0),
+      child: Text(
+        ch,
+        style: AppText.neon(
+          size: s,
+          color: color,
+          glow: glow,
+          letterSpacing: 0.015,
+        ),
+      ),
+    );
 
     const top = 'STRANGER';
     const bottom = 'THINGS';
-    final bar = _Bar(color: color, opacity: bars * glow.clamp(0.0, 1.0), thickness: barThickness);
+    final bar = _Bar(
+      color: color,
+      opacity: bars * glow.clamp(0.0, 1.0),
+      thickness: barThickness,
+    );
 
     return Semantics(
       label: 'Stranger Things',
@@ -87,10 +91,20 @@ class STLogo extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(child: Padding(padding: EdgeInsets.only(right: size * 0.18), child: bar)),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(right: size * 0.18),
+                      child: bar,
+                    ),
+                  ),
                   for (var i = 0; i < bottom.length; i++)
                     letter(bottom[i], size, i, bottom.length),
-                  Expanded(child: Padding(padding: EdgeInsets.only(left: size * 0.18), child: bar)),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(left: size * 0.18),
+                      child: bar,
+                    ),
+                  ),
                 ],
               ),
             ],
@@ -122,8 +136,14 @@ class _Bar extends StatelessWidget {
           color: Color.lerp(color, Colors.white, 0.15),
           borderRadius: BorderRadius.circular(thickness),
           boxShadow: [
-            BoxShadow(color: color.withValues(alpha: 0.8), blurRadius: thickness * 3),
-            BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: thickness * 8),
+            BoxShadow(
+              color: color.withValues(alpha: 0.8),
+              blurRadius: thickness * 3,
+            ),
+            BoxShadow(
+              color: color.withValues(alpha: 0.4),
+              blurRadius: thickness * 8,
+            ),
           ],
         ),
       ),

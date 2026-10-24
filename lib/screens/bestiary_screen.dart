@@ -100,16 +100,16 @@ class _MonsterCardState extends ConsumerState<_MonsterCard>
               fit: StackFit.expand,
               children: [
                 // Upside Down ash drifting across the monster art.                  if (world.depth > 0.02)
-                  IgnorePointer(
-                    child: ParticleField(
-                      color: world.tint(m.accent),
-                      glowColor: world.accent,
-                      count: 30,
-                      baseRadius: 1.6,
-                      speed: 0.8 + world.depth * 0.4,
-                      opacity: 0.7,
-                    ),
+                IgnorePointer(
+                  child: ParticleField(
+                    color: world.tint(m.accent),
+                    glowColor: world.accent,
+                    count: 30,
+                    baseRadius: 1.6,
+                    speed: 0.8 + world.depth * 0.4,
+                    opacity: 0.7,
                   ),
+                ),
                 AnimatedBuilder(
                   animation: _scare,
                   // The art itself stays a static child; only the punch and
@@ -279,18 +279,20 @@ class _MonsterCardState extends ConsumerState<_MonsterCard>
                         ),
                       ),
                     ],
-                  ),                  ),
+                  ),
+                ),
               ],
             ),
           ),
           // Spore/pollen burst the instant the card settles into place.
           IgnorePointer(
             child: ParticleBurst(
-              controller: Tween<double>(begin: 0, end: 1)
-                  .animate(CurvedAnimation(
-                    parent: AlwaysStoppedAnimation(0.0 + (_scare.value / 1)),
-                    curve: Curves.easeOut,
-                  )),
+              controller: Tween<double>(begin: 0, end: 1).animate(
+                CurvedAnimation(
+                  parent: AlwaysStoppedAnimation(0.0 + (_scare.value / 1)),
+                  curve: Curves.easeOut,
+                ),
+              ),
               color: accent,
               count: 12,
             ),
@@ -300,4 +302,3 @@ class _MonsterCardState extends ConsumerState<_MonsterCard>
     );
   }
 }
-

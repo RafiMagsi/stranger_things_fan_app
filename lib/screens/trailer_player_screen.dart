@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
+import '../core/audio/sfx.dart';
+import '../core/media/app_video.dart';
 import '../core/media/youtube_embed.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
@@ -13,6 +15,7 @@ import '../core/widgets/rift_route.dart';
 import '../core/widgets/st_effects.dart';
 import '../core/widgets/st_scaffold.dart';
 import '../core/widgets/world_fx.dart';
+import '../data/fan_media.dart';
 import '../data/seasons.dart';
 import '../models/trailer.dart';
 
@@ -29,7 +32,8 @@ class TrailerPlayerScreen extends StatefulWidget {
   State<TrailerPlayerScreen> createState() => _TrailerPlayerScreenState();
 }
 
-class _TrailerPlayerScreenState extends State<TrailerPlayerScreen> {
+class _TrailerPlayerScreenState extends State<TrailerPlayerScreen>
+    with SoundtrackClaimMixin {
   late YoutubePlayerController _controller;
   StreamSubscription<YoutubePlayerValue>? _sub;
   Timer? _deadline;
@@ -113,6 +117,7 @@ class _TrailerPlayerScreenState extends State<TrailerPlayerScreen> {
     final t = widget.trailer;
     final season = Seasons.all[t.season - 1];
     final accent = world.tint(season.accent);
+    final cut = FanMedia.clip(FanMedia.trailerCut[t.youtubeId] ?? '');
     final others = [
       for (final s in Seasons.all)
         ...s.trailers.where((o) => o.youtubeId != t.youtubeId),
@@ -132,6 +137,11 @@ class _TrailerPlayerScreenState extends State<TrailerPlayerScreen> {
                 controller: _controller,
                 aspectRatio: 16 / 9,
               ),
+              // YouTube said no: the season's fan cut plays right here.
+              _ when cut != null => FanCutPlayer(
+                key: ValueKey(cut.slug),
+                clip: cut,
+              ),
               final failure => TrailerUnavailable(
                 failure: failure,
                 errorCode: _error == YoutubeError.none ? null : _error.code,
@@ -141,6 +151,17 @@ class _TrailerPlayerScreenState extends State<TrailerPlayerScreen> {
               ),
             },
           ),
+          if (_failure != null && cut != null) ...[
+            const SizedBox(height: 12),
+            _BlockedNote(
+              failure: _failure!,
+              errorCode: _error == YoutubeError.none ? null : _error.code,
+              cut: cut,
+              accent: accent,
+              onWatchOnYouTube: _openInYouTube,
+              onRetry: _retry,
+            ),
+          ],
           const SizedBox(height: 18),
           Text(
             'STRANGER THINGS ${t.season}',
@@ -160,7 +181,7 @@ class _TrailerPlayerScreenState extends State<TrailerPlayerScreen> {
               GlowBadge(text: season.setting, color: world.muted),
             ],
           ),
-          // The dead-channel panel already offers YouTube when it's showing.
+          // The dead-channel panel and the note offer YouTube themselves.
           if (_failure == null) ...[
             const SizedBox(height: 16),
             OutlinedButton.icon(
@@ -200,6 +221,78 @@ class _TrailerPlayerScreenState extends State<TrailerPlayerScreen> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Why the fan cut is playing instead, and the ways back to YouTube.
+class _BlockedNote extends StatelessWidget {
+  const _BlockedNote({
+    required this.failure,
+    required this.cut,
+    required this.accent,
+    required this.onWatchOnYouTube,
+    required this.onRetry,
+    this.errorCode,
+  });
+
+  final TrailerFailure failure;
+  final FanClip cut;
+  final Color accent;
+  final VoidCallback onWatchOnYouTube;
+  final VoidCallback onRetry;
+  final int? errorCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final world = WorldPalette.of(context);
+    return NeonCard(
+      glow: accent,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.tv_off, size: 18, color: accent),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${failure.title} · PLAYING THE FAN CUT',
+                  style: AppText.headline(
+                    world.ink,
+                    size: 13.5,
+                    letterSpacing: 0.08,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${failure.message}${errorCode == null ? '' : ' (error $errorCode)'} '
+            'Meanwhile: "${cut.title}", ${cut.creator == null ? 'a fan edit' : 'fan edit by ${cut.creator}'}, from the Reel.',
+            style: AppText.body(world.muted, size: 12),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 4,
+            children: [
+              TextButton.icon(
+                key: const ValueKey('trailer-watch-on-youtube'),
+                onPressed: onWatchOnYouTube,
+                icon: const Icon(Icons.open_in_new, size: 16),
+                label: const Text('WATCH ON YOUTUBE'),
+              ),
+              TextButton(
+                key: const ValueKey('trailer-retry'),
+                onPressed: onRetry,
+                child: const Text('TRY YOUTUBE AGAIN'),
+              ),
+            ],
+          ),
         ],
       ),
     );

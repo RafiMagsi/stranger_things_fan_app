@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../core/audio/sfx.dart';
+import '../core/state/app_state.dart';
 
 import '../core/theme/text_styles.dart';
 import '../core/theme/world_palette.dart';
@@ -13,10 +17,30 @@ import 'watch_screen.dart';
 typedef _Tab = ({String label, IconData icon, IconData active, String key});
 
 const List<_Tab> _tabs = [
-  (label: 'HOME', icon: Icons.home_outlined, active: Icons.home, key: 'nav-home'),
-  (label: 'EXPLORE', icon: Icons.explore_outlined, active: Icons.explore, key: 'nav-explore'),
-  (label: 'WATCH', icon: Icons.play_circle_outline, active: Icons.play_circle, key: 'nav-watch'),
-  (label: 'UPSIDE DOWN', icon: Icons.flip_outlined, active: Icons.flip, key: 'nav-upside-down'),
+  (
+    label: 'HOME',
+    icon: Icons.home_outlined,
+    active: Icons.home,
+    key: 'nav-home',
+  ),
+  (
+    label: 'EXPLORE',
+    icon: Icons.explore_outlined,
+    active: Icons.explore,
+    key: 'nav-explore',
+  ),
+  (
+    label: 'WATCH',
+    icon: Icons.play_circle_outline,
+    active: Icons.play_circle,
+    key: 'nav-watch',
+  ),
+  (
+    label: 'UPSIDE DOWN',
+    icon: Icons.flip_outlined,
+    active: Icons.flip,
+    key: 'nav-upside-down',
+  ),
   (label: 'MORE', icon: Icons.menu, active: Icons.menu_open, key: 'nav-more'),
 ];
 
@@ -24,18 +48,38 @@ const List<_Tab> _tabs = [
 /// screen. Tabs are built the first time they're visited and then kept, so
 /// each keeps its scroll position; the ones you can't see stop animating.
 /// Back on any other tab returns Home before it leaves the app.
-class MainShell extends StatefulWidget {
+///
+/// While it's up, Running Up That Hill plays under everything - drowned
+/// and slowed when you cross into the Upside Down.
+class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key, this.initialTab = 0});
 
   final int initialTab;
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  ConsumerState<MainShell> createState() => _MainShellState();
 }
 
-class _MainShellState extends State<MainShell> {
+class _MainShellState extends ConsumerState<MainShell>
+    with SingleTickerProviderStateMixin {
   late int _tab = widget.initialTab;
   late final Set<int> _visited = {_tab};
+
+  // The tab you switch to fades up into place (opacity only paints a layer
+  // while it runs).
+  late final AnimationController _enter = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 260),
+    value: 1,
+  );
+  late final Animation<double> _fade = CurvedAnimation(
+    parent: _enter,
+    curve: Curves.easeOut,
+  );
+  late final Animation<Offset> _rise = Tween(
+    begin: const Offset(0, 0.015),
+    end: Offset.zero,
+  ).animate(_fade);
 
   Widget _page(int i) => switch (i) {
     0 => const HomeScreen(),
@@ -52,10 +96,23 @@ class _MainShellState extends State<MainShell> {
       _tab = i;
       _visited.add(i);
     });
+    if (!MediaQuery.disableAnimationsOf(context)) _enter.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    Soundtrack.setAmbient(null);
+    _enter.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    Soundtrack.setAmbient(
+      ref.watch(worldModeProvider)
+          ? Soundtrack.hillUpsideDown
+          : Soundtrack.hill,
+    );
     return PopScope(
       canPop: _tab == 0,
       onPopInvokedWithResult: (didPop, _) {
@@ -68,7 +125,17 @@ class _MainShellState extends State<MainShell> {
             for (var i = 0; i < _tabs.length; i++)
               TickerMode(
                 enabled: i == _tab,
-                child: _visited.contains(i) ? _page(i) : const SizedBox.shrink(),
+                child: FadeTransition(
+                  opacity: i == _tab ? _fade : const AlwaysStoppedAnimation(1),
+                  child: SlideTransition(
+                    position: i == _tab
+                        ? _rise
+                        : const AlwaysStoppedAnimation(Offset.zero),
+                    child: _visited.contains(i)
+                        ? _page(i)
+                        : const SizedBox.shrink(),
+                  ),
+                ),
               ),
           ],
         ),
@@ -92,9 +159,15 @@ class NeonNavBar extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Color.lerp(world.bg, Colors.black, 0.45),
-        border: Border(top: BorderSide(color: world.accent.withValues(alpha: 0.35))),
+        border: Border(
+          top: BorderSide(color: world.accent.withValues(alpha: 0.35)),
+        ),
         boxShadow: [
-          BoxShadow(color: world.accent.withValues(alpha: 0.18), blurRadius: 18, offset: const Offset(0, -4)),
+          BoxShadow(
+            color: world.accent.withValues(alpha: 0.18),
+            blurRadius: 18,
+            offset: const Offset(0, -4),
+          ),
         ],
       ),
       child: SafeArea(
@@ -120,7 +193,11 @@ class NeonNavBar extends StatelessWidget {
 }
 
 class _NavItem extends StatelessWidget {
-  const _NavItem({required this.tab, required this.selected, required this.onTap});
+  const _NavItem({
+    required this.tab,
+    required this.selected,
+    required this.onTap,
+  });
 
   final _Tab tab;
   final bool selected;
@@ -160,7 +237,9 @@ class _NavItem extends StatelessWidget {
               selected ? tab.active : tab.icon,
               size: 23,
               color: color,
-              shadows: selected ? [Shadow(color: world.accent, blurRadius: 12)] : null,
+              shadows: selected
+                  ? [Shadow(color: world.accent, blurRadius: 12)]
+                  : null,
             ),
             const SizedBox(height: 3),
             Text(
@@ -168,7 +247,12 @@ class _NavItem extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.fade,
               softWrap: false,
-              style: AppText.headline(color, size: 9.5, weight: selected ? 600 : 500, letterSpacing: 0.1),
+              style: AppText.headline(
+                color,
+                size: 9.5,
+                weight: selected ? 600 : 500,
+                letterSpacing: 0.1,
+              ),
             ),
           ],
         ),

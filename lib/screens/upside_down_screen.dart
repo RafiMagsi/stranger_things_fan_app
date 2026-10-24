@@ -45,7 +45,8 @@ class UpsideDownScreen extends ConsumerWidget {
     final inside = ref.watch(worldModeProvider);
     final shield = ref.watch(settingsProvider).spoilerShield;
     final watched = ref.watch(watchProgressProvider);
-    void open(Widget page, String name) => RiftPageRoute.push(context, page, name: name);
+    void open(Widget page, String name) =>
+        RiftPageRoute.push(context, page, name: name);
 
     return STScaffold(
       title: 'THE UPSIDE DOWN',
@@ -91,7 +92,9 @@ class UpsideDownScreen extends ConsumerWidget {
                     title: 'HIVE MIND',
                     body: 'One will, many bodies',
                     onTap: () => open(
-                      CharacterDetailScreen(character: cast_data.Cast.mindFlayer),
+                      CharacterDetailScreen(
+                        character: cast_data.Cast.mindFlayer,
+                      ),
                       '/character/mind_flayer',
                     ),
                   ),
@@ -101,13 +104,18 @@ class UpsideDownScreen extends ConsumerWidget {
           ),
 
           const SectionHeader(title: 'A Mirror World'),
-          const Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: _MirrorCard()),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: _MirrorCard(),
+          ),
 
           SectionHeader(
             title: 'Active Gateways',
             trailing: Text(
               '${Gateways.all.where((g) => g.status == GateStatus.open).length} OPEN',
-              style: AppText.label(world.tint(AppColors.stRed)).copyWith(fontSize: 11),
+              style: AppText.label(
+                world.tint(AppColors.stRed),
+              ).copyWith(fontSize: 11),
             ),
           ),
           for (final (i, g) in Gateways.all.indexed)
@@ -117,9 +125,13 @@ class UpsideDownScreen extends ConsumerWidget {
                 index: i,
                 child: _GatewayCard(
                   gate: g,
-                  hidden: shield && Seasons.isAhead(g.season, g.episode, watched),
+                  hidden:
+                      shield && Seasons.isAhead(g.season, g.episode, watched),
                   onTap: () => open(
-                    SeasonDetailScreen(season: Seasons.all[g.season - 1], focusEpisode: g.episode),
+                    SeasonDetailScreen(
+                      season: Seasons.all[g.season - 1],
+                      focusEpisode: g.episode,
+                    ),
                     '/season/${g.season}',
                   ),
                 ),
@@ -127,14 +139,20 @@ class UpsideDownScreen extends ConsumerWidget {
             ),
 
           const SectionHeader(title: 'Survival Tips'),
-          const Padding(padding: EdgeInsets.symmetric(horizontal: 20), child: _SurvivalCard()),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: _SurvivalCard(),
+          ),
 
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             child: OutlinedButton.icon(
               key: const ValueKey('ud-cross'),
               onPressed: () => crossOver(context, ref),
-              icon: Icon(inside ? Icons.wb_sunny_outlined : Icons.flip, size: 18),
+              icon: Icon(
+                inside ? Icons.wb_sunny_outlined : Icons.flip,
+                size: 18,
+              ),
               label: Text(inside ? 'RETURN TO HAWKINS' : 'CROSS OVER'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: world.ink,
@@ -152,7 +170,11 @@ class UpsideDownScreen extends ConsumerWidget {
 /// "You are entering the Upside Down": the red sky over the mirror town,
 /// a portal breathing in the corner, and the two ways through.
 class _PortalHero extends StatelessWidget {
-  const _PortalHero({required this.inside, required this.onEnter, required this.onCross});
+  const _PortalHero({
+    required this.inside,
+    required this.onEnter,
+    required this.onCross,
+  });
 
   final bool inside;
   final VoidCallback onEnter;
@@ -184,7 +206,11 @@ class _PortalHero extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0x1A000000), Color(0x59000000), Color(0xF0000000)],
+                  colors: [
+                    Color(0x1A000000),
+                    Color(0x59000000),
+                    Color(0xF0000000),
+                  ],
                   stops: [0, 0.45, 1],
                 ),
               ),
@@ -205,20 +231,39 @@ class _PortalHero extends StatelessWidget {
                 children: [
                   Text(
                     inside ? 'YOU ARE NOW IN' : 'YOU ARE ENTERING',
-                    style: AppText.headline(Colors.white, size: 15, weight: 500, letterSpacing: 0.14),
+                    style: AppText.headline(
+                      Colors.white,
+                      size: 15,
+                      weight: 500,
+                      letterSpacing: 0.14,
+                    ),
                   ),
                   Text(
                     'THE UPSIDE DOWN',
-                    style: AppText.headline(Colors.white, size: 34, weight: 700, letterSpacing: 0.04).copyWith(
-                      shadows: [Shadow(color: red.withValues(alpha: 0.8), blurRadius: 18)],
-                    ),
+                    style:
+                        AppText.headline(
+                          Colors.white,
+                          size: 34,
+                          weight: 700,
+                          letterSpacing: 0.04,
+                        ).copyWith(
+                          shadows: [
+                            Shadow(
+                              color: red.withValues(alpha: 0.8),
+                              blurRadius: 18,
+                            ),
+                          ],
+                        ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     inside
                         ? 'Reality flipped. The world here is alive - and it\'s watching.'
                         : 'A dimension colder. Darker. Alive.',
-                    style: AppText.body(Colors.white.withValues(alpha: 0.82), size: 13),
+                    style: AppText.body(
+                      Colors.white.withValues(alpha: 0.82),
+                      size: 13,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
@@ -230,7 +275,10 @@ class _PortalHero extends StatelessWidget {
                         onPressed: onEnter,
                         icon: const Icon(Icons.blur_circular, size: 18),
                         label: const Text('ENTER THE GATE'),
-                        style: FilledButton.styleFrom(backgroundColor: AppColors.stRed, foregroundColor: Colors.white),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.stRed,
+                          foregroundColor: Colors.white,
+                        ),
                       ),
                       OutlinedButton(
                         onPressed: onCross,
@@ -262,8 +310,12 @@ class PortalRing extends StatefulWidget {
   State<PortalRing> createState() => _PortalRingState();
 }
 
-class _PortalRingState extends State<PortalRing> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(seconds: 6));
+class _PortalRingState extends State<PortalRing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 6),
+  );
 
   @override
   void didChangeDependencies() {
@@ -287,7 +339,9 @@ class _PortalRingState extends State<PortalRing> with SingleTickerProviderStateM
       child: RepaintBoundary(
         child: AnimatedBuilder(
           animation: _c,
-          builder: (context, _) => CustomPaint(painter: _RingPainter(t: _c.value, color: widget.color)),
+          builder: (context, _) => CustomPaint(
+            painter: _RingPainter(t: _c.value, color: widget.color),
+          ),
         ),
       ),
     );
@@ -310,7 +364,11 @@ class _RingPainter extends CustomPainter {
       r * 0.55,
       Paint()
         ..shader = RadialGradient(
-          colors: [Colors.black, color.withValues(alpha: 0.25), Colors.transparent],
+          colors: [
+            Colors.black,
+            color.withValues(alpha: 0.25),
+            Colors.transparent,
+          ],
           stops: const [0.3, 0.8, 1],
         ).createShader(Rect.fromCircle(center: c, radius: r * 0.55)),
     );
@@ -320,13 +378,17 @@ class _RingPainter extends CustomPainter {
       final path = Path();
       for (var k = 0; k <= 72; k++) {
         final a = k / 72 * math.pi * 2;
-        final wobble = 1 + 0.06 * math.sin(a * 5 + phase) + 0.03 * math.sin(a * 9 - phase * 2);
+        final wobble =
+            1 +
+            0.06 * math.sin(a * 5 + phase) +
+            0.03 * math.sin(a * 9 - phase * 2);
         final rr = r * (0.42 + i * 0.14) * wobble;
         final p = c + Offset(math.cos(a), math.sin(a)) * rr;
         k == 0 ? path.moveTo(p.dx, p.dy) : path.lineTo(p.dx, p.dy);
       }
       path.close();
-      final alpha = (0.85 - i * 0.18) * (0.75 + 0.25 * math.sin(t * math.pi * 2 + i));
+      final alpha =
+          (0.85 - i * 0.18) * (0.75 + 0.25 * math.sin(t * math.pi * 2 + i));
       canvas.drawPath(
         path,
         Paint()
@@ -340,7 +402,11 @@ class _RingPainter extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.1
-          ..color = Color.lerp(color, Colors.white, 0.3)!.withValues(alpha: alpha),
+          ..color = Color.lerp(
+            color,
+            Colors.white,
+            0.3,
+          )!.withValues(alpha: alpha),
       );
     }
   }
@@ -350,7 +416,12 @@ class _RingPainter extends CustomPainter {
 }
 
 class _HubButton extends StatelessWidget {
-  const _HubButton({required this.icon, required this.title, required this.body, required this.onTap});
+  const _HubButton({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String title;
@@ -373,12 +444,18 @@ class _HubButton extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: red.withValues(alpha: 0.8)),
-              boxShadow: [BoxShadow(color: red.withValues(alpha: 0.35), blurRadius: 12)],
+              boxShadow: [
+                BoxShadow(color: red.withValues(alpha: 0.35), blurRadius: 12),
+              ],
             ),
             child: Icon(icon, color: red, size: 22),
           ),
           const SizedBox(height: 8),
-          Text(title, maxLines: 1, style: AppText.headline(world.ink, size: 13, letterSpacing: 0.08)),
+          Text(
+            title,
+            maxLines: 1,
+            style: AppText.headline(world.ink, size: 13, letterSpacing: 0.08),
+          ),
           const SizedBox(height: 2),
           Text(
             body,
@@ -397,9 +474,21 @@ class _MirrorCard extends StatelessWidget {
   const _MirrorCard();
 
   static const _facts = [
-    (Icons.coronavirus_outlined, 'INFECTED', 'Vines on every wall, spores in the air, no light but lightning.'),
-    (Icons.hub_outlined, 'HIVE MIND', 'Every creature is wired to one will - the Mind Flayer\'s, and behind it, Vecna\'s.'),
-    (Icons.hourglass_empty, 'FROZEN', 'It\'s stuck on November 6, 1983: the night Will vanished.'),
+    (
+      Icons.coronavirus_outlined,
+      'INFECTED',
+      'Vines on every wall, spores in the air, no light but lightning.',
+    ),
+    (
+      Icons.hub_outlined,
+      'HIVE MIND',
+      'Every creature is wired to one will - the Mind Flayer\'s, and behind it, Vecna\'s.',
+    ),
+    (
+      Icons.hourglass_empty,
+      'FROZEN',
+      'It\'s stuck on November 6, 1983: the night Will vanished.',
+    ),
   ];
 
   @override
@@ -427,7 +516,9 @@ class _MirrorCard extends StatelessWidget {
                     height: 2,
                     decoration: BoxDecoration(
                       color: red,
-                      boxShadow: [BoxShadow(color: red, blurRadius: 14, spreadRadius: 1)],
+                      boxShadow: [
+                        BoxShadow(color: red, blurRadius: 14, spreadRadius: 1),
+                      ],
                     ),
                   ),
                 ),
@@ -436,9 +527,16 @@ class _MirrorCard extends StatelessWidget {
                   bottom: 12,
                   child: Text(
                     'IT IS ALWAYS WATCHING.',
-                    style: AppText.headline(Colors.white, size: 18, letterSpacing: 0.1).copyWith(
-                      shadows: const [Shadow(color: Colors.black, blurRadius: 10)],
-                    ),
+                    style:
+                        AppText.headline(
+                          Colors.white,
+                          size: 18,
+                          letterSpacing: 0.1,
+                        ).copyWith(
+                          shadows: const [
+                            Shadow(color: Colors.black, blurRadius: 10),
+                          ],
+                        ),
                   ),
                 ),
               ],
@@ -450,20 +548,40 @@ class _MirrorCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 for (final (i, (icon, title, body)) in _facts.indexed) ...[
-                  if (i > 0) Container(width: 1, height: 88, color: red.withValues(alpha: 0.25)),
+                  if (i > 0)
+                    Container(
+                      width: 1,
+                      height: 88,
+                      color: red.withValues(alpha: 0.25),
+                    ),
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Column(
                         children: [
-                          Icon(icon, color: red, size: 24, shadows: [Shadow(color: red, blurRadius: 10)]),
+                          Icon(
+                            icon,
+                            color: red,
+                            size: 24,
+                            shadows: [Shadow(color: red, blurRadius: 10)],
+                          ),
                           const SizedBox(height: 6),
-                          Text(title, style: AppText.headline(world.ink, size: 12.5, letterSpacing: 0.1)),
+                          Text(
+                            title,
+                            style: AppText.headline(
+                              world.ink,
+                              size: 12.5,
+                              letterSpacing: 0.1,
+                            ),
+                          ),
                           const SizedBox(height: 4),
                           Text(
                             body,
                             textAlign: TextAlign.center,
-                            style: AppText.body(world.muted, size: 10.5).copyWith(height: 1.3),
+                            style: AppText.body(
+                              world.muted,
+                              size: 10.5,
+                            ).copyWith(height: 1.3),
                           ),
                         ],
                       ),
@@ -480,7 +598,11 @@ class _MirrorCard extends StatelessWidget {
 }
 
 class _GatewayCard extends StatelessWidget {
-  const _GatewayCard({required this.gate, required this.hidden, required this.onTap});
+  const _GatewayCard({
+    required this.gate,
+    required this.hidden,
+    required this.onTap,
+  });
 
   final Gateway gate;
 
@@ -504,7 +626,10 @@ class _GatewayCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _StatusLight(color: statusColor, live: gate.status == GateStatus.open),
+          _StatusLight(
+            color: statusColor,
+            live: gate.status == GateStatus.open,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -513,9 +638,19 @@ class _GatewayCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(gate.name.toUpperCase(), style: AppText.headline(world.ink, size: 16, letterSpacing: 0.06)),
+                      child: Text(
+                        gate.name.toUpperCase(),
+                        style: AppText.headline(
+                          world.ink,
+                          size: 16,
+                          letterSpacing: 0.06,
+                        ),
+                      ),
                     ),
-                    Text(gate.status.label, style: AppText.label(statusColor).copyWith(fontSize: 10)),
+                    Text(
+                      gate.status.label,
+                      style: AppText.label(statusColor).copyWith(fontSize: 10),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -553,8 +688,12 @@ class _StatusLight extends StatefulWidget {
   State<_StatusLight> createState() => _StatusLightState();
 }
 
-class _StatusLightState extends State<_StatusLight> with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400));
+class _StatusLightState extends State<_StatusLight>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  );
 
   @override
   void didChangeDependencies() {
@@ -587,7 +726,14 @@ class _StatusLightState extends State<_StatusLight> with SingleTickerProviderSta
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: widget.color,
-              boxShadow: [if (widget.live) BoxShadow(color: widget.color.withValues(alpha: glow), blurRadius: 10, spreadRadius: 1)],
+              boxShadow: [
+                if (widget.live)
+                  BoxShadow(
+                    color: widget.color.withValues(alpha: glow),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+              ],
             ),
           );
         },
@@ -600,10 +746,22 @@ class _SurvivalCard extends StatelessWidget {
   const _SurvivalCard();
 
   static const _tips = [
-    (Icons.flashlight_on, 'When the lights flicker, it\'s close. Carry a flashlight.'),
-    (Icons.water_drop, 'Don\'t bleed. The Demogorgon smells blood across worlds.'),
-    (Icons.local_fire_department, 'Heat drives it out: fire burned the Mind Flayer out of Will.'),
-    (Icons.headphones, 'If you hear the clock, put your song on. Music pulled Max back.'),
+    (
+      Icons.flashlight_on,
+      'When the lights flicker, it\'s close. Carry a flashlight.',
+    ),
+    (
+      Icons.water_drop,
+      'Don\'t bleed. The Demogorgon smells blood across worlds.',
+    ),
+    (
+      Icons.local_fire_department,
+      'Heat drives it out: fire burned the Mind Flayer out of Will.',
+    ),
+    (
+      Icons.headphones,
+      'If you hear the clock, put your song on. Music pulled Max back.',
+    ),
   ];
 
   @override
@@ -638,7 +796,15 @@ class _SurvivalCard extends StatelessWidget {
                 children: [
                   Icon(icon, size: 18, color: world.muted),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(tip, style: AppText.body(world.ink.withValues(alpha: 0.85), size: 13))),
+                  Expanded(
+                    child: Text(
+                      tip,
+                      style: AppText.body(
+                        world.ink.withValues(alpha: 0.85),
+                        size: 13,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

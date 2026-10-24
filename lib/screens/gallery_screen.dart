@@ -54,7 +54,9 @@ class GalleryScreen extends StatelessWidget {
                     Expanded(
                       child: AspectRatio(
                         // A pair shares the taller piece's shape.
-                        aspectRatio: row.map((x) => x.aspect).reduce((p, q) => p < q ? p : q),
+                        aspectRatio: row
+                            .map((x) => x.aspect)
+                            .reduce((p, q) => p < q ? p : q),
                         child: _ArtCard(
                           art: a,
                           onTap: () => _open(context, FanMedia.art.indexOf(a)),
@@ -83,7 +85,8 @@ class GalleryScreen extends StatelessWidget {
         barrierColor: Colors.black,
         transitionDuration: const Duration(milliseconds: 320),
         pageBuilder: (_, _, _) => _Viewer(start: index),
-        transitionsBuilder: (_, a, _, child) => FadeTransition(opacity: a, child: child),
+        transitionsBuilder: (_, a, _, child) =>
+            FadeTransition(opacity: a, child: child),
       ),
     );
   }
@@ -139,7 +142,11 @@ class _ArtCard extends StatelessWidget {
                   art.title.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppText.headline(Colors.white, size: 13.5, letterSpacing: 0.05),
+                  style: AppText.headline(
+                    Colors.white,
+                    size: 13.5,
+                    letterSpacing: 0.05,
+                  ),
                 ),
                 Text(
                   art.artist ?? 'Fan art',
@@ -224,7 +231,9 @@ class _ViewerState extends State<_Viewer> {
                       padding: const EdgeInsets.only(right: 16),
                       child: Text(
                         '${_index + 1} / ${FanMedia.art.length}',
-                        style: AppText.label(Colors.white70).copyWith(fontSize: 11),
+                        style: AppText.label(
+                          Colors.white70,
+                        ).copyWith(fontSize: 11),
                       ),
                     ),
                   ],
@@ -250,7 +259,10 @@ class _ViewerState extends State<_Viewer> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(art.title.toUpperCase(), style: AppText.headline(Colors.white, size: 20)),
+                        Text(
+                          art.title.toUpperCase(),
+                          style: AppText.headline(Colors.white, size: 20),
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           '${art.credit} · personal fan-media pack',

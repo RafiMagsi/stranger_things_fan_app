@@ -165,7 +165,9 @@ class _GateWindP extends CustomPainter {
         Offset(x, y),
         r,
         Paint()
-          ..color = color.withValues(alpha: (0.15 + rng.nextDouble() * 0.3) * alpha)
+          ..color = color.withValues(
+            alpha: (0.15 + rng.nextDouble() * 0.3) * alpha,
+          )
           ..maskFilter = MaskFilter.blur(BlurStyle.normal, 6),
       );
     }
@@ -173,5 +175,8 @@ class _GateWindP extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _GateWindP o) =>
-      o.p != p || o.color != color || o.seed != seed || o.openPercent != openPercent;
+      o.p != p ||
+      o.color != color ||
+      o.seed != seed ||
+      o.openPercent != openPercent;
 }

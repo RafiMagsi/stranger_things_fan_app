@@ -71,12 +71,18 @@ class SeasonArt extends StatelessWidget {
             iconSize: 130,
             // With a Gate on the right, park the motif up and left, away
             // from both the tear and the title text below.
-            iconAlignment: hasGate ? const Alignment(-0.7, -0.6) : const Alignment(0.8, -0.2),
+            iconAlignment: hasGate
+                ? const Alignment(-0.7, -0.6)
+                : const Alignment(0.8, -0.2),
           ),
           if (hasGate)
             Opacity(
               opacity: 0.9,
-              child: GateArt(color: season.accent, seed: season.number * 11, animate: animate),
+              child: GateArt(
+                color: season.accent,
+                seed: season.number * 11,
+                animate: animate,
+              ),
             ),
         ],
       ),
@@ -149,7 +155,12 @@ class EventArt extends StatelessWidget {
   Widget build(BuildContext context) {
     final asset = MediaCredits.photo(photo);
     if (asset == null) {
-      return KeyArt(accent: accent, icon: icon, iconSize: 90, iconAlignment: const Alignment(0.8, 0));
+      return KeyArt(
+        accent: accent,
+        icon: icon,
+        iconSize: 90,
+        iconAlignment: const Alignment(0.8, 0),
+      );
     }
     final world = WorldPalette.of(context);
     return WorldGrade(
@@ -188,7 +199,11 @@ class CastMosaic extends StatelessWidget {
             child: Row(
               children: [
                 for (var col = 0; col < 2; col++)
-                  Expanded(child: cell(characters[(row * 2 + col) % characters.length])),
+                  Expanded(
+                    child: cell(
+                      characters[(row * 2 + col) % characters.length],
+                    ),
+                  ),
               ],
             ),
           ),
@@ -199,7 +214,11 @@ class CastMosaic extends StatelessWidget {
 
 /// A chapter's still if it has one, else its season's key art.
 class SeasonOrEventArt extends StatelessWidget {
-  const SeasonOrEventArt({super.key, required this.season, required this.photo});
+  const SeasonOrEventArt({
+    super.key,
+    required this.season,
+    required this.photo,
+  });
 
   final Season season;
   final String? photo;

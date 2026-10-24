@@ -32,7 +32,9 @@ class SeasonsScreen extends ConsumerWidget {
         itemBuilder: (context, i) {
           final s = Seasons.all[i];
           final tag = 'season-list-${s.number}';
-          final done = s.episodes.where((e) => watched.contains(s.keyFor(e))).length;
+          final done = s.episodes
+              .where((e) => watched.contains(s.keyFor(e)))
+              .length;
           return Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: FlickerIn(
@@ -82,14 +84,22 @@ class _SeasonCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            STHero(tag: heroTag, radius: 22, child: SeasonArt(season: s)),
+            STHero(
+              tag: heroTag,
+              radius: 22,
+              child: SeasonArt(season: s),
+            ),
             // Dark end on the left, under the text.
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.centerRight,
                   end: Alignment.centerLeft,
-                  colors: [Color(0x11000000), Color(0x99000000), Color(0xF0000000)],
+                  colors: [
+                    Color(0x11000000),
+                    Color(0x99000000),
+                    Color(0xF0000000),
+                  ],
                   stops: [0, 0.45, 1],
                 ),
               ),
@@ -97,7 +107,10 @@ class _SeasonCard extends StatelessWidget {
             Positioned(
               right: 16,
               top: 6,
-              child: Text('${s.number}', style: AppText.neon(size: 96, color: accent)),
+              child: Text(
+                '${s.number}',
+                style: AppText.neon(size: 96, color: accent),
+              ),
             ),
             Positioned(
               left: 18,
@@ -107,7 +120,10 @@ class _SeasonCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('SEASON ${s.number}', style: AppText.chapter(accent, size: 13)),
+                  Text(
+                    'SEASON ${s.number}',
+                    style: AppText.chapter(accent, size: 13),
+                  ),
                   const SizedBox(height: 6),
                   Text(
                     s.tagline,
@@ -121,7 +137,11 @@ class _SeasonCard extends StatelessWidget {
                     runSpacing: 6,
                     children: [
                       GlowBadge(text: s.setting, color: Colors.white70),
-                      GlowBadge(text: s.threat, color: AppColors.hawkinsGold, icon: Icons.warning_amber),
+                      GlowBadge(
+                        text: s.threat,
+                        color: AppColors.hawkinsGold,
+                        icon: Icons.warning_amber,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -134,14 +154,18 @@ class _SeasonCard extends StatelessWidget {
                             value: watched / s.episodes.length,
                             minHeight: 3,
                             color: accent,
-                            backgroundColor: Colors.white.withValues(alpha: 0.15),
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.15,
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 10),
                       Text(
                         '$watched/${s.episodes.length}',
-                        style: AppText.label(Colors.white70).copyWith(fontSize: 10.5),
+                        style: AppText.label(
+                          Colors.white70,
+                        ).copyWith(fontSize: 10.5),
                       ),
                     ],
                   ),

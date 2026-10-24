@@ -8,6 +8,8 @@ import '../theme/world_palette.dart';
 import 'neon_card.dart';
 import 'st_effects.dart';
 import 'world_fx.dart';
+import 'glow.dart';
+import 'world_scenery.dart';
 import 'world_toggle.dart';
 
 /// Widest the readable content gets on tablets and desktop.
@@ -53,12 +55,19 @@ class STScaffold extends StatelessWidget {
               delay: const Duration(milliseconds: 250),
               builder: (context, glow) => Text(
                 title,
-                style: AppText.headline(world.ink, size: 24, letterSpacing: 0.1).copyWith(
-                  shadows: [
-                    Shadow(color: world.accent.withValues(alpha: 0.8 * glow), blurRadius: 8),
-                    Shadow(color: world.accent.withValues(alpha: 0.5 * glow), blurRadius: 22),
-                  ],
-                ),
+                style: AppText.headline(world.ink, size: 24, letterSpacing: 0.1)
+                    .copyWith(
+                      shadows: [
+                        Shadow(
+                          color: world.accent.withValues(alpha: 0.8 * glow),
+                          blurRadius: 8,
+                        ),
+                        Shadow(
+                          color: world.accent.withValues(alpha: 0.5 * glow),
+                          blurRadius: 22,
+                        ),
+                      ],
+                    ),
               ),
             ),
             if (subtitle != null) ...[
@@ -112,7 +121,10 @@ class STScaffold extends StatelessWidget {
 /// every few seconds, and vines crawling in from the corners. The two skies
 /// crossfade with [WorldPalette.depth], so the storm rolls in as you flip.
 class WorldAtmosphere extends StatefulWidget {
-  const WorldAtmosphere({super.key});
+  const WorldAtmosphere({super.key, this.moon = true});
+
+  /// Off where the screen's own banner already hangs a moon.
+  final bool moon;
 
   @override
   State<WorldAtmosphere> createState() => _WorldAtmosphereState();
@@ -153,10 +165,20 @@ class _WorldAtmosphereState extends State<WorldAtmosphere>
           RepaintBoundary(
             child: AnimatedBuilder(
               animation: _c,
-              builder: (context, _) => CustomPaint(
-                painter: _SkyPainter(t: _c.value, depth: world.depth),
-                size: Size.infinite,
-              ),
+              builder: (context, _) {
+                // 30 fps is plenty for drifting fog; it halves the work.
+                final t = steppedValue(_c.value, _c.duration!);
+                return CustomPaint(
+                  painter: _SkyPainter(t: t, depth: world.depth),
+                  // The town itself, in whichever world you're in.
+                  foregroundPainter: WorldSceneryPainter(
+                    t: t,
+                    depth: world.depth,
+                    moon: widget.moon,
+                  ),
+                  size: Size.infinite,
+                );
+              },
             ),
           ),
           VineOverlay(grow: Curves.easeOut.transform(world.depth)),
@@ -172,18 +194,7 @@ class _SkyPainter extends CustomPainter {
   final double t;
   final double depth;
 
-  /// Distant lightning: a strong double flicker, and a weaker one earlier.
-  double get _flash {
-    double spike(double at, double width) {
-      final d = (t - at).abs();
-      return d < width ? 1 - d / width : 0;
-    }
-
-    return math.max(
-      math.max(spike(0.705, 0.012), spike(0.735, 0.008)),
-      0.45 * spike(0.31, 0.01),
-    );
-  }
+  double get _flash => skyFlash(t);
 
   void _glow(Canvas canvas, Offset c, double r, Color color) {
     canvas.drawCircle(

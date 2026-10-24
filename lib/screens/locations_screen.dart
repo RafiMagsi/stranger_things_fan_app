@@ -24,7 +24,10 @@ class LocationsScreen extends StatelessWidget {
         itemCount: Locations.all.length,
         itemBuilder: (context, i) => Padding(
           padding: const EdgeInsets.only(bottom: 14),
-          child: FlickerIn(index: i, child: _LocationCard(loc: Locations.all[i])),
+          child: FlickerIn(
+            index: i,
+            child: _LocationCard(loc: Locations.all[i]),
+          ),
         ),
       ),
     );
@@ -73,9 +76,19 @@ class _LocationCard extends StatelessWidget {
                     spacing: 6,
                     children: [
                       if (loc.upsideDown)
-                        const GlowBadge(text: 'Upside Down', color: AppColors.udGlow, icon: Icons.blur_on, onImage: true),
+                        const GlowBadge(
+                          text: 'Upside Down',
+                          color: AppColors.udGlow,
+                          icon: Icons.blur_on,
+                          onImage: true,
+                        ),
                       if (photo != null)
-                        const GlowBadge(text: 'Real location', color: Colors.white, icon: Icons.photo_camera, onImage: true),
+                        const GlowBadge(
+                          text: 'Real location',
+                          color: Colors.white,
+                          icon: Icons.photo_camera,
+                          onImage: true,
+                        ),
                     ],
                   ),
                 ),
@@ -84,7 +97,12 @@ class _LocationCard extends StatelessWidget {
                   Positioned(
                     right: 14,
                     bottom: 10,
-                    child: Icon(loc.icon, color: accent, size: 26, shadows: [Shadow(color: accent, blurRadius: 12)]),
+                    child: Icon(
+                      loc.icon,
+                      color: accent,
+                      size: 26,
+                      shadows: [Shadow(color: accent, blurRadius: 12)],
+                    ),
                   ),
               ],
             ),
@@ -94,13 +112,19 @@ class _LocationCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(loc.name, style: AppText.h2(world.ink).copyWith(fontSize: 19)),
+                Text(
+                  loc.name,
+                  style: AppText.h2(world.ink).copyWith(fontSize: 19),
+                ),
                 const SizedBox(height: 4),
                 Text(loc.note, style: AppText.dossier(accent, size: 13)),
                 const SizedBox(height: 10),
                 Text(
                   loc.detail,
-                  style: AppText.body(world.ink.withValues(alpha: 0.75), size: 13),
+                  style: AppText.body(
+                    world.ink.withValues(alpha: 0.75),
+                    size: 13,
+                  ),
                 ),
                 if (loc.filmedAt != null) ...[
                   const SizedBox(height: 12),
@@ -112,7 +136,11 @@ class _LocationCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           'Filmed at ${loc.filmedAt}',
-                          style: AppText.body(world.ink, size: 12.5, bold: true),
+                          style: AppText.body(
+                            world.ink,
+                            size: 12.5,
+                            bold: true,
+                          ),
                         ),
                       ),
                     ],
@@ -127,7 +155,10 @@ class _LocationCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           'Photo: ${credit.author} · ${credit.license}',
-                          style: AppText.body(world.muted.withValues(alpha: 0.8), size: 10.5),
+                          style: AppText.body(
+                            world.muted.withValues(alpha: 0.8),
+                            size: 10.5,
+                          ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),

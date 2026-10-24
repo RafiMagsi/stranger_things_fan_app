@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../platform/test_env.dart';
+import 'glow.dart';
 
 /// Signature life for each creature of the Upside Down: a procedural
 /// animated overlay layered over key art so the monsters *move* — the
@@ -102,7 +103,8 @@ class _MonsterFxState extends State<MonsterFx>
     if (c == null) return frame(MonsterFx.stillFrame);
     return AnimatedBuilder(
       animation: c,
-      builder: (context, _) => frame(c.value),
+      // 30 fps: the creatures breathe just as well, at half the cost.
+      builder: (context, _) => frame(steppedValue(c.value, c.duration!)),
     );
   }
 }

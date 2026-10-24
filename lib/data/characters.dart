@@ -21,6 +21,8 @@ class Cast {
     nancy,
     jonathan,
     robin,
+    eddie,
+    billy,
     hopper,
     joyce,
     vecna,
@@ -301,6 +303,62 @@ class Cast {
     role: 'Hawkins High',
   );
 
+  static const Character eddie = Character(
+    id: 'eddie',
+    name: 'Eddie Munson',
+    alias: 'The Freak',
+    tagline: 'Dungeon master of the Hellfire Club',
+    bio:
+        'Metalhead, held back twice, and the Hellfire Club\'s dungeon master. '
+        'When Chrissy died in his trailer the whole town hunted him. In the '
+        'Upside Down he played "Master of Puppets" on a trailer roof to draw '
+        'the demobats away - and stayed to hold them off.',
+    line: 'I didn\'t run away this time.',
+    accent: Color(0xFFE57373),
+    accentDeep: Color(0xFF6D1B1B),
+    icon: Icons.music_note,
+    stats: CharacterStats(
+      power: 4,
+      courage: 9,
+      intellect: 7,
+      heart: 9,
+      luck: 2,
+      stealth: 5,
+    ),
+    skills: ['Dungeon mastering', 'Metal guitar', 'Hellfire Club'],
+    seasons: [4],
+    actor: 'Joseph Quinn',
+    role: 'Hawkins High',
+  );
+
+  static const Character billy = Character(
+    id: 'billy',
+    name: 'Billy Hargrove',
+    alias: 'The new kid',
+    tagline: 'Max\'s stepbrother, the Mind Flayer\'s host',
+    bio:
+        'Rolled in from California in a blue Camaro with a temper to match. '
+        'In 1985 the Mind Flayer took him and used him to build an army of '
+        'the Flayed - until Eleven found the memory of his mother, and he '
+        'died shielding her at Starcourt.',
+    line: 'I\'m sorry.',
+    accent: Color(0xFF42A5F5),
+    accentDeep: Color(0xFF0D3C73),
+    icon: Icons.directions_car,
+    stats: CharacterStats(
+      power: 8,
+      courage: 6,
+      intellect: 4,
+      heart: 4,
+      luck: 2,
+      stealth: 3,
+    ),
+    skills: ['Blue Camaro', 'Lifeguard chair', 'Intimidation'],
+    seasons: [2, 3, 4],
+    actor: 'Dacre Montgomery',
+    role: 'Hawkins High',
+  );
+
   static const Character hopper = Character(
     id: 'hopper',
     name: 'Jim Hopper',
@@ -349,7 +407,11 @@ class Cast {
       luck: 3,
       stealth: 2,
     ),
-    skills: ['Christmas-light messages', 'Gut instinct', 'Screaming at monsters'],
+    skills: [
+      'Christmas-light messages',
+      'Gut instinct',
+      'Screaming at monsters',
+    ],
     seasons: [1, 2, 3, 4, 5],
     actor: 'Winona Ryder',
     role: 'Hawkins Adult',

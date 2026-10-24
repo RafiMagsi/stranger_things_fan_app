@@ -535,8 +535,7 @@ class Moments {
       setup:
           'Vecna sends demodogs after Max\'s comatose body at the hospital. '
           'The only adult in the room is Karen Wheeler.',
-      reveal:
-          'She blows them up with a laundry machine.',
+      reveal: 'She blows them up with a laundry machine.',
       why:
           'The mom who spent four seasons in the background of her own '
           'house becomes the reason Max survives.',

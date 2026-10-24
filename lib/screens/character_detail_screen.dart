@@ -91,10 +91,21 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
     final credit = photo == null ? null : MediaCredits.forAsset(photo);
     // The portrait — or the captured footage of them, when a clip of this
     // character is bundled (it loops silently under the dossier chrome).
+    // Vecna's room (clock, rain, gold light) is what you see until his
+    // footage is up - painted over it, it would hide the video.
     final art = ClipLoop(
       videoKey: 'char_${c.id}',
-      placeholder: CharacterArt(character: c, iconSize: 220),
+      placeholder: c.id == 'vecna'
+          ? Stack(
+              fit: StackFit.expand,
+              children: [
+                CharacterArt(character: c, iconSize: 220),
+                VecnaScene(accent: c.accent, story: false),
+              ],
+            )
+          : CharacterArt(character: c, iconSize: 220),
     );
+    final reel = FanMedia.clip(FanMedia.characterReel[c.id] ?? '');
     // The character's colour, as it looks in the current world.
     final accent = world.tint(c.accent);
 
@@ -144,24 +155,6 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                           ),
                         ),
                       ),
-                      // When an edit of them is bundled, offer it with sound.
-                      if (FanMedia.clip(FanMedia.characterReel[c.id] ?? '')
-                          case final reel?)
-                        Positioned(
-                          top: 56,
-                          right: 14,
-                          child: FutureBuilder<bool>(
-                            future: AssetMedia.hasVideo(reel.videoKey),
-                            builder: (context, snap) => snap.data != true
-                                ? const SizedBox.shrink()
-                                : _WatchChip(
-                                    accent: accent,
-                                    onTap: () => ClipPlayer.play(context, [
-                                      ClipItem.fan(reel),
-                                    ]),
-                                  ),
-                          ),
-                        ),
                       // The dossier's subject, observed: creatures animate
                       // in both worlds (the file always shows it alive).
                       if (c.isCreature)
@@ -171,11 +164,6 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                             accent: c.accent,
                             intensity: 1.1,
                           ),
-                        ),
-                      // Vecna gets the room: clock, rain, gold light, door.
-                      if (c.id == 'vecna')
-                        Positioned.fill(
-                          child: VecnaScene(accent: c.accent, story: false),
                         ),
                       if (c.isCreature && upsideDown)
                         ParticleField(
@@ -238,6 +226,22 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                                       : Icons.person,
                                 ),
                                 GlowBadge(text: c.seasonLabel, color: c.accent),
+                                // Their edit, with sound - down here with the
+                                // name, clear of the toolbar and the switch.
+                                if (reel != null)
+                                  FutureBuilder<bool>(
+                                    future: AssetMedia.hasVideo(reel.videoKey),
+                                    builder: (context, snap) =>
+                                        snap.data != true
+                                        ? const SizedBox.shrink()
+                                        : _WatchChip(
+                                            accent: accent,
+                                            onTap: () => ClipPlayer.play(
+                                              context,
+                                              [ClipItem.fan(reel)],
+                                            ),
+                                          ),
+                                  ),
                               ],
                             ),
                             if (c.actor != null) ...[

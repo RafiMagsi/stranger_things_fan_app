@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../data/fan_media.dart';
+import '../audio/sfx.dart';
 import '../platform/test_env.dart';
 import '../state/app_state.dart';
 import '../theme/app_colors.dart';
@@ -47,6 +48,7 @@ class ClipLoop extends ConsumerStatefulWidget {
 
 class _ClipLoopState extends ConsumerState<ClipLoop> {
   VideoPlayerController? _controller;
+  Timer? _idle;
   bool _loading = false;
   bool _firstFrame = false;
 
@@ -71,18 +73,26 @@ class _ClipLoopState extends ConsumerState<ClipLoop> {
   }
 
   /// Start, play, pause or drop the clip to match what the screen wants.
+  /// Start, play, pause or drop the clip. Only clips you can see load;
+  /// one hidden behind another tab or page pauses, and gives its decoder
+  /// back if it stays hidden.
   void _sync() {
     if (!_wanted) {
       _release();
       return;
     }
+    if (!TickerMode.valuesOf(context).enabled) {
+      _controller?.pause();
+      _idle ??= Timer(const Duration(seconds: 2), _release);
+      return;
+    }
+    _idle?.cancel();
+    _idle = null;
     final c = _controller;
     if (c == null) {
       _load();
-    } else if (TickerMode.valuesOf(context).enabled) {
-      c.play();
     } else {
-      c.pause();
+      c.play();
     }
   }
 
@@ -121,12 +131,17 @@ class _ClipLoopState extends ConsumerState<ClipLoop> {
 
   void _onTick() {
     final c = _controller;
-    if (!_firstFrame && c != null && c.value.isPlaying && c.value.position > Duration.zero) {
+    if (!_firstFrame &&
+        c != null &&
+        c.value.isPlaying &&
+        c.value.position > Duration.zero) {
       setState(() => _firstFrame = true);
     }
   }
 
   void _release() {
+    _idle?.cancel();
+    _idle = null;
     final c = _controller;
     if (c == null) return;
     c.removeListener(_onTick);
@@ -138,6 +153,7 @@ class _ClipLoopState extends ConsumerState<ClipLoop> {
 
   @override
   void dispose() {
+    _idle?.cancel();
     _controller?.removeListener(_onTick);
     _controller?.dispose();
     super.dispose();
@@ -146,7 +162,10 @@ class _ClipLoopState extends ConsumerState<ClipLoop> {
   @override
   Widget build(BuildContext context) {
     // Re-sync when the "motion clips" setting changes.
-    ref.listen(settingsProvider.select((s) => s.autoplayPreviews), (_, _) => _sync());
+    ref.listen(
+      settingsProvider.select((s) => s.autoplayPreviews),
+      (_, _) => _sync(),
+    );
     final c = _controller;
     return Stack(
       fit: StackFit.expand,
@@ -176,16 +195,163 @@ class _ClipLoopState extends ConsumerState<ClipLoop> {
   }
 }
 
+/// A fan edit playing inline, with sound - where a YouTube trailer would
+/// have been. Tap to pause; the corner button goes fullscreen.
+class FanCutPlayer extends StatefulWidget {
+  const FanCutPlayer({super.key, required this.clip});
+
+  final FanClip clip;
+
+  @override
+  State<FanCutPlayer> createState() => _FanCutPlayerState();
+}
+
+class _FanCutPlayerState extends State<FanCutPlayer> {
+  VideoPlayerController? _c;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    if (isFlutterTest) return;
+    final path = await AssetMedia.video(widget.clip.videoKey);
+    if (path == null || !mounted) return;
+    final c = VideoPlayerController.asset(path);
+    try {
+      await c.initialize();
+    } catch (_) {
+      await c.dispose();
+      return;
+    }
+    if (!mounted) {
+      await c.dispose();
+      return;
+    }
+    c.addListener(_tick);
+    setState(() => _c = c);
+    await c.play();
+  }
+
+  void _tick() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _c?.removeListener(_tick);
+    _c?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = _c;
+    final playing = c?.value.isPlaying ?? false;
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: GestureDetector(
+        key: const ValueKey('fan-cut'),
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          if (c == null) return;
+          playing ? c.pause() : c.play();
+        },
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Until the clip's up: its own still.
+            Image.asset(
+              widget.clip.thumbnail,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const ColoredBox(color: Colors.black),
+            ),
+            if (c != null)
+              ColoredBox(
+                color: Colors.black,
+                child: FittedBox(
+                  // Phone-shot edits sit in the middle; widescreen ones fill.
+                  fit: widget.clip.portrait ? BoxFit.contain : BoxFit.cover,
+                  child: SizedBox(
+                    width: c.value.size.width,
+                    height: c.value.size.height,
+                    child: VideoPlayer(c),
+                  ),
+                ),
+              ),
+            if (c != null && !playing)
+              const Center(
+                child: Icon(
+                  Icons.play_circle_fill,
+                  color: Colors.white,
+                  size: 54,
+                ),
+              ),
+            Positioned(
+              left: 8,
+              top: 6,
+              child: Text(
+                'FAN CUT · ${widget.clip.title.toUpperCase()}',
+                style: AppText.label(
+                  Colors.white.withValues(alpha: 0.85),
+                ).copyWith(fontSize: 9.5),
+              ),
+            ),
+            Positioned(
+              right: 0,
+              bottom: 4,
+              child: IconButton(
+                key: const ValueKey('fan-cut-fullscreen'),
+                tooltip: 'Full screen',
+                onPressed: () {
+                  c?.pause();
+                  ClipPlayer.play(context, [ClipItem.fan(widget.clip)]);
+                },
+                icon: const Icon(Icons.fullscreen, color: Colors.white),
+              ),
+            ),
+            if (c != null)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: VideoProgressIndicator(
+                  c,
+                  allowScrubbing: true,
+                  padding: EdgeInsets.zero,
+                  colors: const VideoProgressColors(
+                    playedColor: AppColors.stRed,
+                    bufferedColor: Color(0x55FFFFFF),
+                    backgroundColor: Color(0x33FFFFFF),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// One thing the fullscreen player can play.
 @immutable
 class ClipItem {
-  const ClipItem({required this.videoKey, required this.title, this.subtitle, this.landscape = true});
+  const ClipItem({
+    required this.videoKey,
+    required this.title,
+    this.subtitle,
+    this.landscape = true,
+  });
 
   ClipItem.fan(FanClip clip)
-      : videoKey = clip.videoKey,
-        title = clip.title,
-        subtitle = clip.note == null ? clip.credit : '${clip.note} · ${clip.credit}',
-        landscape = !clip.portrait;
+    : videoKey = clip.videoKey,
+      title = clip.title,
+      subtitle = clip.note == null
+          ? clip.credit
+          : '${clip.note} · ${clip.credit}',
+      landscape = !clip.portrait;
 
   final String videoKey;
   final String title;
@@ -212,10 +378,21 @@ class ClipPlayer extends StatefulWidget {
     required String title,
     String? subtitle,
     bool landscape = true,
-  }) => play(context, [ClipItem(videoKey: videoKey, title: title, subtitle: subtitle, landscape: landscape)]);
+  }) => play(context, [
+    ClipItem(
+      videoKey: videoKey,
+      title: title,
+      subtitle: subtitle,
+      landscape: landscape,
+    ),
+  ]);
 
   /// Plays [items] from [start], rolling on to the next when one ends.
-  static Future<void> play(BuildContext context, List<ClipItem> items, {int start = 0}) {
+  static Future<void> play(
+    BuildContext context,
+    List<ClipItem> items, {
+    int start = 0,
+  }) {
     return Navigator.of(context).push(
       PageRouteBuilder<void>(
         opaque: true,
@@ -226,7 +403,10 @@ class ClipPlayer extends StatefulWidget {
         transitionsBuilder: (_, a, _, child) => FadeTransition(
           opacity: a,
           child: ScaleTransition(
-            scale: Tween(begin: 1.04, end: 1.0).animate(CurvedAnimation(parent: a, curve: Curves.easeOut)),
+            scale: Tween(
+              begin: 1.04,
+              end: 1.0,
+            ).animate(CurvedAnimation(parent: a, curve: Curves.easeOut)),
             child: child,
           ),
         ),
@@ -238,7 +418,7 @@ class ClipPlayer extends StatefulWidget {
   State<ClipPlayer> createState() => _ClipPlayerState();
 }
 
-class _ClipPlayerState extends State<ClipPlayer> {
+class _ClipPlayerState extends State<ClipPlayer> with SoundtrackClaimMixin {
   late int _index = widget.start;
   VideoPlayerController? _controller;
   bool _missing = false;
@@ -292,7 +472,11 @@ class _ClipPlayerState extends State<ClipPlayer> {
     final c = _controller;
     if (c == null || !mounted) return;
     final v = c.value;
-    final ended = v.isInitialized && !v.isPlaying && v.duration > Duration.zero && v.position >= v.duration;
+    final ended =
+        v.isInitialized &&
+        !v.isPlaying &&
+        v.duration > Duration.zero &&
+        v.position >= v.duration;
     if (ended && _hasNext) {
       // Not from inside the controller's own notification.
       scheduleMicrotask(() {
@@ -321,7 +505,9 @@ class _ClipPlayerState extends State<ClipPlayer> {
   void _scheduleHide() {
     _hide?.cancel();
     _hide = Timer(const Duration(seconds: 3), () {
-      if (mounted && (_controller?.value.isPlaying ?? false)) setState(() => _controls = false);
+      if (mounted && (_controller?.value.isPlaying ?? false)) {
+        setState(() => _controls = false);
+      }
     });
   }
 
@@ -351,10 +537,15 @@ class _ClipPlayerState extends State<ClipPlayer> {
     if (isFlutterTest) return;
     await SystemChrome.setPreferredOrientations(
       sideways
-          ? const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]
+          ? const [
+              DeviceOrientation.landscapeLeft,
+              DeviceOrientation.landscapeRight,
+            ]
           : const [DeviceOrientation.portraitUp],
     );
-    await SystemChrome.setEnabledSystemUIMode(sideways ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge);
+    await SystemChrome.setEnabledSystemUIMode(
+      sideways ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
+    );
     _scheduleHide();
   }
 
@@ -380,7 +571,9 @@ class _ClipPlayerState extends State<ClipPlayer> {
   Widget build(BuildContext context) {
     final c = _controller;
     final item = _item;
-    final osd = AppText.label(Colors.white.withValues(alpha: 0.85)).copyWith(fontSize: 11);
+    final osd = AppText.label(
+      Colors.white.withValues(alpha: 0.85),
+    ).copyWith(fontSize: 11);
     final playing = c?.value.isPlaying ?? false;
 
     return Scaffold(
@@ -398,9 +591,16 @@ class _ClipPlayerState extends State<ClipPlayer> {
               child: c == null
                   ? Text(
                       _missing ? 'NO TAPE IN THE DECK' : 'TRACKING…',
-                      style: AppText.headline(Colors.white38, size: 18, letterSpacing: 0.2),
+                      style: AppText.headline(
+                        Colors.white38,
+                        size: 18,
+                        letterSpacing: 0.2,
+                      ),
                     )
-                  : AspectRatio(aspectRatio: c.value.aspectRatio, child: VideoPlayer(c)),
+                  : AspectRatio(
+                      aspectRatio: c.value.aspectRatio,
+                      child: VideoPlayer(c),
+                    ),
             ),
             // On-screen display, like a 1985 VCR.
             AnimatedOpacity(
@@ -413,7 +613,12 @@ class _ClipPlayerState extends State<ClipPlayer> {
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Color(0xCC000000), Color(0x00000000), Color(0x00000000), Color(0xE6000000)],
+                      colors: [
+                        Color(0xCC000000),
+                        Color(0x00000000),
+                        Color(0x00000000),
+                        Color(0xE6000000),
+                      ],
                       stops: [0, 0.22, 0.7, 1],
                     ),
                   ),
@@ -427,8 +632,12 @@ class _ClipPlayerState extends State<ClipPlayer> {
                               IconButton(
                                 key: const ValueKey('player-close'),
                                 tooltip: 'Close',
-                                onPressed: () => Navigator.of(context).maybePop(),
-                                icon: const Icon(Icons.close, color: Colors.white),
+                                onPressed: () =>
+                                    Navigator.of(context).maybePop(),
+                                icon: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                ),
                               ),
                               const SizedBox(width: 4),
                               Expanded(
@@ -439,14 +648,21 @@ class _ClipPlayerState extends State<ClipPlayer> {
                                       item.title.toUpperCase(),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: AppText.headline(Colors.white, size: 17, letterSpacing: 0.06),
+                                      style: AppText.headline(
+                                        Colors.white,
+                                        size: 17,
+                                        letterSpacing: 0.06,
+                                      ),
                                     ),
                                     if (item.subtitle != null)
                                       Text(
                                         item.subtitle!,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: AppText.dossier(Colors.white60, size: 11.5),
+                                        style: AppText.dossier(
+                                          Colors.white60,
+                                          size: 11.5,
+                                        ),
                                       ),
                                   ],
                                 ),
@@ -456,7 +672,9 @@ class _ClipPlayerState extends State<ClipPlayer> {
                                 height: 8,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: playing ? AppColors.stRed : Colors.white38,
+                                  color: playing
+                                      ? AppColors.stRed
+                                      : Colors.white38,
                                 ),
                               ),
                               const SizedBox(width: 6),
@@ -471,7 +689,10 @@ class _ClipPlayerState extends State<ClipPlayer> {
                               if (widget.items.length > 1)
                                 IconButton(
                                   onPressed: _index > 0 ? () => _go(-1) : null,
-                                  icon: const Icon(Icons.skip_previous, size: 30),
+                                  icon: const Icon(
+                                    Icons.skip_previous,
+                                    size: 30,
+                                  ),
                                   color: Colors.white,
                                 ),
                               IconButton(
@@ -483,7 +704,12 @@ class _ClipPlayerState extends State<ClipPlayer> {
                               IconButton(
                                 key: const ValueKey('player-play'),
                                 onPressed: _togglePlay,
-                                icon: Icon(playing ? Icons.pause_circle_filled : Icons.play_circle_fill, size: 64),
+                                icon: Icon(
+                                  playing
+                                      ? Icons.pause_circle_filled
+                                      : Icons.play_circle_fill,
+                                  size: 64,
+                                ),
                                 color: Colors.white,
                               ),
                               const SizedBox(width: 10),
@@ -503,11 +729,15 @@ class _ClipPlayerState extends State<ClipPlayer> {
                           const Spacer(),
                           if (c != null)
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               child: VideoProgressIndicator(
                                 c,
                                 allowScrubbing: true,
-                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
                                 colors: const VideoProgressColors(
                                   playedColor: AppColors.stRed,
                                   bufferedColor: Color(0x55FFFFFF),
@@ -519,7 +749,9 @@ class _ClipPlayerState extends State<ClipPlayer> {
                             children: [
                               const SizedBox(width: 12),
                               Text(
-                                c == null ? '0:00' : '${_time(c.value.position)} / ${_time(c.value.duration)}',
+                                c == null
+                                    ? '0:00'
+                                    : '${_time(c.value.position)} / ${_time(c.value.duration)}',
                                 style: osd,
                               ),
                               const Spacer(),
@@ -530,7 +762,10 @@ class _ClipPlayerState extends State<ClipPlayer> {
                                     'NEXT: ${widget.items[_index + 1].title.toUpperCase()}',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: osd.copyWith(color: Colors.white54, fontSize: 10),
+                                    style: osd.copyWith(
+                                      color: Colors.white54,
+                                      fontSize: 10,
+                                    ),
                                   ),
                                 ),
                               IconButton(
@@ -540,15 +775,22 @@ class _ClipPlayerState extends State<ClipPlayer> {
                                   c?.setVolume(_muted ? 0 : 1);
                                   _scheduleHide();
                                 },
-                                icon: Icon(_muted ? Icons.volume_off : Icons.volume_up, color: Colors.white),
+                                icon: Icon(
+                                  _muted ? Icons.volume_off : Icons.volume_up,
+                                  color: Colors.white,
+                                ),
                               ),
                               if (item.landscape)
                                 IconButton(
                                   key: const ValueKey('player-rotate'),
-                                  tooltip: _sideways ? 'Back to portrait' : 'Turn sideways',
+                                  tooltip: _sideways
+                                      ? 'Back to portrait'
+                                      : 'Turn sideways',
                                   onPressed: _turn,
                                   icon: Icon(
-                                    _sideways ? Icons.stay_current_portrait : Icons.screen_rotation,
+                                    _sideways
+                                        ? Icons.stay_current_portrait
+                                        : Icons.screen_rotation,
                                     color: Colors.white,
                                   ),
                                 ),

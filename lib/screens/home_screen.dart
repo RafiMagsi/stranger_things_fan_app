@@ -15,6 +15,7 @@ import '../core/widgets/st_effects.dart';
 import '../core/widgets/st_logo.dart';
 import '../core/widgets/st_scaffold.dart';
 import '../core/widgets/world_fx.dart';
+import '../core/widgets/world_scenery.dart';
 import '../core/widgets/world_toggle.dart';
 import '../data/characters.dart' as cast_data;
 import '../data/moments.dart';
@@ -59,6 +60,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     cast_data.Cast.nancy,
     cast_data.Cast.jonathan,
     cast_data.Cast.robin,
+    cast_data.Cast.eddie,
+    cast_data.Cast.billy,
     cast_data.Cast.hopper,
     cast_data.Cast.joyce,
   ];
@@ -99,7 +102,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const WorldAtmosphere(),
+          // The header's town band carries Home's moon.
+          const WorldAtmosphere(moon: false),
           SafeArea(
             bottom: false,
             child: Align(
@@ -151,10 +155,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SliverToBoxAdapter(child: _StatsRow()),
                     SliverToBoxAdapter(
                       child: _QuickAccess(
-                        onTimeline: () => _open(const TimelineScreen(), '/timeline'),
-                        onMonsters: () => _open(const BestiaryScreen(), '/bestiary'),
+                        onTimeline: () =>
+                            _open(const TimelineScreen(), '/timeline'),
+                        onMonsters: () =>
+                            _open(const BestiaryScreen(), '/bestiary'),
                         onCharacters: () => _open(const CastScreen(), '/cast'),
-                        onEpisodes: () => _open(const SeasonsScreen(), '/seasons'),
+                        onEpisodes: () =>
+                            _open(const SeasonsScreen(), '/seasons'),
                       ),
                     ),
 
@@ -356,53 +363,86 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final world = WorldPalette.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 16, 4),
-      child: Row(
+    // The town under the logo: Hawkins at night, or the Upside Down's
+    // version of it - so you always know which world you're standing in.
+    return SizedBox(
+      height: 176,
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                NeonIgnite(
-                  delay: const Duration(milliseconds: 350),
-                  builder: (context, glow) => STLogo(size: 19, glow: glow),
+          const WorldSceneryBand(horizon: 0.5),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 34,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [world.bg.withValues(alpha: 0), world.bg],
                 ),
-                const SizedBox(height: 10),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400),
-                  child: Row(
-                    key: ValueKey(upsideDown),
-                    children: [
-                      Icon(
-                        upsideDown ? Icons.blur_on : Icons.location_on,
-                        size: 14,
-                        color: world.secondary,
-                      ),
-                      const SizedBox(width: 5),
-                      Flexible(
-                        child: Text(
-                          upsideDown
-                              ? 'You are in the Upside Down'
-                              : 'Hawkins, Indiana · 1983-1989',
-                          style: AppText.dossier(world.muted, size: 12.5),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-          IconButton(
-            key: const ValueKey('open-settings'),
-            tooltip: 'Settings',
-            onPressed: () => showSettingsSheet(context),
-            icon: Icon(Icons.tune, color: world.muted),
+          Align(
+            alignment: Alignment.topCenter,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 16, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        NeonIgnite(
+                          delay: const Duration(milliseconds: 350),
+                          builder: (context, glow) =>
+                              STLogo(size: 19, glow: glow),
+                        ),
+                        const SizedBox(height: 10),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 400),
+                          child: Row(
+                            key: ValueKey(upsideDown),
+                            children: [
+                              Icon(
+                                upsideDown ? Icons.blur_on : Icons.location_on,
+                                size: 14,
+                                color: world.secondary,
+                              ),
+                              const SizedBox(width: 5),
+                              Flexible(
+                                child: Text(
+                                  upsideDown
+                                      ? 'You are in the Upside Down'
+                                      : 'Hawkins, Indiana · 1983-1989',
+                                  style: AppText.dossier(
+                                    world.muted,
+                                    size: 12.5,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    key: const ValueKey('open-settings'),
+                    tooltip: 'Settings',
+                    onPressed: () => showSettingsSheet(context),
+                    icon: Icon(Icons.tune, color: world.muted),
+                  ),
+                  const SizedBox(width: 4),
+                  const WorldToggle(),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(width: 4),
-          const WorldToggle(),
         ],
       ),
     );
@@ -481,7 +521,10 @@ class _FeaturedBanner extends StatelessWidget {
                 ),
               ),
               // The finale edit, silent, like a streaming billboard.
-              const ClipLoop(videoKey: 'hero_finale', placeholder: SizedBox.shrink()),
+              const ClipLoop(
+                videoKey: 'hero_finale',
+                placeholder: SizedBox.shrink(),
+              ),
               // Legibility: dark end under the text, bottom-left.
               const DecoratedBox(
                 decoration: BoxDecoration(
@@ -1125,18 +1168,37 @@ class _StatsRow extends StatelessWidget {
         child: Row(
           children: [
             for (final (i, (n, label)) in stats.indexed) ...[
-              if (i > 0) Container(width: 1, height: 34, color: world.accent.withValues(alpha: 0.2)),
+              if (i > 0)
+                Container(
+                  width: 1,
+                  height: 34,
+                  color: world.accent.withValues(alpha: 0.2),
+                ),
               Expanded(
                 child: Column(
                   children: [
                     Text(
                       n,
-                      style: AppText.headline(world.ink, size: 24, weight: 700, letterSpacing: 0).copyWith(
-                        shadows: [Shadow(color: world.accent.withValues(alpha: 0.6), blurRadius: 10)],
-                      ),
+                      style:
+                          AppText.headline(
+                            world.ink,
+                            size: 24,
+                            weight: 700,
+                            letterSpacing: 0,
+                          ).copyWith(
+                            shadows: [
+                              Shadow(
+                                color: world.accent.withValues(alpha: 0.6),
+                                blurRadius: 10,
+                              ),
+                            ],
+                          ),
                     ),
                     const SizedBox(height: 2),
-                    Text(label, style: AppText.label(world.muted).copyWith(fontSize: 9.5)),
+                    Text(
+                      label,
+                      style: AppText.label(world.muted).copyWith(fontSize: 9.5),
+                    ),
                   ],
                 ),
               ),
@@ -1189,15 +1251,36 @@ class _QuickAccess extends StatelessWidget {
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: world.card,
-                        border: Border.all(color: world.accent.withValues(alpha: 0.7), width: 1.4),
-                        boxShadow: [BoxShadow(color: world.accent.withValues(alpha: 0.3), blurRadius: 14)],
+                        border: Border.all(
+                          color: world.accent.withValues(alpha: 0.7),
+                          width: 1.4,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: world.accent.withValues(alpha: 0.3),
+                            blurRadius: 14,
+                          ),
+                        ],
                       ),
-                      child: Icon(icon, color: world.accent, size: 25, shadows: [Shadow(color: world.accent, blurRadius: 8)]),
+                      child: Icon(
+                        icon,
+                        color: world.accent,
+                        size: 25,
+                        shadows: [Shadow(color: world.accent, blurRadius: 8)],
+                      ),
                     ),
                     const SizedBox(height: 7),
                     FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text(label, style: AppText.headline(world.ink, size: 11, weight: 500, letterSpacing: 0.1)),
+                      child: Text(
+                        label,
+                        style: AppText.headline(
+                          world.ink,
+                          size: 11,
+                          weight: 500,
+                          letterSpacing: 0.1,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -1212,7 +1295,11 @@ class _QuickAccess extends StatelessWidget {
 /// The series' turns as glowing case cards; behind the spoiler shield the
 /// ones you haven't reached stay classified.
 class _TwistRow extends StatelessWidget {
-  const _TwistRow({required this.shield, required this.watched, required this.onTap});
+  const _TwistRow({
+    required this.shield,
+    required this.watched,
+    required this.onTap,
+  });
 
   final bool shield;
   final Set<String> watched;
@@ -1242,9 +1329,14 @@ class _TwistRow extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (context, i) {
           final m = twists[i];
-          final hidden = shield && Seasons.isAhead(m.season, m.episode, watched);
+          final hidden =
+              shield && Seasons.isAhead(m.season, m.episode, watched);
           final c = world.tint(m.kind.color);
-          final titleStyle = AppText.headline(world.ink, size: 14.5, letterSpacing: 0.04);
+          final titleStyle = AppText.headline(
+            world.ink,
+            size: 14.5,
+            letterSpacing: 0.04,
+          );
           return SizedBox(
             width: 148,
             child: NeonCard(
@@ -1261,14 +1353,25 @@ class _TwistRow extends StatelessWidget {
                     shadows: [Shadow(color: c, blurRadius: 12)],
                   ),
                   const Spacer(),
-                  Text(m.kind.label.toUpperCase(), style: AppText.label(c).copyWith(fontSize: 9.5)),
+                  Text(
+                    m.kind.label.toUpperCase(),
+                    style: AppText.label(c).copyWith(fontSize: 9.5),
+                  ),
                   const SizedBox(height: 3),
                   if (hidden)
                     RedactedText(m.title, style: titleStyle, maxLines: 2)
                   else
-                    Text(m.title.toUpperCase(), maxLines: 2, overflow: TextOverflow.ellipsis, style: titleStyle),
+                    Text(
+                      m.title.toUpperCase(),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: titleStyle,
+                    ),
                   const SizedBox(height: 4),
-                  Text(m.chapterLabel, style: AppText.dossier(world.muted, size: 11)),
+                  Text(
+                    m.chapterLabel,
+                    style: AppText.dossier(world.muted, size: 11),
+                  ),
                 ],
               ),
             ),

@@ -21,17 +21,14 @@ class TapOrigin {
 /// with red lightning in cold haze and throws off ash instead. The page
 /// behind dims and sinks as it's pulled under. Back closes the tear.
 class RiftPageRoute<T> extends PageRouteBuilder<T> {
-  RiftPageRoute({
-    required this.page,
-    String? name,
-    Offset? origin,
-  })  : origin = origin ?? TapOrigin.last,
-        super(
-          settings: RouteSettings(name: name),
-          transitionDuration: const Duration(milliseconds: 700),
-          reverseTransitionDuration: const Duration(milliseconds: 480),
-          pageBuilder: (context, animation, secondaryAnimation) => page,
-        );
+  RiftPageRoute({required this.page, String? name, Offset? origin})
+    : origin = origin ?? TapOrigin.last,
+      super(
+        settings: RouteSettings(name: name),
+        transitionDuration: const Duration(milliseconds: 700),
+        reverseTransitionDuration: const Duration(milliseconds: 480),
+        pageBuilder: (context, animation, secondaryAnimation) => page,
+      );
 
   final Widget page;
 
@@ -43,9 +40,10 @@ class RiftPageRoute<T> extends PageRouteBuilder<T> {
 
   /// Push helper used across the app.
   static Future<T?> push<T>(BuildContext context, Widget page, {String? name}) {
-    return Navigator.of(context, rootNavigator: true).push<T>(
-      RiftPageRoute<T>(page: page, name: name),
-    );
+    return Navigator.of(
+      context,
+      rootNavigator: true,
+    ).push<T>(RiftPageRoute<T>(page: page, name: name));
   }
 
   @override
@@ -103,7 +101,8 @@ class _GateTransition extends StatelessWidget {
         final opening = t < 1 && !reduce;
 
         return Opacity(
-          opacity: (1 - 0.55 * cover) * (reduce ? Curves.easeOut.transform(t) : 1),
+          opacity:
+              (1 - 0.55 * cover) * (reduce ? Curves.easeOut.transform(t) : 1),
           child: Transform.scale(
             scale: 1 - 0.05 * cover,
             child: Stack(
@@ -151,24 +150,32 @@ class _GateTransition extends StatelessWidget {
   }
 
   static double _farthestCorner(Offset c, Size s) => [
-        c,
-        Offset(s.width - c.dx, c.dy),
-        Offset(c.dx, s.height - c.dy),
-        Offset(s.width - c.dx, s.height - c.dy),
-      ].map((o) => o.distance).reduce(math.max);
+    c,
+    Offset(s.width - c.dx, c.dy),
+    Offset(c.dx, s.height - c.dy),
+    Offset(s.width - c.dx, s.height - c.dy),
+  ].map((o) => o.distance).reduce(math.max);
 }
 
 /// A ring whose radius writhes with layered sine noise — an organic tear,
 /// not a geometric circle. The noise drifts with [t] so the edge squirms.
 /// [crackle] adds per-frame jitter on top: electricity along the rim.
-Path _gatePath(Offset center, double radius, double seed, double t,
-    {double crackle = 0}) {
+Path _gatePath(
+  Offset center,
+  double radius,
+  double seed,
+  double t, {
+  double crackle = 0,
+}) {
   const n = 128;
   final path = Path();
-  final jitter = crackle > 0 ? math.Random((t * 90).floor() + seed.floor()) : null;
+  final jitter = crackle > 0
+      ? math.Random((t * 90).floor() + seed.floor())
+      : null;
   for (var i = 0; i <= n; i++) {
     final a = i / n * math.pi * 2;
-    final wobble = 1 +
+    final wobble =
+        1 +
         0.07 * math.sin(7 * a + seed + t * 3) +
         0.045 * math.sin(13 * a + seed * 2 - t * 5) +
         0.025 * math.sin(23 * a + seed * 3 + t * 8) +
@@ -228,7 +235,11 @@ class _GateRimPainter extends CustomPainter {
     final rim = _gatePath(center, radius, seed, t);
     final haze = Color.lerp(AppColors.stRed, AppColors.udGlow, depth)!;
     final edge = Color.lerp(AppColors.stRedGlow, AppColors.udLightning, depth)!;
-    final core = Color.lerp(const Color(0xFFFFD6C9), const Color(0xFFE8F1FF), depth)!;
+    final core = Color.lerp(
+      const Color(0xFFFFD6C9),
+      const Color(0xFFE8F1FF),
+      depth,
+    )!;
 
     // Wide halo of the world's light.
     canvas.drawPath(
@@ -248,7 +259,8 @@ class _GateRimPainter extends CustomPainter {
       final dir = Offset(math.cos(a), math.sin(a));
       final inner = center + dir * radius * (0.82 + rng.nextDouble() * 0.08);
       final outer = center + dir * radius * (1.08 + rng.nextDouble() * 0.1);
-      final sag = Offset(-dir.dy, dir.dx) * radius * 0.06 * (rng.nextDouble() - 0.5);
+      final sag =
+          Offset(-dir.dy, dir.dx) * radius * 0.06 * (rng.nextDouble() - 0.5);
       final mid = Offset.lerp(inner, outer, 0.5)! + sag;
       strands
         ..moveTo(inner.dx, inner.dy)
@@ -284,21 +296,30 @@ class _GateRimPainter extends CustomPainter {
     );
 
     // Embers (Hawkins) or ash (Upside Down) thrown off the edge.
-    final speck = Color.lerp(const Color(0xFFFFB36B), AppColors.udSpore, depth)!;
+    final speck = Color.lerp(
+      const Color(0xFFFFB36B),
+      AppColors.udSpore,
+      depth,
+    )!;
     final burst = Paint();
     for (var i = 0; i < 48; i++) {
       final a = rng.nextDouble() * math.pi * 2;
       final speed = 0.5 + rng.nextDouble();
       final dist = radius * (0.97 + 0.05 * rng.nextDouble()) + 90 * speed * t;
       final p = center + Offset(math.cos(a), math.sin(a)) * dist;
-      burst.color = speck.withValues(alpha: 0.85 * fade * (0.4 + 0.6 * rng.nextDouble()));
+      burst.color = speck.withValues(
+        alpha: 0.85 * fade * (0.4 + 0.6 * rng.nextDouble()),
+      );
       canvas.drawCircle(p, (1 + 1.6 * rng.nextDouble()) * fade + 0.4, burst);
     }
   }
 
   @override
   bool shouldRepaint(covariant _GateRimPainter old) =>
-      old.radius != radius || old.t != t || old.center != center || old.depth != depth;
+      old.radius != radius ||
+      old.t != t ||
+      old.center != center ||
+      old.depth != depth;
 }
 
 /// Heat-haze swirl around a living gate: light from the page bends as if
@@ -336,12 +357,16 @@ class _GateHeatHaze extends CustomPainter {
       final ring = Path();
       for (var i = 0; i <= 64; i++) {
         final a = i / 64 * math.pi * 2;
-        final wobble = 1 + 0.04 * math.sin(a * 3 + theta) + 0.02 * math.sin(a * 7 - theta);
-        final start = center + Offset(math.cos(a) * r * wobble, math.sin(a) * r * wobble);
+        final wobble =
+            1 + 0.04 * math.sin(a * 3 + theta) + 0.02 * math.sin(a * 7 - theta);
+        final start =
+            center + Offset(math.cos(a) * r * wobble, math.sin(a) * r * wobble);
         ring.moveTo(start.dx, start.dy);
         for (var j = 1; j <= 4; j++) {
           final ja = (i + j) / 64 * math.pi * 2;
-          final next = center + Offset(math.cos(ja) * r * wobble, math.sin(ja) * r * wobble);
+          final next =
+              center +
+              Offset(math.cos(ja) * r * wobble, math.sin(ja) * r * wobble);
           ring.lineTo(next.dx, next.dy);
         }
       }
@@ -352,18 +377,29 @@ class _GateHeatHaze extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.4 * (1 - b / bandCount)
-          ..color = (depth > 0.5
-                  ? Color.lerp(AppColors.udGlow, AppColors.udLightning, 0.4)!
-                  : AppColors.stRedGlow)
-              .withValues(alpha: alpha)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2.0 * (1 - b / bandCount)),
+          ..color =
+              (depth > 0.5
+                      ? Color.lerp(
+                          AppColors.udGlow,
+                          AppColors.udLightning,
+                          0.4,
+                        )!
+                      : AppColors.stRedGlow)
+                  .withValues(alpha: alpha)
+          ..maskFilter = MaskFilter.blur(
+            BlurStyle.normal,
+            2.0 * (1 - b / bandCount),
+          ),
       );
     }
   }
 
   @override
   bool shouldRepaint(covariant _GateHeatHaze old) =>
-      old.t != t || old.radius != radius || old.seed != seed || old.depth != depth;
+      old.t != t ||
+      old.radius != radius ||
+      old.seed != seed ||
+      old.depth != depth;
 }
 
 /// The world-flip storm: fired each time Hawkins ⇄ the Upside Down is
@@ -415,8 +451,14 @@ class _StormPainter extends CustomPainter {
   /// (a random walk that keeps pulling back toward its line), and a few
   /// short forks peeling off and tapering. Trunk and forks go into separate
   /// paths so the trunk can be drawn heavier.
-  void _bolt(math.Random rng, Offset from, Offset to, Path trunk, Path forks,
-      {bool canFork = true}) {
+  void _bolt(
+    math.Random rng,
+    Offset from,
+    Offset to,
+    Path trunk,
+    Path forks, {
+    bool canFork = true,
+  }) {
     const segments = 16;
     final span = to - from;
     final kinkScale = span.distance * 0.045;
@@ -429,7 +471,14 @@ class _StormPainter extends CustomPainter {
       if (canFork && i > 2 && i < segments - 2 && rng.nextDouble() < 0.2) {
         final len = span.distance * (0.1 + rng.nextDouble() * 0.12);
         final side = rng.nextBool() ? 1.0 : -1.0;
-        _bolt(rng, p, p + Offset(side * len * 0.75, len), forks, forks, canFork: false);
+        _bolt(
+          rng,
+          p,
+          p + Offset(side * len * 0.75, len),
+          forks,
+          forks,
+          canFork: false,
+        );
         trunk.moveTo(p.dx, p.dy);
       }
     }
@@ -493,7 +542,9 @@ class _StormPainter extends CustomPainter {
     // A soft pressure wave rolling out with the thunder: blurred, starting
     // wide, red with a cold blue echo - felt more than seen.
     final center = size.center(Offset.zero);
-    final r = size.longestSide * (0.25 + 0.75 * Curves.easeOutCubic.transform(progress));
+    final r =
+        size.longestSide *
+        (0.25 + 0.75 * Curves.easeOutCubic.transform(progress));
     final fade = 1 - progress;
     canvas.drawCircle(
       center,

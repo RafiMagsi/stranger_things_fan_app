@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'glow.dart';
+
 /// Particle engine: floating spores (Upside Down) or warm dust (Hawkins).
 ///
 /// One painter serves both worlds — the caller tints and sizes it. Physics
@@ -30,9 +32,10 @@ class ParticleField extends StatefulWidget {
 
 class _ParticleFieldState extends State<ParticleField>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: const Duration(seconds: 24))
-        ..repeat();
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 24),
+  )..repeat();
 
   late final List<_Particle> _particles;
 
@@ -69,7 +72,10 @@ class _ParticleFieldState extends State<ParticleField>
             return CustomPaint(
               painter: _ParticlePainter(
                 particles: _particles,
-                t: _controller.value * widget.speed,
+                // 30 fps: drifting embers don't need more.
+                t:
+                    steppedValue(_controller.value, _controller.duration!) *
+                    widget.speed,
                 color: widget.color,
                 glowColor: widget.glowColor,
                 opacity: widget.opacity,
@@ -121,9 +127,10 @@ class _ParticlePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty) return;
-    final glowPaint = Paint()
-      ..color = glowColor.withValues(alpha: 0.16 * opacity)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+    // Soft halos from one sprite in one batched draw - a blur per particle
+    // was the most expensive thing on screen.
+    final glows = GlowBatch();
+    final glow = glowColor.withValues(alpha: 0.16 * opacity);
     final dotPaint = Paint();
 
     for (final p in particles) {
@@ -133,14 +140,16 @@ class _ParticlePainter extends CustomPainter {
           (((p.x + math.sin(t * p.sway + p.phase) * 0.012) % 1.0) + 1.0) % 1.0;
       final center = Offset(dx * size.width, dy * size.height);
 
-      final twinkle =
-          0.55 + 0.45 * math.sin(t * p.pulse * 6.283 + p.phase * 3);
+      final twinkle = 0.55 + 0.45 * math.sin(t * p.pulse * 6.283 + p.phase * 3);
       final r = p.radius * (0.75 + 0.25 * twinkle);
 
-      dotPaint.color = color.withValues(alpha: (0.25 + 0.5 * twinkle) * opacity);
-      canvas.drawCircle(center, r * 3.2, glowPaint);
+      dotPaint.color = color.withValues(
+        alpha: (0.25 + 0.5 * twinkle) * opacity,
+      );
+      glows.add(center, r * 3.2 + 6, glow);
       canvas.drawCircle(center, r, dotPaint);
     }
+    glows.paint(canvas);
   }
 
   @override

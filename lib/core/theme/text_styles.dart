@@ -26,16 +26,15 @@ class AppText {
     double size = 24,
     double weight = 600,
     double letterSpacing = 0.08,
-  }) =>
-      TextStyle(
-        fontFamily: condensed,
-        fontWeight: FontWeight.values[((weight / 100).round() - 1).clamp(0, 8)],
-        fontVariations: [FontVariation('wght', weight)],
-        fontSize: size,
-        height: 1.05,
-        letterSpacing: size * letterSpacing,
-        color: c,
-      );
+  }) => TextStyle(
+    fontFamily: condensed,
+    fontWeight: FontWeight.values[((weight / 100).round() - 1).clamp(0, 8)],
+    fontVariations: [FontVariation('wght', weight)],
+    fontSize: size,
+    height: 1.05,
+    letterSpacing: size * letterSpacing,
+    color: c,
+  );
 
   /// The Stranger Things title treatment: Grenze pushed to 900, tight,
   /// glowing brand red on black.
@@ -58,13 +57,16 @@ class AppText {
 
   /// Vertical gradient for the ST logotype: bright red top → deep oxblood bottom.
   static LinearGradient titleGradient() => const LinearGradient(
-        colors: [Color(0xFFE50914), Color(0xFFA00312)],
-        stops: [0.0, 1.0],
-        tileMode: TileMode.clamp,
-      );
+    colors: [Color(0xFFE50914), Color(0xFFA00312)],
+    stops: [0.0, 1.0],
+    tileMode: TileMode.clamp,
+  );
 
   /// Glow-only TextStyle (low-opacity white) used as a base under the gradient.
-  static TextStyle titleGlow({double size = 34, Color glow = AppColors.stRed}) => TextStyle(
+  static TextStyle titleGlow({
+    double size = 34,
+    Color glow = AppColors.stRed,
+  }) => TextStyle(
     fontFamily: display,
     fontWeight: FontWeight.w900,
     fontVariations: const [FontVariation('wght', 900)],
@@ -74,7 +76,7 @@ class AppText {
     color: Colors.white.withValues(alpha: 0.3),
     shadows: [
       Shadow(color: glow.withValues(alpha: 0.6), blurRadius: size * 0.45),
-      ],
+    ],
   );
 
   /// The show's neon lettering: hollow Benguiat strokes with the tube's
@@ -86,50 +88,56 @@ class AppText {
     Color color = AppColors.stRed,
     double glow = 1.0,
     double letterSpacing = 0.06,
-  }) =>
-      TextStyle(
-        fontFamily: display,
-        fontWeight: FontWeight.w900,
-        fontVariations: const [FontVariation('wght', 900)],
-        fontSize: size,
-        height: 1.0,
-        letterSpacing: size * letterSpacing,
-        foreground: Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = (size * 0.045).clamp(1.0, 3.2)
-          ..strokeJoin = StrokeJoin.round
-          // An unlit tube is still there, just dull: lerp from dark glass to
-          // the hot lit tube as the glow comes up.
-          ..color = Color.lerp(
-            Color.lerp(color, Colors.black, 0.55),
-            Color.lerp(color, Colors.white, 0.18),
-            glow.clamp(0.0, 1.0),
-          )!,
-        shadows: [
-          Shadow(color: color.withValues(alpha: 0.55 * glow), blurRadius: size * 0.12),
-          Shadow(color: color.withValues(alpha: 0.65 * glow), blurRadius: size * 0.45),
-          Shadow(color: color.withValues(alpha: 0.35 * glow), blurRadius: size * 1.1),
-        ],
-      );
+  }) => TextStyle(
+    fontFamily: display,
+    fontWeight: FontWeight.w900,
+    fontVariations: const [FontVariation('wght', 900)],
+    fontSize: size,
+    height: 1.0,
+    letterSpacing: size * letterSpacing,
+    foreground: Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = (size * 0.045).clamp(1.0, 3.2)
+      ..strokeJoin = StrokeJoin.round
+      // An unlit tube is still there, just dull: lerp from dark glass to
+      // the hot lit tube as the glow comes up.
+      ..color = Color.lerp(
+        Color.lerp(color, Colors.black, 0.55),
+        Color.lerp(color, Colors.white, 0.18),
+        glow.clamp(0.0, 1.0),
+      )!,
+    shadows: [
+      Shadow(
+        color: color.withValues(alpha: 0.55 * glow),
+        blurRadius: size * 0.12,
+      ),
+      Shadow(
+        color: color.withValues(alpha: 0.65 * glow),
+        blurRadius: size * 0.45,
+      ),
+      Shadow(
+        color: color.withValues(alpha: 0.35 * glow),
+        blurRadius: size * 1.1,
+      ),
+    ],
+  );
 
   /// "CHAPTER ONE" — the episode title card's small caps line.
   static TextStyle chapter(Color c, {double size = 12}) => TextStyle(
-        fontFamily: display,
-        fontWeight: FontWeight.w700,
-        fontVariations: const [FontVariation('wght', 700)],
-        fontSize: size,
-        letterSpacing: size * 0.22,
-        height: 1.1,
-        color: c,
-        shadows: [Shadow(color: c.withValues(alpha: 0.6), blurRadius: size * 0.8)],
-      );
+    fontFamily: display,
+    fontWeight: FontWeight.w700,
+    fontVariations: const [FontVariation('wght', 700)],
+    fontSize: size,
+    letterSpacing: size * 0.22,
+    height: 1.1,
+    color: c,
+    shadows: [Shadow(color: c.withValues(alpha: 0.6), blurRadius: size * 0.8)],
+  );
 
   static TextStyle h1(Color c, {bool heavy = false}) => TextStyle(
     fontFamily: display,
     fontWeight: heavy ? FontWeight.w900 : FontWeight.w700,
-    fontVariations: [
-      FontVariation('wght', heavy ? 900 : 700),
-    ],
+    fontVariations: [FontVariation('wght', heavy ? 900 : 700)],
     fontSize: 28,
     height: 1.08,
     letterSpacing: 0.2,
@@ -139,9 +147,7 @@ class AppText {
   static TextStyle h2(Color c, {bool heavy = false}) => TextStyle(
     fontFamily: display,
     fontWeight: heavy ? FontWeight.w700 : FontWeight.w600,
-    fontVariations: [
-      FontVariation('wght', heavy ? 700 : 600),
-    ],
+    fontVariations: [FontVariation('wght', heavy ? 700 : 600)],
     fontSize: 21,
     height: 1.14,
     color: c,
@@ -166,10 +172,6 @@ class AppText {
     color: c,
   );
 
-  static TextStyle dossier(Color c, {double size = 14}) => TextStyle(
-    fontFamily: typewriter,
-    fontSize: size,
-    height: 1.4,
-    color: c,
-  );
+  static TextStyle dossier(Color c, {double size = 14}) =>
+      TextStyle(fontFamily: typewriter, fontSize: size, height: 1.4, color: c);
 }

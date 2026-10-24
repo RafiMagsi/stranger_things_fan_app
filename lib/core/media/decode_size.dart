@@ -19,5 +19,10 @@ ImageProvider sizedAsset(String asset, Size box, double devicePixelRatio) {
   final image = AssetImage(asset);
   return edge == null
       ? image
-      : ResizeImage(image, width: edge, height: edge, policy: ResizeImagePolicy.fit);
+      : ResizeImage(
+          image,
+          width: edge,
+          height: edge,
+          policy: ResizeImagePolicy.fit,
+        );
 }

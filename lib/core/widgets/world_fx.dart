@@ -38,19 +38,40 @@ class WorldGrade extends StatelessWidget {
     }
     ud.addAll([0, 0, 0, 1, 0]);
     const identity = [
-      1.0, 0.0, 0.0, 0.0, 0.0,
-      0.0, 1.0, 0.0, 0.0, 0.0,
-      0.0, 0.0, 1.0, 0.0, 0.0,
-      0.0, 0.0, 0.0, 1.0, 0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
     ];
-    return [for (var i = 0; i < 20; i++) identity[i] + (ud[i] - identity[i]) * d];
+    return [
+      for (var i = 0; i < 20; i++) identity[i] + (ud[i] - identity[i]) * d,
+    ];
   }
 
   @override
   Widget build(BuildContext context) {
     final d = (WorldPalette.of(context).depth * strength).clamp(0.0, 1.0);
     if (d <= 0.001) return child;
-    return ColorFiltered(colorFilter: ColorFilter.matrix(_matrix(d)), child: child);
+    return ColorFiltered(
+      colorFilter: ColorFilter.matrix(_matrix(d)),
+      child: child,
+    );
   }
 }
 
@@ -121,7 +142,8 @@ class _CardVinePainter extends CustomPainter {
       for (var i = 0; i < segments; i++) {
         a += (rng.nextDouble() - 0.5) * 0.8;
         final next = p + Offset(math.cos(a), math.sin(a)) * (reach / segments);
-        final bend = Offset(math.cos(a + math.pi / 2), math.sin(a + math.pi / 2)) *
+        final bend =
+            Offset(math.cos(a + math.pi / 2), math.sin(a + math.pi / 2)) *
             ((rng.nextDouble() - 0.5) * reach / segments);
         final c = Offset.lerp(p, next, 0.5)! + bend;
         path.quadraticBezierTo(c.dx, c.dy, next.dx, next.dy);
@@ -130,7 +152,12 @@ class _CardVinePainter extends CustomPainter {
           final s = Path()..moveTo(next.dx, next.dy);
           final sa = a + (rng.nextBool() ? 0.9 : -0.9);
           final end = next + Offset(math.cos(sa), math.sin(sa)) * reach * 0.25;
-          s.quadraticBezierTo(next.dx + (end.dx - next.dx) * 0.4, end.dy, end.dx, end.dy);
+          s.quadraticBezierTo(
+            next.dx + (end.dx - next.dx) * 0.4,
+            end.dy,
+            end.dx,
+            end.dy,
+          );
           vines.add((s, 1.6));
         }
         p = next;
@@ -169,7 +196,11 @@ class _CardVinePainter extends CustomPainter {
 /// a dull tube, a buzz of light, dark, a catch, then steady - instead of
 /// simply appearing. Gives [builder] a glow from 0 (unlit) to 1.
 class NeonIgnite extends StatefulWidget {
-  const NeonIgnite({super.key, required this.builder, this.delay = Duration.zero});
+  const NeonIgnite({
+    super.key,
+    required this.builder,
+    this.delay = Duration.zero,
+  });
 
   final Widget Function(BuildContext context, double glow) builder;
   final Duration delay;
@@ -254,7 +285,9 @@ class TypewriterText extends StatefulWidget {
 
 class _TypewriterTextState extends State<TypewriterText>
     with SingleTickerProviderStateMixin {
-  late final Duration _typing = Duration(milliseconds: widget.text.length * widget.charMs);
+  late final Duration _typing = Duration(
+    milliseconds: widget.text.length * widget.charMs,
+  );
   // Created eagerly: build may never touch it (reduced effects), and a lazy
   // controller first created in dispose() would look up a dead context.
   late final AnimationController _c;
@@ -262,7 +295,8 @@ class _TypewriterTextState extends State<TypewriterText>
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(vsync: this, duration: widget.delay + _typing)..forward();
+    _c = AnimationController(vsync: this, duration: widget.delay + _typing)
+      ..forward();
   }
 
   @override
@@ -277,13 +311,16 @@ class _TypewriterTextState extends State<TypewriterText>
       return Text(widget.text, style: widget.style);
     }
     final caret = widget.style.color ?? Colors.white;
-    final start = widget.delay.inMicroseconds / (widget.delay + _typing).inMicroseconds;
+    final start =
+        widget.delay.inMicroseconds / (widget.delay + _typing).inMicroseconds;
     return AnimatedBuilder(
       animation: _c,
       builder: (context, _) {
         final t = ((_c.value - start) / (1 - start)).clamp(0.0, 1.0);
         final n = (widget.text.length * t).floor();
-        if (n >= widget.text.length) return Text(widget.text, style: widget.style);
+        if (n >= widget.text.length) {
+          return Text(widget.text, style: widget.style);
+        }
         final hidden = widget.style.copyWith(color: Colors.transparent);
         return Text.rich(
           TextSpan(
@@ -325,40 +362,47 @@ class STHero extends StatelessWidget {
   Widget build(BuildContext context) {
     return Hero(
       tag: tag,
-      flightShuttleBuilder: (flightContext, animation, direction, fromContext, toContext) {
-        final art = (toContext.widget as Hero).child;
-        final glow = WorldPalette.of(flightContext).accent;
-        return AnimatedBuilder(
-          animation: animation,
-          child: art,
-          builder: (context, child) {
-            final t = animation.value;
-            final burn = math.sin(t * math.pi);
-            final r = BorderRadius.circular(radius * (1 - t));
-            return DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: r,
-                boxShadow: [
-                  BoxShadow(color: glow.withValues(alpha: 0.65 * burn), blurRadius: 34 * burn),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: r,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    child!,
-                    Opacity(
-                      opacity: burn,
-                      child: const CrtOverlay(opacity: 0.22, animate: false),
+      flightShuttleBuilder:
+          (flightContext, animation, direction, fromContext, toContext) {
+            final art = (toContext.widget as Hero).child;
+            final glow = WorldPalette.of(flightContext).accent;
+            return AnimatedBuilder(
+              animation: animation,
+              child: art,
+              builder: (context, child) {
+                final t = animation.value;
+                final burn = math.sin(t * math.pi);
+                final r = BorderRadius.circular(radius * (1 - t));
+                return DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: r,
+                    boxShadow: [
+                      BoxShadow(
+                        color: glow.withValues(alpha: 0.65 * burn),
+                        blurRadius: 34 * burn,
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: r,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        child!,
+                        Opacity(
+                          opacity: burn,
+                          child: const CrtOverlay(
+                            opacity: 0.22,
+                            animate: false,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             );
           },
-        );
-      },
       child: child,
     );
   }
@@ -367,7 +411,12 @@ class STHero extends StatelessWidget {
 /// Hawkins Lab redaction: the words are still laid out (so the card keeps
 /// its shape) but blacked out like a declassified document.
 class RedactedText extends StatelessWidget {
-  const RedactedText(this.text, {super.key, required this.style, this.maxLines});
+  const RedactedText(
+    this.text, {
+    super.key,
+    required this.style,
+    this.maxLines,
+  });
 
   final String text;
   final TextStyle style;
@@ -408,7 +457,9 @@ class ClassifiedBanner extends StatelessWidget {
           Expanded(
             child: Text(
               'CLASSIFIED · WATCH $unlock TO UNLOCK · TAP TO DECLASSIFY',
-              style: AppText.label(world.secondary).copyWith(fontSize: 10.5, letterSpacing: 1.1),
+              style: AppText.label(
+                world.secondary,
+              ).copyWith(fontSize: 10.5, letterSpacing: 1.1),
               maxLines: 2,
             ),
           ),
@@ -431,7 +482,8 @@ class FilmGrain extends StatefulWidget {
   State<FilmGrain> createState() => _FilmGrainState();
 }
 
-class _FilmGrainState extends State<FilmGrain> with SingleTickerProviderStateMixin {
+class _FilmGrainState extends State<FilmGrain>
+    with SingleTickerProviderStateMixin {
   static ui.Image? _noise; // shared: one texture for the app's lifetime
 
   late final AnimationController _c = AnimationController(
@@ -500,7 +552,11 @@ class _FilmGrainState extends State<FilmGrain> with SingleTickerProviderStateMix
             decoration: BoxDecoration(
               gradient: RadialGradient(
                 radius: 1.05,
-                colors: [Color(0x00000000), Color(0x00000000), Color(0x73000000)],
+                colors: [
+                  Color(0x00000000),
+                  Color(0x00000000),
+                  Color(0x73000000),
+                ],
                 stops: [0, 0.62, 1],
               ),
             ),
@@ -512,7 +568,11 @@ class _FilmGrainState extends State<FilmGrain> with SingleTickerProviderStateMix
 }
 
 class _GrainPainter extends CustomPainter {
-  const _GrainPainter({required this.noise, required this.frame, required this.opacity});
+  const _GrainPainter({
+    required this.noise,
+    required this.frame,
+    required this.opacity,
+  });
 
   final ui.Image? noise;
   final int frame;
@@ -523,11 +583,20 @@ class _GrainPainter extends CustomPainter {
     final img = noise;
     if (img == null || size.isEmpty) return;
     final rng = math.Random(frame);
-    final shift = Matrix4.translationValues(rng.nextDouble() * 128, rng.nextDouble() * 128, 0);
+    final shift = Matrix4.translationValues(
+      rng.nextDouble() * 128,
+      rng.nextDouble() * 128,
+      0,
+    );
     canvas.drawRect(
       Offset.zero & size,
       Paint()
-        ..shader = ImageShader(img, TileMode.repeated, TileMode.repeated, shift.storage)
+        ..shader = ImageShader(
+          img,
+          TileMode.repeated,
+          TileMode.repeated,
+          shift.storage,
+        )
         ..color = Colors.white.withValues(alpha: opacity),
     );
   }
@@ -571,7 +640,18 @@ class _SurveillanceOverlayState extends State<SurveillanceOverlay>
   Duration _elapsed = Duration.zero;
 
   static const _months = [
-    'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC',
+    'JAN',
+    'FEB',
+    'MAR',
+    'APR',
+    'MAY',
+    'JUN',
+    'JUL',
+    'AUG',
+    'SEP',
+    'OCT',
+    'NOV',
+    'DEC',
   ];
 
   @override
@@ -600,18 +680,27 @@ class _SurveillanceOverlayState extends State<SurveillanceOverlay>
     final world = WorldPalette.of(context);
     final reduce = MediaQuery.disableAnimationsOf(context);
     final now = widget.since.add(_elapsed);
-    final stamp = '${_months[now.month - 1]} ${_two(now.day)} ${now.year}  '
+    final stamp =
+        '${_months[now.month - 1]} ${_two(now.day)} ${now.year}  '
         '${_two(now.hour)}:${_two(now.minute)}:${_two(now.second)}';
     final rec = reduce || (_elapsed.inMilliseconds ~/ 500).isEven;
     // The Upside Down interferes with the signal.
-    final tearing = !reduce && world.depth > 0.5 && _elapsed.inSeconds % 6 == 5 && _elapsed.inMilliseconds % 1000 < 500;
-    final osd = AppText.label(Colors.white.withValues(alpha: 0.82)).copyWith(fontSize: 10.5, letterSpacing: 1.4);
+    final tearing =
+        !reduce &&
+        world.depth > 0.5 &&
+        _elapsed.inSeconds % 6 == 5 &&
+        _elapsed.inMilliseconds % 1000 < 500;
+    final osd = AppText.label(
+      Colors.white.withValues(alpha: 0.82),
+    ).copyWith(fontSize: 10.5, letterSpacing: 1.4);
 
     return IgnorePointer(
       child: Stack(
         fit: StackFit.expand,
         children: [
-          CustomPaint(painter: _ViewfinderPainter(top: widget.topInset, tearing: tearing)),
+          CustomPaint(
+            painter: _ViewfinderPainter(top: widget.topInset, tearing: tearing),
+          ),
           Positioned(
             top: widget.topInset + 10,
             left: 26,
@@ -623,7 +712,10 @@ class _SurveillanceOverlayState extends State<SurveillanceOverlay>
                   child: Container(
                     width: 9,
                     height: 9,
-                    decoration: const BoxDecoration(color: AppColors.stRedGlow, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                      color: AppColors.stRedGlow,
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -634,7 +726,10 @@ class _SurveillanceOverlayState extends State<SurveillanceOverlay>
           Positioned(
             top: widget.topInset + 28,
             left: 26,
-            child: Text('${widget.camera}\n${widget.subject} · OBSERVATION', style: osd.copyWith(fontSize: 9.5, color: Colors.white60)),
+            child: Text(
+              '${widget.camera}\n${widget.subject} · OBSERVATION',
+              style: osd.copyWith(fontSize: 9.5, color: Colors.white60),
+            ),
           ),
         ],
       ),
@@ -670,19 +765,31 @@ class _ViewfinderPainter extends CustomPainter {
     final faint = Paint()
       ..strokeWidth = 1
       ..color = Colors.white.withValues(alpha: 0.25);
-    canvas.drawLine(mid - const Offset(10, 0), mid + const Offset(10, 0), faint);
-    canvas.drawLine(mid - const Offset(0, 10), mid + const Offset(0, 10), faint);
+    canvas.drawLine(
+      mid - const Offset(10, 0),
+      mid + const Offset(10, 0),
+      faint,
+    );
+    canvas.drawLine(
+      mid - const Offset(0, 10),
+      mid + const Offset(0, 10),
+      faint,
+    );
 
     if (tearing) {
       final rng = math.Random(DateTime.now().millisecondsSinceEpoch ~/ 120);
       final tear = Paint()..color = Colors.white.withValues(alpha: 0.18);
       for (var i = 0; i < 5; i++) {
         final y = rng.nextDouble() * size.height;
-        canvas.drawRect(Rect.fromLTWH(0, y, size.width, 1 + rng.nextDouble() * 3), tear);
+        canvas.drawRect(
+          Rect.fromLTWH(0, y, size.width, 1 + rng.nextDouble() * 3),
+          tear,
+        );
       }
     }
   }
 
   @override
-  bool shouldRepaint(covariant _ViewfinderPainter old) => old.tearing != tearing || tearing || old.top != top;
+  bool shouldRepaint(covariant _ViewfinderPainter old) =>
+      old.tearing != tearing || tearing || old.top != top;
 }

@@ -22,7 +22,10 @@ class QuotesScreen extends StatelessWidget {
         itemCount: Quotes.all.length,
         itemBuilder: (context, i) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: FlickerIn(index: i, child: _QuoteCard(q: Quotes.all[i])),
+          child: FlickerIn(
+            index: i,
+            child: _QuoteCard(q: Quotes.all[i]),
+          ),
         ),
       ),
     );
@@ -44,17 +47,27 @@ class _QuoteCard extends StatelessWidget {
       // Long-press copies the quote, like a fan sharing it.
       onLongPress: () {
         Clipboard.setData(ClipboardData(text: '"${q.text}" — ${q.speaker}'));
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Copied: ${q.speaker}')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Copied: ${q.speaker}')));
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ExcludeSemantics(
-            child: Text('“', style: AppText.neon(size: 44, color: accent, glow: 0.8).copyWith(height: 0.9)),
+            child: Text(
+              '“',
+              style: AppText.neon(
+                size: 44,
+                color: accent,
+                glow: 0.8,
+              ).copyWith(height: 0.9),
+            ),
           ),
-          Text(q.text, style: AppText.dossier(world.ink.withValues(alpha: 0.92), size: 17)),
+          Text(
+            q.text,
+            style: AppText.dossier(world.ink.withValues(alpha: 0.92), size: 17),
+          ),
           const SizedBox(height: 14),
           Row(
             children: [

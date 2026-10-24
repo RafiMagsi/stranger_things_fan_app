@@ -51,7 +51,8 @@ class TimelineScreen extends ConsumerWidget {
                 child: _Beat(
                   event: e,
                   isLast: i == events.length - 1,
-                  shielded: shield && Seasons.isAhead(e.season, e.episode, watched),
+                  shielded:
+                      shield && Seasons.isAhead(e.season, e.episode, watched),
                 ),
               ),
             ],
@@ -89,7 +90,10 @@ class _BeatState extends State<_Beat> {
     final accent = world.tint(e.accent);
     final hidden = widget.shielded && !_declassified;
     final titleStyle = AppText.h2(world.ink).copyWith(fontSize: 17);
-    final detailStyle = AppText.body(world.ink.withValues(alpha: 0.72), size: 13);
+    final detailStyle = AppText.body(
+      world.ink.withValues(alpha: 0.72),
+      size: 13,
+    );
 
     return IntrinsicHeight(
       child: Row(
@@ -110,8 +114,16 @@ class _BeatState extends State<_Beat> {
                     boxShadow: hidden
                         ? null
                         : [
-                            BoxShadow(color: accent.withValues(alpha: 0.9), blurRadius: 12, spreadRadius: 1),
-                            BoxShadow(color: accent.withValues(alpha: 0.4), blurRadius: 26, spreadRadius: 4),
+                            BoxShadow(
+                              color: accent.withValues(alpha: 0.9),
+                              blurRadius: 12,
+                              spreadRadius: 1,
+                            ),
+                            BoxShadow(
+                              color: accent.withValues(alpha: 0.4),
+                              blurRadius: 26,
+                              spreadRadius: 4,
+                            ),
                           ],
                   ),
                 ),
@@ -142,7 +154,9 @@ class _BeatState extends State<_Beat> {
               child: NeonCard(
                 glow: e.accent,
                 padding: EdgeInsets.zero,
-                onTap: hidden ? () => setState(() => _declassified = true) : null,
+                onTap: hidden
+                    ? () => setState(() => _declassified = true)
+                    : null,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -154,7 +168,10 @@ class _BeatState extends State<_Beat> {
                         children: [
                           ImageFiltered(
                             enabled: hidden,
-                            imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            imageFilter: ImageFilter.blur(
+                              sigmaX: 12,
+                              sigmaY: 12,
+                            ),
                             child: EventArt(photo: e.photo, accent: e.accent),
                           ),
                           DecoratedBox(
@@ -162,7 +179,10 @@ class _BeatState extends State<_Beat> {
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: [Colors.black.withValues(alpha: 0.1), world.card],
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.1),
+                                  world.card,
+                                ],
                                 stops: const [0.3, 1],
                               ),
                             ),
@@ -172,13 +192,22 @@ class _BeatState extends State<_Beat> {
                             bottom: 8,
                             child: Text(
                               e.year,
-                              style: AppText.neon(size: 19, color: accent, glow: 0.85),
+                              style: AppText.neon(
+                                size: 19,
+                                color: accent,
+                                glow: 0.85,
+                              ),
                             ),
                           ),
                           Positioned(
                             top: 10,
                             right: 10,
-                            child: GlowBadge(text: e.revealedIn, color: world.muted, icon: Icons.live_tv, onImage: true),
+                            child: GlowBadge(
+                              text: e.revealedIn,
+                              color: world.muted,
+                              icon: Icons.live_tv,
+                              onImage: true,
+                            ),
                           ),
                         ],
                       ),
@@ -189,9 +218,17 @@ class _BeatState extends State<_Beat> {
                           ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                RedactedText(e.title, style: titleStyle, maxLines: 1),
+                                RedactedText(
+                                  e.title,
+                                  style: titleStyle,
+                                  maxLines: 1,
+                                ),
                                 const SizedBox(height: 6),
-                                RedactedText(e.detail, style: detailStyle, maxLines: 2),
+                                RedactedText(
+                                  e.detail,
+                                  style: detailStyle,
+                                  maxLines: 2,
+                                ),
                                 const SizedBox(height: 10),
                                 ClassifiedBanner(unlock: e.revealedIn),
                               ],

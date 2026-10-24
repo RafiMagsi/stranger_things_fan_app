@@ -81,7 +81,8 @@ const _transmissions = <_Transmission>[
   ),
 ];
 
-class _TransmissionsScreenState extends ConsumerState<TransmissionsScreen> {
+class _TransmissionsScreenState extends ConsumerState<TransmissionsScreen>
+    with SoundtrackClaimMixin {
   final _player = AudioPlayer();
   int? _playingIndex;
   Duration _position = Duration.zero;

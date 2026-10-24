@@ -12,7 +12,7 @@ import 'core/widgets/particles.dart';
 import 'core/widgets/rift_route.dart';
 import 'core/widgets/world_fx.dart';
 import 'core/widgets/world_toggle.dart';
-import 'screens/splash_screen.dart';
+import 'screens/intro_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +23,7 @@ void main() {
       statusBarBrightness: Brightness.dark,
     ),
   );
+  Soundtrack.configure();
   runApp(const ProviderScope(child: StrangerThingsApp()));
 }
 
@@ -41,7 +42,7 @@ class StrangerThingsApp extends ConsumerWidget {
       themeMode: upsideDown ? ThemeMode.dark : ThemeMode.light,
       themeAnimationDuration: const Duration(milliseconds: 600),
       builder: (context, child) => _WorldStack(child: child!),
-      home: const SplashScreen(),
+      home: const IntroScreen(),
     );
   }
 }
@@ -64,7 +65,7 @@ class _WorldStack extends ConsumerStatefulWidget {
 }
 
 class _WorldStackState extends ConsumerState<_WorldStack>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _storm = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1100),
@@ -77,7 +78,20 @@ class _WorldStackState extends ConsumerState<_WorldStack>
   int _strikes = 0;
 
   @override
+  void initState() {
+    super.initState();
+    // The music sleeps with the app.
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    Soundtrack.setForeground(state == AppLifecycleState.resumed);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _flip.dispose();
     _storm.dispose();
     super.dispose();
@@ -126,6 +140,7 @@ class _WorldStackState extends ConsumerState<_WorldStack>
 
   @override
   Widget build(BuildContext context) {
+    Soundtrack.setEnabled(ref.watch(settingsProvider.select((s) => s.music)));
     final upsideDown = ref.watch(worldModeProvider);
     final settings = ref.watch(settingsProvider);
     final media = MediaQuery.of(context);
@@ -140,7 +155,11 @@ class _WorldStackState extends ConsumerState<_WorldStack>
         onFlip: _startFlip,
         child: Listener(
           behavior: HitTestBehavior.translucent,
-          onPointerDown: (e) => TapOrigin.last = e.position,
+          onPointerDown: (e) {
+            TapOrigin.last = e.position;
+            // Browsers hold audio until the first touch; start it then.
+            Soundtrack.wake();
+          },
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -203,7 +222,8 @@ class _WorldStackState extends ConsumerState<_WorldStack>
                           key: ValueKey('ash'),
                           color: AppColors.udSpore,
                           glowColor: AppColors.udGlow,
-                          count: 46,
+                          // The town behind already drifts with spores.
+                          count: 22,
                           baseRadius: 1.3,
                           speed: 0.6,
                           opacity: 0.75,

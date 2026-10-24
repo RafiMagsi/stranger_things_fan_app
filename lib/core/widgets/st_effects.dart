@@ -995,9 +995,7 @@ class _VecnaSceneState extends State<VecnaScene>
 
   @override
   Widget build(BuildContext context) {
-    final t = _kTest
-        ? 0.6
-        : (_c.isAnimating ? _c.value : 0.4);
+    final t = _kTest ? 0.6 : (_c.isAnimating ? _c.value : 0.4);
     return IgnorePointer(
       child: RepaintBoundary(
         child: CustomPaint(
@@ -1063,11 +1061,7 @@ class _VecnaRoomPainter extends CustomPainter {
       final x = rng.nextDouble() * w;
       final y = rng.nextDouble() * h;
       final len = 14 + rng.nextDouble() * 22;
-      canvas.drawLine(
-        Offset(x, y),
-        Offset(x - 3, y + len),
-        rain,
-      );
+      canvas.drawLine(Offset(x, y), Offset(x - 3, y + len), rain);
     }
 
     // Clock: centered, big, behind the name in non-story mode.
@@ -1117,7 +1111,10 @@ class _VecnaRoomPainter extends CustomPainter {
         px += math.cos(a) * clockR * 0.12;
         py += math.sin(a) * clockR * 0.12;
         canvas.drawLine(
-          Offset(px - math.cos(a) * clockR * 0.04, py - math.sin(a) * clockR * 0.04),
+          Offset(
+            px - math.cos(a) * clockR * 0.04,
+            py - math.sin(a) * clockR * 0.04,
+          ),
           Offset(px, py),
           crack,
         );
@@ -1143,7 +1140,10 @@ class _VecnaRoomPainter extends CustomPainter {
     final handLen = clockR * 0.62;
     canvas.drawLine(
       Offset(cx, cy),
-      Offset(cx + math.cos(handAngle) * handLen, cy + math.sin(handAngle) * handLen),
+      Offset(
+        cx + math.cos(handAngle) * handLen,
+        cy + math.sin(handAngle) * handLen,
+      ),
       Paint()
         ..color = accent.withValues(alpha: 0.9)
         ..strokeWidth = 3,
@@ -1153,7 +1153,10 @@ class _VecnaRoomPainter extends CustomPainter {
     // A thin tail on the hand.
     canvas.drawLine(
       Offset(cx, cy),
-      Offset(cx - math.cos(handAngle) * clockR * 0.12, cy - math.sin(handAngle) * clockR * 0.12),
+      Offset(
+        cx - math.cos(handAngle) * clockR * 0.12,
+        cy - math.sin(handAngle) * clockR * 0.12,
+      ),
       Paint()
         ..color = accent.withValues(alpha: 0.7)
         ..strokeWidth = 1.6,
@@ -1225,7 +1228,9 @@ class _VecnaRoomPainter extends CustomPainter {
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
       );
       // A single gold sliver through the door gap, flickering.
-      final sliver = accent.withValues(alpha: 0.5 + 0.3 * math.sin(t * math.pi * 8));
+      final sliver = accent.withValues(
+        alpha: 0.5 + 0.3 * math.sin(t * math.pi * 8),
+      );
       canvas.drawRect(
         Rect.fromLTWH(doorX + doorW * 0.3, h * 0.08, doorW * 0.08, doorH * 0.9),
         Paint()
@@ -1235,7 +1240,12 @@ class _VecnaRoomPainter extends CustomPainter {
       // A shadow figure in the doorway, barely there.
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(doorX + doorW * 0.18, h * 0.12, doorW * 0.64, doorH * 0.7),
+          Rect.fromLTWH(
+            doorX + doorW * 0.18,
+            h * 0.12,
+            doorW * 0.64,
+            doorH * 0.7,
+          ),
           const Radius.circular(4),
         ),
         Paint()

@@ -16,26 +16,87 @@ import 'settings_sheet.dart';
 import 'soundboard_screen.dart';
 import 'story_screen.dart';
 
-typedef _Row = ({String key, IconData icon, String title, String body, Color color});
+typedef _Row = ({
+  String key,
+  IconData icon,
+  String title,
+  String body,
+  Color color,
+});
 
 /// Dive deeper: the extras, the settings, and where everything came from.
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
 
   static const List<_Row> _rows = [
-    (key: 'story', icon: Icons.auto_stories, title: 'Story Mode', body: 'The whole series, chapter by chapter', color: AppColors.stRed),
-    (key: 'reel', icon: Icons.movie, title: 'The Reel', body: 'Fan edits, the right way up', color: Color(0xFF4FC3F7)),
-    (key: 'gallery', icon: Icons.palette, title: 'Fan Art', body: 'The gallery wall', color: Color(0xFFB388FF)),
-    (key: 'sounds', icon: Icons.graphic_eq, title: 'Sounds & Music', body: 'Synth cues, clocks and captures', color: Color(0xFF66BB6A)),
-    (key: 'quotes', icon: Icons.format_quote, title: 'Quotes', body: 'Iconic lines from the series', color: AppColors.hawkinsGold),
-    (key: 'trivia', icon: Icons.lightbulb, title: 'Trivia', body: 'Prove you\'re Hawkins-ready', color: Color(0xFFFF7043)),
-    (key: 'settings', icon: Icons.tune, title: 'Settings', body: 'Spoilers, sound, motion, progress', color: Color(0xFF90A4AE)),
-    (key: 'credits', icon: Icons.info_outline, title: 'Credits & Sources', body: 'Who made what, and the licences', color: Color(0xFF90A4AE)),
-    (key: 'about', icon: Icons.favorite_border, title: 'About', body: 'A fan companion, not an official app', color: AppColors.stRed),
+    (
+      key: 'story',
+      icon: Icons.auto_stories,
+      title: 'Story Mode',
+      body: 'The whole series, chapter by chapter',
+      color: AppColors.stRed,
+    ),
+    (
+      key: 'reel',
+      icon: Icons.movie,
+      title: 'The Reel',
+      body: 'Fan edits, the right way up',
+      color: Color(0xFF4FC3F7),
+    ),
+    (
+      key: 'gallery',
+      icon: Icons.palette,
+      title: 'Fan Art',
+      body: 'The gallery wall',
+      color: Color(0xFFB388FF),
+    ),
+    (
+      key: 'sounds',
+      icon: Icons.graphic_eq,
+      title: 'Sounds & Music',
+      body: 'Synth cues, clocks and captures',
+      color: Color(0xFF66BB6A),
+    ),
+    (
+      key: 'quotes',
+      icon: Icons.format_quote,
+      title: 'Quotes',
+      body: 'Iconic lines from the series',
+      color: AppColors.hawkinsGold,
+    ),
+    (
+      key: 'trivia',
+      icon: Icons.lightbulb,
+      title: 'Trivia',
+      body: 'Prove you\'re Hawkins-ready',
+      color: Color(0xFFFF7043),
+    ),
+    (
+      key: 'settings',
+      icon: Icons.tune,
+      title: 'Settings',
+      body: 'Spoilers, sound, motion, progress',
+      color: Color(0xFF90A4AE),
+    ),
+    (
+      key: 'credits',
+      icon: Icons.info_outline,
+      title: 'Credits & Sources',
+      body: 'Who made what, and the licences',
+      color: Color(0xFF90A4AE),
+    ),
+    (
+      key: 'about',
+      icon: Icons.favorite_border,
+      title: 'About',
+      body: 'A fan companion, not an official app',
+      color: AppColors.stRed,
+    ),
   ];
 
   void _open(BuildContext context, String key) {
-    void push(Widget page, String name) => RiftPageRoute.push(context, page, name: name);
+    void push(Widget page, String name) =>
+        RiftPageRoute.push(context, page, name: name);
     switch (key) {
       case 'story':
         push(const StoryScreen(), '/story');
@@ -88,19 +149,40 @@ class MoreScreen extends StatelessWidget {
                         height: 40,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: world.tint(r.color).withValues(alpha: 0.75)),
-                          boxShadow: [BoxShadow(color: world.tint(r.color).withValues(alpha: 0.3), blurRadius: 10)],
+                          border: Border.all(
+                            color: world.tint(r.color).withValues(alpha: 0.75),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: world.tint(r.color).withValues(alpha: 0.3),
+                              blurRadius: 10,
+                            ),
+                          ],
                         ),
-                        child: Icon(r.icon, size: 20, color: world.tint(r.color)),
+                        child: Icon(
+                          r.icon,
+                          size: 20,
+                          color: world.tint(r.color),
+                        ),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(r.title.toUpperCase(), style: AppText.headline(world.ink, size: 15, letterSpacing: 0.06)),
+                            Text(
+                              r.title.toUpperCase(),
+                              style: AppText.headline(
+                                world.ink,
+                                size: 15,
+                                letterSpacing: 0.06,
+                              ),
+                            ),
                             const SizedBox(height: 2),
-                            Text(r.body, style: AppText.dossier(world.muted, size: 12)),
+                            Text(
+                              r.body,
+                              style: AppText.dossier(world.muted, size: 12),
+                            ),
                           ],
                         ),
                       ),
@@ -133,7 +215,10 @@ class _About extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('ABOUT THIS APP', style: AppText.headline(world.ink, size: 20)),
+              Text(
+                'ABOUT THIS APP',
+                style: AppText.headline(world.ink, size: 20),
+              ),
               const SizedBox(height: 10),
               Text(
                 'An unofficial fan companion to Stranger Things, made for education and fun. '
@@ -141,7 +226,10 @@ class _About extends StatelessWidget {
                 'Official trailers stream from Netflix\'s own YouTube channels. Photos are '
                 'freely licensed and credited. The Reel, the fan-art wall and the captured '
                 'sounds are a personal media pack of other fans\' work - see Credits.',
-                style: AppText.body(world.ink.withValues(alpha: 0.85), size: 13.5),
+                style: AppText.body(
+                  world.ink.withValues(alpha: 0.85),
+                  size: 13.5,
+                ),
               ),
             ],
           ),

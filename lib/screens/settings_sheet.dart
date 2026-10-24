@@ -80,10 +80,21 @@ class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
                     onChanged: notifier.setSpoilerShield,
                   ),
                   _Toggle(
-                    key: const ValueKey('setting-music'),
-                    title: 'Score',
+                    key: const ValueKey('setting-titles'),
+                    title: 'Opening titles',
                     body:
-                        'The synth theme behind the title sequence and Story mode.',
+                        'Start on the show\'s real opening credits, with the theme. '
+                        'Off: the five-second title sequence.',
+                    icon: Icons.movie_filter,
+                    value: settings.openingTitles,
+                    onChanged: notifier.setOpeningTitles,
+                  ),
+                  _Toggle(
+                    key: const ValueKey('setting-music'),
+                    title: 'Music',
+                    body:
+                        'Running Up That Hill through the app (drowned in the '
+                        'Upside Down), the theme on the title and in Story mode.',
                     icon: Icons.music_note,
                     value: settings.music,
                     onChanged: notifier.setMusic,

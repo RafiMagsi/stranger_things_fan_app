@@ -26,7 +26,8 @@ class TimelineEvent {
   /// `MediaCredits.photo`), e.g. `'events/lights'`.
   final String? photo;
 
-  String get revealedIn => episode == null ? 'Season $season' : 'S$season · E$episode';
+  String get revealedIn =>
+      episode == null ? 'Season $season' : 'S$season · E$episode';
 }
 
 /// The Stranger Things story in the order it happened, 1959 -> 1989.
@@ -289,8 +290,7 @@ class STTimeline {
       year: 'Late 1985',
       title: '"The American"',
       photo: 'events/volcano',
-      detail:
-          'Hopper is alive, a prisoner in a Soviet camp in Kamchatka.',
+      detail: 'Hopper is alive, a prisoner in a Soviet camp in Kamchatka.',
       season: 3,
       episode: 8,
       accent: _s4,

@@ -81,7 +81,9 @@ class _NeonCardState extends State<NeonCard> {
           stops: const [0, 0.45, 1],
         ),
         border: Border.all(
-          color: accent.withValues(alpha: _pressed ? 0.65 : 0.26 - 0.06 * depth),
+          color: accent.withValues(
+            alpha: _pressed ? 0.65 : 0.26 - 0.06 * depth,
+          ),
         ),
         boxShadow: [
           BoxShadow(
@@ -269,7 +271,10 @@ class GlowBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: onImage
-            ? Color.alphaBlend(color.withValues(alpha: 0.16), const Color(0xB3000000))
+            ? Color.alphaBlend(
+                color.withValues(alpha: 0.16),
+                const Color(0xB3000000),
+              )
             : color.withValues(alpha: 0.13),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.5)),
@@ -284,7 +289,9 @@ class GlowBadge extends StatelessWidget {
           Flexible(
             child: Text(
               text.toUpperCase(),
-              style: AppText.label(color).copyWith(fontSize: 10.5, letterSpacing: 1.3),
+              style: AppText.label(
+                color,
+              ).copyWith(fontSize: 10.5, letterSpacing: 1.3),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -315,7 +322,10 @@ class SectionHeader extends StatelessWidget {
       padding: padding,
       child: Row(
         children: [
-          SizedBox(width: 16, child: NeonTube(color: world.accent, thickness: 2.5)),
+          SizedBox(
+            width: 16,
+            child: NeonTube(color: world.accent, thickness: 2.5),
+          ),
           const SizedBox(width: 10),
           // The title takes what it needs; the rule only gets the rest.
           Flexible(
@@ -323,9 +333,15 @@ class SectionHeader extends StatelessWidget {
             child: Text(
               title.toUpperCase(),
               // A condensed poster label, lit by the world's neon.
-              style: AppText.headline(world.ink, size: 15, letterSpacing: 0.16).copyWith(
-                shadows: [Shadow(color: world.accent.withValues(alpha: 0.55), blurRadius: 10)],
-              ),
+              style: AppText.headline(world.ink, size: 15, letterSpacing: 0.16)
+                  .copyWith(
+                    shadows: [
+                      Shadow(
+                        color: world.accent.withValues(alpha: 0.55),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -343,10 +359,7 @@ class SectionHeader extends StatelessWidget {
               ),
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: 12),
-            trailing!,
-          ],
+          if (trailing != null) ...[const SizedBox(width: 12), trailing!],
         ],
       ),
     );

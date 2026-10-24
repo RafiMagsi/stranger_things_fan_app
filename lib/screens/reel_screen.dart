@@ -53,13 +53,19 @@ class _ReelScreenState extends State<ReelScreen> {
                     onPressed: () => playReel(context, clips, 0),
                     icon: const Icon(Icons.play_arrow, size: 18),
                     label: const Text('PLAY ALL'),
-                    style: FilledButton.styleFrom(backgroundColor: AppColors.stRed, foregroundColor: Colors.white),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.stRed,
+                      foregroundColor: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       '${clips.length} clips · sound on',
-                      style: AppText.dossier(WorldPalette.of(context).muted, size: 12),
+                      style: AppText.dossier(
+                        WorldPalette.of(context).muted,
+                        size: 12,
+                      ),
                     ),
                   ),
                 ],
@@ -78,7 +84,10 @@ class _ReelScreenState extends State<ReelScreen> {
               itemCount: clips.length,
               itemBuilder: (context, i) => FlickerIn(
                 index: i,
-                child: ReelCard(clip: clips[i], onTap: () => playReel(context, clips, i)),
+                child: ReelCard(
+                  clip: clips[i],
+                  onTap: () => playReel(context, clips, i),
+                ),
               ),
             ),
           ),
@@ -90,12 +99,19 @@ class _ReelScreenState extends State<ReelScreen> {
 
 /// Plays [clips] fullscreen from [start], rolling through the rest.
 Future<void> playReel(BuildContext context, List<FanClip> clips, int start) =>
-    ClipPlayer.play(context, [for (final c in clips) ClipItem.fan(c)], start: start);
+    ClipPlayer.play(context, [
+      for (final c in clips) ClipItem.fan(c),
+    ], start: start);
 
 /// A fan edit as a tape cover: its still, how it was shot, a play button,
 /// and who cut it.
 class ReelCard extends StatelessWidget {
-  const ReelCard({super.key, required this.clip, required this.onTap, this.large = false});
+  const ReelCard({
+    super.key,
+    required this.clip,
+    required this.onTap,
+    this.large = false,
+  });
 
   final FanClip clip;
   final VoidCallback onTap;
@@ -129,7 +145,11 @@ class ReelCard extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0x40000000), Color(0x00000000), Color(0xE6000000)],
+                colors: [
+                  Color(0x40000000),
+                  Color(0x00000000),
+                  Color(0xE6000000),
+                ],
                 stops: [0, 0.4, 1],
               ),
             ),
@@ -144,14 +164,18 @@ class ReelCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    clip.portrait ? Icons.stay_current_portrait : Icons.stay_current_landscape,
+                    clip.portrait
+                        ? Icons.stay_current_portrait
+                        : Icons.stay_current_landscape,
                     size: 11,
                     color: Colors.white70,
                   ),
                   const SizedBox(width: 4),
                   Text(
                     clip.portrait ? 'PHONE' : 'WIDESCREEN',
-                    style: AppText.label(Colors.white70).copyWith(fontSize: 8.5, letterSpacing: 1.2),
+                    style: AppText.label(
+                      Colors.white70,
+                    ).copyWith(fontSize: 8.5, letterSpacing: 1.2),
                   ),
                 ],
               ),
@@ -165,9 +189,18 @@ class ReelCard extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: Colors.black.withValues(alpha: 0.45),
                 border: Border.all(color: accent, width: 2),
-                boxShadow: [BoxShadow(color: accent.withValues(alpha: 0.7), blurRadius: 16)],
+                boxShadow: [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.7),
+                    blurRadius: 16,
+                  ),
+                ],
               ),
-              child: Icon(Icons.play_arrow, color: Colors.white, size: large ? 34 : 26),
+              child: Icon(
+                Icons.play_arrow,
+                color: Colors.white,
+                size: large ? 34 : 26,
+              ),
             ),
           ),
           Positioned(
@@ -181,14 +214,21 @@ class ReelCard extends StatelessWidget {
                   clip.title.toUpperCase(),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppText.headline(Colors.white, size: large ? 22 : 14.5, letterSpacing: 0.04),
+                  style: AppText.headline(
+                    Colors.white,
+                    size: large ? 22 : 14.5,
+                    letterSpacing: 0.04,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   clip.note ?? clip.creator ?? 'Fan edit',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppText.dossier(Colors.white70, size: large ? 12 : 10.5),
+                  style: AppText.dossier(
+                    Colors.white70,
+                    size: large ? 12 : 10.5,
+                  ),
                 ),
               ],
             ),

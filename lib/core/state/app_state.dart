@@ -34,8 +34,9 @@ class WorldModeNotifier extends Notifier<bool> {
   }
 }
 
-final worldModeProvider =
-    NotifierProvider<WorldModeNotifier, bool>(WorldModeNotifier.new);
+final worldModeProvider = NotifierProvider<WorldModeNotifier, bool>(
+  WorldModeNotifier.new,
+);
 
 /// App preferences, saved on device.
 @immutable
@@ -46,6 +47,7 @@ class AppSettings {
     this.music = true,
     this.autoplayPreviews = true,
     this.reduceEffects = false,
+    this.openingTitles = true,
   });
 
   /// Hide timeline beats and moments from chapters you haven't watched.
@@ -54,14 +56,19 @@ class AppSettings {
   /// Sound cues on big moments (the world flip, creatures, dice).
   final bool soundEffects;
 
-  /// The synth score behind the title sequence and Story mode.
+  /// The soundtrack: Running Up That Hill under the app, the theme on the
+  /// titles and in Story mode.
   final bool music;
 
-  /// Official trailers play silently behind the home banner.
+  /// Silent fan-edit loops behind banners, dossiers and the Gate.
   final bool autoplayPreviews;
 
   /// No flashes, flicker or big motion - on top of the system setting.
   final bool reduceEffects;
+
+  /// Open on the show's real opening credits (otherwise the rebuilt,
+  /// five-second title sequence).
+  final bool openingTitles;
 
   AppSettings copyWith({
     bool? spoilerShield,
@@ -69,14 +76,15 @@ class AppSettings {
     bool? music,
     bool? autoplayPreviews,
     bool? reduceEffects,
-  }) =>
-      AppSettings(
-        spoilerShield: spoilerShield ?? this.spoilerShield,
-        soundEffects: soundEffects ?? this.soundEffects,
-        music: music ?? this.music,
-        autoplayPreviews: autoplayPreviews ?? this.autoplayPreviews,
-        reduceEffects: reduceEffects ?? this.reduceEffects,
-      );
+    bool? openingTitles,
+  }) => AppSettings(
+    spoilerShield: spoilerShield ?? this.spoilerShield,
+    soundEffects: soundEffects ?? this.soundEffects,
+    music: music ?? this.music,
+    autoplayPreviews: autoplayPreviews ?? this.autoplayPreviews,
+    reduceEffects: reduceEffects ?? this.reduceEffects,
+    openingTitles: openingTitles ?? this.openingTitles,
+  );
 }
 
 class SettingsNotifier extends Notifier<AppSettings> {
@@ -85,16 +93,20 @@ class SettingsNotifier extends Notifier<AppSettings> {
   static const _reduce = 'reduce_effects';
   static const _music = 'music';
   static const _previews = 'autoplay_previews';
+  static const _titles = 'opening_titles';
 
   @override
   AppSettings build() {
-    _pref((p) async => AppSettings(
-          spoilerShield: p.getBool(_shield) ?? false,
-          soundEffects: p.getBool(_sound) ?? true,
-          music: p.getBool(_music) ?? true,
-          autoplayPreviews: p.getBool(_previews) ?? true,
-          reduceEffects: p.getBool(_reduce) ?? false,
-        )).then((saved) {
+    _pref(
+      (p) async => AppSettings(
+        spoilerShield: p.getBool(_shield) ?? false,
+        soundEffects: p.getBool(_sound) ?? true,
+        music: p.getBool(_music) ?? true,
+        autoplayPreviews: p.getBool(_previews) ?? true,
+        reduceEffects: p.getBool(_reduce) ?? false,
+        openingTitles: p.getBool(_titles) ?? true,
+      ),
+    ).then((saved) {
       if (saved != null) state = saved;
     });
     return const AppSettings();
@@ -124,10 +136,16 @@ class SettingsNotifier extends Notifier<AppSettings> {
     state = state.copyWith(reduceEffects: v);
     _pref((p) => p.setBool(_reduce, v));
   }
+
+  void setOpeningTitles(bool v) {
+    state = state.copyWith(openingTitles: v);
+    _pref((p) => p.setBool(_titles, v));
+  }
 }
 
-final settingsProvider =
-    NotifierProvider<SettingsNotifier, AppSettings>(SettingsNotifier.new);
+final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(
+  SettingsNotifier.new,
+);
 
 /// Which chapters the fan has watched, as "S1E1" keys. Saved on the device
 /// so the app can follow you through the series in order and always know
@@ -180,4 +198,5 @@ class WatchProgressNotifier extends Notifier<Set<String>> {
 
 final watchProgressProvider =
     NotifierProvider<WatchProgressNotifier, Set<String>>(
-        WatchProgressNotifier.new);
+      WatchProgressNotifier.new,
+    );

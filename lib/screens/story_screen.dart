@@ -68,6 +68,7 @@ class _StoryScreenState extends ConsumerState<StoryScreen> {
 
   late int _index = _startIndex();
   bool _paused = false;
+  late final SoundtrackClaim _theme;
   bool _showHint = true;
   final _progress = ValueNotifier<double>(0);
 
@@ -87,15 +88,13 @@ class _StoryScreenState extends ConsumerState<StoryScreen> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && ref.read(settingsProvider).music) Score.start();
-    });
+    _theme = Soundtrack.claim(Soundtrack.storyTheme, volume: 0.5);
   }
 
   @override
   void dispose() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    Score.stop();
+    Soundtrack.release(_theme);
     _progress.dispose();
     super.dispose();
   }

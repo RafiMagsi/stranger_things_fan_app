@@ -69,13 +69,18 @@ class WorldToggle extends ConsumerWidget {
               ),
               border: Border.all(color: primary.withValues(alpha: 0.7)),
               boxShadow: [
-                BoxShadow(color: primary.withValues(alpha: 0.35), blurRadius: 14),
+                BoxShadow(
+                  color: primary.withValues(alpha: 0.35),
+                  blurRadius: 14,
+                ),
               ],
             ),
             child: AnimatedAlign(
               duration: const Duration(milliseconds: 460),
               curve: Curves.easeOutBack,
-              alignment: upsideDown ? Alignment.centerRight : Alignment.centerLeft,
+              alignment: upsideDown
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
               child: AnimatedRotation(
                 duration: const Duration(milliseconds: 460),
                 curve: Curves.easeOutBack,
@@ -87,12 +92,23 @@ class WorldToggle extends ConsumerWidget {
                     shape: BoxShape.circle,
                     gradient: RadialGradient(
                       colors: upsideDown
-                          ? [AppColors.udSpore, AppColors.udGlow, const Color(0xFF13325A)]
-                          : [const Color(0xFFFFE08A), AppColors.stRed, AppColors.stRedDeep],
+                          ? [
+                              AppColors.udSpore,
+                              AppColors.udGlow,
+                              const Color(0xFF13325A),
+                            ]
+                          : [
+                              const Color(0xFFFFE08A),
+                              AppColors.stRed,
+                              AppColors.stRedDeep,
+                            ],
                       stops: const [0, 0.55, 1],
                     ),
                     boxShadow: [
-                      BoxShadow(color: primary.withValues(alpha: 0.9), blurRadius: 10),
+                      BoxShadow(
+                        color: primary.withValues(alpha: 0.9),
+                        blurRadius: 10,
+                      ),
                     ],
                   ),
                   child: Icon(

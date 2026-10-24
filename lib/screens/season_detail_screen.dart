@@ -98,13 +98,23 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
                   background: Stack(
                     fit: StackFit.expand,
                     children: [
-                      widget.heroTag == null ? art : STHero(tag: widget.heroTag!, radius: 22, child: art),
+                      widget.heroTag == null
+                          ? art
+                          : STHero(
+                              tag: widget.heroTag!,
+                              radius: 22,
+                              child: art,
+                            ),
                       const DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [Color(0x55000000), Color(0x22000000), Color(0xF0000000)],
+                            colors: [
+                              Color(0x55000000),
+                              Color(0x22000000),
+                              Color(0xF0000000),
+                            ],
                             stops: [0, 0.4, 1],
                           ),
                         ),
@@ -120,22 +130,43 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
                               delay: const Duration(milliseconds: 300),
                               builder: (context, glow) => Text(
                                 'SEASON ${numberWord(s.number)}',
-                                style: AppText.neon(size: 34, color: world.tint(s.accent), glow: glow),
+                                style: AppText.neon(
+                                  size: 34,
+                                  color: world.tint(s.accent),
+                                  glow: glow,
+                                ),
                               ),
                             ),
                             const SizedBox(height: 10),
                             Text(
                               s.tagline,
-                              style: AppText.body(Colors.white.withValues(alpha: 0.9), size: 14),
+                              style: AppText.body(
+                                Colors.white.withValues(alpha: 0.9),
+                                size: 14,
+                              ),
                             ),
                             const SizedBox(height: 12),
                             Wrap(
                               spacing: 6,
                               runSpacing: 6,
                               children: [
-                                GlowBadge(text: s.setting, color: Colors.white70, icon: Icons.event, onImage: true),
-                                GlowBadge(text: s.threat, color: AppColors.hawkinsGold, icon: Icons.warning_amber, onImage: true),
-                                GlowBadge(text: '${s.year} · ${s.episodeLabel}', color: Colors.white70, onImage: true),
+                                GlowBadge(
+                                  text: s.setting,
+                                  color: Colors.white70,
+                                  icon: Icons.event,
+                                  onImage: true,
+                                ),
+                                GlowBadge(
+                                  text: s.threat,
+                                  color: AppColors.hawkinsGold,
+                                  icon: Icons.warning_amber,
+                                  onImage: true,
+                                ),
+                                GlowBadge(
+                                  text: '${s.year} · ${s.episodeLabel}',
+                                  color: Colors.white70,
+                                  onImage: true,
+                                ),
                               ],
                             ),
                           ],
@@ -157,8 +188,12 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              done == keys.length ? 'SEASON COMPLETE' : 'WATCHED $done OF ${keys.length}',
-                              style: AppText.label(world.muted).copyWith(fontSize: 11),
+                              done == keys.length
+                                  ? 'SEASON COMPLETE'
+                                  : 'WATCHED $done OF ${keys.length}',
+                              style: AppText.label(
+                                world.muted,
+                              ).copyWith(fontSize: 11),
                             ),
                             const SizedBox(height: 6),
                             ClipRRect(
@@ -167,7 +202,9 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
                                 value: done / keys.length,
                                 minHeight: 4,
                                 color: world.tint(s.accent),
-                                backgroundColor: world.ink.withValues(alpha: 0.1),
+                                backgroundColor: world.ink.withValues(
+                                  alpha: 0.1,
+                                ),
                               ),
                             ),
                           ],
@@ -198,7 +235,9 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
               ),
 
               if (s.trailers.isNotEmpty) ...[
-                const SliverToBoxAdapter(child: SectionHeader(title: 'Official Trailers')),
+                const SliverToBoxAdapter(
+                  child: SectionHeader(title: 'Official Trailers'),
+                ),
                 SliverToBoxAdapter(
                   child: SizedBox(
                     height: 150,
@@ -236,7 +275,9 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
                     children: [
                       for (final (i, e) in s.episodes.indexed)
                         Padding(
-                          key: e.number == widget.focusEpisode ? _focusKey : null,
+                          key: e.number == widget.focusEpisode
+                              ? _focusKey
+                              : null,
                           padding: const EdgeInsets.only(bottom: 12),
                           child: FlickerIn(
                             index: i,
@@ -247,11 +288,17 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
                               focused: e.number == widget.focusEpisode,
                               onToggle: () {
                                 HapticFeedback.lightImpact();
-                                ref.read(watchProgressProvider.notifier).toggle(s.keyFor(e));
+                                ref
+                                    .read(watchProgressProvider.notifier)
+                                    .toggle(s.keyFor(e));
                               },
                               onPlay: () => RiftPageRoute.push(
                                 context,
-                                StoryScreen(season: s.number, episode: e.number, onlySeason: true),
+                                StoryScreen(
+                                  season: s.number,
+                                  episode: e.number,
+                                  onlySeason: true,
+                                ),
                                 name: '/story',
                               ),
                             ),
@@ -272,7 +319,11 @@ class _SeasonDetailScreenState extends ConsumerState<SeasonDetailScreen> {
 
 /// One chapter, styled like the show's own title card.
 class _ChapterCard extends StatelessWidget {
-  void _showExtras(BuildContext context, List<Moment> moments, List<TimelineEvent> beats) {
+  void _showExtras(
+    BuildContext context,
+    List<Moment> moments,
+    List<TimelineEvent> beats,
+  ) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -338,7 +389,10 @@ class _ChapterCard extends StatelessWidget {
                     ),
                     if (focused) ...[
                       const SizedBox(width: 8),
-                      const GlowBadge(text: 'Next up', color: AppColors.hawkinsGold),
+                      const GlowBadge(
+                        text: 'Next up',
+                        color: AppColors.hawkinsGold,
+                      ),
                     ],
                   ],
                 ),
@@ -350,7 +404,10 @@ class _ChapterCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   episode.synopsis,
-                  style: AppText.body(world.ink.withValues(alpha: 0.72), size: 13),
+                  style: AppText.body(
+                    world.ink.withValues(alpha: 0.72),
+                    size: 13,
+                  ),
                 ),
                 if (moments.isNotEmpty || beats.isNotEmpty) ...[
                   const SizedBox(height: 12),
@@ -361,14 +418,16 @@ class _ChapterCard extends StatelessWidget {
                       if (moments.isNotEmpty)
                         _LinkChip(
                           icon: Icons.local_fire_department,
-                          label: '${moments.length} ${moments.length == 1 ? 'moment' : 'moments'}',
+                          label:
+                              '${moments.length} ${moments.length == 1 ? 'moment' : 'moments'}',
                           color: accent,
                           onTap: () => _showExtras(context, moments, beats),
                         ),
                       if (beats.isNotEmpty)
                         _LinkChip(
                           icon: Icons.timeline,
-                          label: '${beats.length} timeline ${beats.length == 1 ? 'beat' : 'beats'}',
+                          label:
+                              '${beats.length} timeline ${beats.length == 1 ? 'beat' : 'beats'}',
                           color: accent,
                           onTap: () => _showExtras(context, moments, beats),
                         ),
@@ -395,17 +454,26 @@ class _ChapterCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: watched ? accent : Colors.transparent,
                   border: Border.all(
-                    color: watched ? accent : world.muted.withValues(alpha: 0.6),
+                    color: watched
+                        ? accent
+                        : world.muted.withValues(alpha: 0.6),
                     width: 1.5,
                   ),
                   boxShadow: watched
-                      ? [BoxShadow(color: accent.withValues(alpha: 0.7), blurRadius: 12)]
+                      ? [
+                          BoxShadow(
+                            color: accent.withValues(alpha: 0.7),
+                            blurRadius: 12,
+                          ),
+                        ]
                       : null,
                 ),
                 child: Icon(
                   Icons.check,
                   size: 18,
-                  color: watched ? Colors.white : world.muted.withValues(alpha: 0.35),
+                  color: watched
+                      ? Colors.white
+                      : world.muted.withValues(alpha: 0.35),
                 ),
               ),
             ),
@@ -447,7 +515,12 @@ class _LinkChip extends StatelessWidget {
             children: [
               Icon(icon, size: 14, color: color),
               const SizedBox(width: 6),
-              Text(label.toUpperCase(), style: AppText.label(color).copyWith(fontSize: 10.5, letterSpacing: 1.2)),
+              Text(
+                label.toUpperCase(),
+                style: AppText.label(
+                  color,
+                ).copyWith(fontSize: 10.5, letterSpacing: 1.2),
+              ),
             ],
           ),
         ),
@@ -475,8 +548,13 @@ class _ChapterExtrasSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final world = WorldPalette.of(context);
-    final shielded = ref.watch(settingsProvider).spoilerShield &&
-        Seasons.isAhead(season.number, episode.number, ref.watch(watchProgressProvider));
+    final shielded =
+        ref.watch(settingsProvider).spoilerShield &&
+        Seasons.isAhead(
+          season.number,
+          episode.number,
+          ref.watch(watchProgressProvider),
+        );
     final height = MediaQuery.sizeOf(context).height * 0.7;
 
     Widget item({
@@ -487,7 +565,10 @@ class _ChapterExtrasSheet extends ConsumerWidget {
       required String body,
     }) {
       final titleStyle = AppText.h2(world.ink).copyWith(fontSize: 16);
-      final bodyStyle = AppText.body(world.ink.withValues(alpha: 0.72), size: 12.5);
+      final bodyStyle = AppText.body(
+        world.ink.withValues(alpha: 0.72),
+        size: 12.5,
+      );
       return Padding(
         padding: const EdgeInsets.only(bottom: 10),
         child: NeonCard(
@@ -496,14 +577,21 @@ class _ChapterExtrasSheet extends ConsumerWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(width: 88, height: 104, child: EventArt(photo: photo, accent: accent)),
+              SizedBox(
+                width: 88,
+                height: 104,
+                child: EventArt(photo: photo, accent: accent),
+              ),
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(kicker, style: AppText.chapter(world.tint(accent), size: 10)),
+                      Text(
+                        kicker,
+                        style: AppText.chapter(world.tint(accent), size: 10),
+                      ),
                       const SizedBox(height: 4),
                       shielded
                           ? RedactedText(title, style: titleStyle, maxLines: 1)
@@ -511,7 +599,12 @@ class _ChapterExtrasSheet extends ConsumerWidget {
                       const SizedBox(height: 4),
                       shielded
                           ? RedactedText(body, style: bodyStyle, maxLines: 2)
-                          : Text(body, style: bodyStyle, maxLines: 4, overflow: TextOverflow.ellipsis),
+                          : Text(
+                              body,
+                              style: bodyStyle,
+                              maxLines: 4,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                     ],
                   ),
                 ),
@@ -539,10 +632,15 @@ class _ChapterExtrasSheet extends ConsumerWidget {
                   style: AppText.chapter(world.tint(season.accent), size: 11),
                 ),
                 const SizedBox(height: 4),
-                Text(episode.title, style: AppText.h1(world.ink).copyWith(fontSize: 22)),
+                Text(
+                  episode.title,
+                  style: AppText.h1(world.ink).copyWith(fontSize: 22),
+                ),
                 if (shielded) ...[
                   const SizedBox(height: 10),
-                  ClassifiedBanner(unlock: 'S${season.number} · E${episode.number}'),
+                  ClassifiedBanner(
+                    unlock: 'S${season.number} · E${episode.number}',
+                  ),
                 ],
                 const SizedBox(height: 14),
                 for (final m in moments)

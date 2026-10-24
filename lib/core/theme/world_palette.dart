@@ -43,34 +43,34 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
   final Color line;
 
   factory WorldPalette.hawkins() => const WorldPalette(
-        upsideDown: false,
-        depth: 0,
-        accent: AppColors.stRed,
-        accentGlow: AppColors.stRedGlow,
-        secondary: AppColors.hawkinsGold,
-        atmosphere: AppColors.stRed,
-        bg: AppColors.hawkinsBg,
-        card: AppColors.hawkinsCard,
-        cardHi: AppColors.hawkinsCardHi,
-        ink: AppColors.hawkinsInk,
-        muted: AppColors.hawkinsMute,
-        line: AppColors.hawkinsLine,
-      );
+    upsideDown: false,
+    depth: 0,
+    accent: AppColors.stRed,
+    accentGlow: AppColors.stRedGlow,
+    secondary: AppColors.hawkinsGold,
+    atmosphere: AppColors.stRed,
+    bg: AppColors.hawkinsBg,
+    card: AppColors.hawkinsCard,
+    cardHi: AppColors.hawkinsCardHi,
+    ink: AppColors.hawkinsInk,
+    muted: AppColors.hawkinsMute,
+    line: AppColors.hawkinsLine,
+  );
 
   factory WorldPalette.upsideDown() => const WorldPalette(
-        upsideDown: true,
-        depth: 1,
-        accent: AppColors.udGlow,
-        accentGlow: AppColors.udSpore,
-        secondary: AppColors.udLightning,
-        atmosphere: AppColors.udLightning,
-        bg: AppColors.udVoid,
-        card: AppColors.udFog,
-        cardHi: AppColors.udFogHi,
-        ink: Colors.white,
-        muted: AppColors.udMist,
-        line: AppColors.udFogHi,
-      );
+    upsideDown: true,
+    depth: 1,
+    accent: AppColors.udGlow,
+    accentGlow: AppColors.udSpore,
+    secondary: AppColors.udLightning,
+    atmosphere: AppColors.udLightning,
+    bg: AppColors.udVoid,
+    card: AppColors.udFog,
+    cardHi: AppColors.udFogHi,
+    ink: Colors.white,
+    muted: AppColors.udMist,
+    line: AppColors.udFogHi,
+  );
 
   /// Pulls any content colour (a character's, a season's, a creature's) into
   /// the active world's light. Hawkins leaves it alone. The Upside Down only
@@ -85,10 +85,14 @@ class WorldPalette extends ThemeExtension<WorldPalette> {
     final target = hsl.saturation < 0.15
         ? AppColors.udSpore
         : (hsl.hue < 45 || hsl.hue > 300)
-            ? AppColors.udLightning
-            : AppColors.udGlow;
+        ? AppColors.udLightning
+        : AppColors.udGlow;
     final decayed = Color.lerp(c, target, 0.68 * depth)!;
-    return Color.lerp(decayed, Colors.black, 0.12 * depth)!.withValues(alpha: c.a);
+    return Color.lerp(
+      decayed,
+      Colors.black,
+      0.12 * depth,
+    )!.withValues(alpha: c.a);
   }
 
   /// Convenience lookup with a safe fallback.

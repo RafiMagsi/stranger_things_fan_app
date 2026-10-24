@@ -12,9 +12,9 @@ class Seasons {
 
   /// Every episode of the series, in the order you watch it.
   static List<(Season, Episode)> get watchOrder => [
-        for (final s in all)
-          for (final e in s.episodes) (s, e),
-      ];
+    for (final s in all)
+      for (final e in s.episodes) (s, e),
+  ];
 
   /// The first chapter, in watch order, that isn't in [watched]; null once
   /// the whole series is done.
@@ -37,11 +37,16 @@ class Seasons {
     number: 1,
     year: '2016',
     setting: 'November 1983',
-    tagline: 'A boy vanishes. A girl appears. A town finds out what is underneath.',
+    tagline:
+        'A boy vanishes. A girl appears. A town finds out what is underneath.',
     threat: 'The Demogorgon',
     accent: Color(0xFFE50914),
     trailers: [
-      Trailer(youtubeId: 'b9EkMc79ZSU', title: 'Official Final Trailer', season: 1),
+      Trailer(
+        youtubeId: 'b9EkMc79ZSU',
+        title: 'Official Final Trailer',
+        season: 1,
+      ),
     ],
     episodes: [
       Episode(
@@ -120,11 +125,16 @@ class Seasons {
     number: 2,
     year: '2017',
     setting: 'October 1984',
-    tagline: 'Hawkins prepares for Halloween - and a shadow learns Will\'s name.',
+    tagline:
+        'Hawkins prepares for Halloween - and a shadow learns Will\'s name.',
     threat: 'The Mind Flayer',
     accent: Color(0xFFFF6D00),
     trailers: [
-      Trailer(youtubeId: 'R1ZXOOLMJ8s', title: 'Official Final Trailer', season: 2),
+      Trailer(
+        youtubeId: 'R1ZXOOLMJ8s',
+        title: 'Official Final Trailer',
+        season: 2,
+      ),
     ],
     episodes: [
       Episode(
@@ -209,7 +219,8 @@ class Seasons {
     number: 3,
     year: '2019',
     setting: 'Summer 1985',
-    tagline: 'A summer of mall rats, Russian tunnels, and something under Starcourt.',
+    tagline:
+        'A summer of mall rats, Russian tunnels, and something under Starcourt.',
     threat: 'The Flayed',
     accent: Color(0xFF00E5FF),
     trailers: [
@@ -293,7 +304,8 @@ class Seasons {
     number: 4,
     year: '2022',
     setting: 'March 1986',
-    tagline: 'Vecna counts down, Hawkins splits apart, and Max runs for a song.',
+    tagline:
+        'Vecna counts down, Hawkins splits apart, and Max runs for a song.',
     threat: 'Vecna',
     accent: Color(0xFF9C27B0),
     trailers: [
