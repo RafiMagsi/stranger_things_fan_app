@@ -13,7 +13,7 @@ import '../core/widgets/st_scaffold.dart';
 import '../data/soundboard.dart';
 import '../models/sound_clip.dart';
 
-/// Soundboard: a grid of original synth cues, like a bank of pads on a
+/// Soundboard: a grid of the show's own sounds, like a bank of pads on a
 /// 1984 synth. Tapping a pad plays it and pulses its glow in time with an
 /// amplitude meter.
 class SoundboardScreen extends StatefulWidget {
@@ -80,7 +80,7 @@ class _SoundboardScreenState extends State<SoundboardScreen>
     final world = WorldPalette.of(context);
     return STScaffold(
       title: 'SOUNDBOARD',
-      subtitle: '${Soundboard.clips.length} original synth cues',
+      subtitle: '${Soundboard.clips.length} sounds from the show',
       actions: [
         IconButton(
           tooltip: _muted ? 'Unmute' : 'Mute',
@@ -102,7 +102,7 @@ class _SoundboardScreenState extends State<SoundboardScreen>
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'Original synth cues, generated for this app. Tap a pad to '
+                    'Cut from the fan edits in the media pack. Tap a pad to '
                     'trigger it - tap again to stop.',
                     style: AppText.body(world.muted, size: 13),
                   ),

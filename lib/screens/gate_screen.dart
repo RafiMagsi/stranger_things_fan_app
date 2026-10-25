@@ -96,7 +96,6 @@ class _GateScreenState extends ConsumerState<GateScreen>
     if (!_cracked && _force.value > 0.5) {
       _cracked = true;
       HapticFeedback.heavyImpact();
-      Sfx.cue(ref, 'audio/power.wav', volume: 0.7);
     }
   }
 
@@ -104,7 +103,6 @@ class _GateScreenState extends ConsumerState<GateScreen>
     if (_crossing || _holding) return;
     setState(() => _holding = true);
     HapticFeedback.mediumImpact();
-    Sfx.cue(ref, 'audio/portal.wav', volume: 0.6);
     _force.forward();
   }
 
@@ -125,8 +123,9 @@ class _GateScreenState extends ConsumerState<GateScreen>
     if (shell != null) {
       shell.onFlip();
     } else {
+      final intoUpsideDown = !ref.read(worldModeProvider);
       ref.read(worldModeProvider.notifier).toggle();
-      Sfx.cue(ref, 'audio/portal.wav');
+      Sfx.cue(ref, Sfx.crossing(intoUpsideDown: intoUpsideDown), volume: 1);
     }
     // It heals behind you.
     Future<void>.delayed(const Duration(milliseconds: 900), () {

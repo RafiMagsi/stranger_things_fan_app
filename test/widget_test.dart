@@ -384,14 +384,21 @@ void main() {
   });
 
   test('Every sound the app plays is bundled', () {
-    final assets = [
-      Soundtrack.title,
-      Soundtrack.storyTheme,
-      Soundtrack.hill,
-      Soundtrack.hillUpsideDown,
-      for (final c in Soundboard.clips) c.asset,
-    ];
+    // Every 'audio/...' path written anywhere in lib/, so a cue can't go
+    // quiet because its file went missing.
+    final named = RegExp(r"'(audio/[^']+\.(?:wav|m4a))'");
+    final assets = {
+      for (final f in Directory('lib').listSync(recursive: true))
+        if (f is File && f.path.endsWith('.dart'))
+          for (final m in named.allMatches(f.readAsStringSync())) m.group(1)!,
+    };
+    expect(assets, contains(Sfx.intoUpsideDown));
+    expect(assets, contains('audio/captures/vecna_voice.m4a'));
+    // Only the show's own sound: everything is cut from the fan edits.
     for (final a in assets) {
+      expect(a, startsWith('audio/captures/'), reason: a);
+    }
+    for (final a in [...assets, for (final c in Soundboard.clips) c.asset]) {
       expect(File('assets/$a').existsSync(), isTrue, reason: a);
     }
   });
@@ -401,30 +408,38 @@ void main() {
       for (final t in s.trailers) {
         final cut = FanMedia.clip(FanMedia.trailerCut[t.youtubeId] ?? '');
         expect(cut, isNotNull, reason: '${t.title} (S${t.season})');
-        expect(File('assets/video/${cut!.videoKey}.mp4').existsSync(), isTrue, reason: cut.slug);
+        expect(
+          File('assets/video/${cut!.videoKey}.mp4').existsSync(),
+          isTrue,
+          reason: cut.slug,
+        );
       }
     }
     // And the opening titles are bundled for the landing page.
     expect(File('assets/video/intro.mp4').existsSync(), isTrue);
   });
 
-  testWidgets('Vecna\'s room waits under his footage, and WATCH sits by his name', (tester) async {
-    usePhoneSize(tester);
-    await tester.pumpWidget(_wrap(child: CharacterDetailScreen(character: cast_data.Cast.vecna)));
-    await tester.pump(const Duration(milliseconds: 500));
-    // The room is the loop's placeholder - never painted over the video.
-    expect(
-      find.descendant(of: find.byType(ClipLoop), matching: find.byType(VecnaScene)),
-      findsOneWidget,
-    );
-    expect(find.byType(VecnaScene), findsOneWidget);
-    // WATCH is down with the name and badges, well clear of the toolbar
-    // and the world switch.
-    final watch = find.byKey(const ValueKey('dossier-watch'));
-    expect(watch, findsOneWidget);
-    expect(tester.getTopLeft(watch).dy, greaterThan(250));
-    expect(tester.getCenter(watch).dy, closeTo(tester.getCenter(find.text('S4 · S5')).dy, 30));
-  });
+  testWidgets(
+    'Vecna\'s file has his footage and voice, and WATCH sits by his name',
+    (tester) async {
+      usePhoneSize(tester);
+      await tester.pumpWidget(
+        _wrap(child: CharacterDetailScreen(character: cast_data.Cast.vecna)),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+      // Nothing drawn over the footage any more.
+      expect(find.byType(ClipLoop), findsOneWidget);
+      // WATCH is down with the name and badges, well clear of the toolbar
+      // and the world switch.
+      final watch = find.byKey(const ValueKey('dossier-watch'));
+      expect(watch, findsOneWidget);
+      expect(tester.getTopLeft(watch).dy, greaterThan(250));
+      expect(
+        tester.getCenter(watch).dy,
+        closeTo(tester.getCenter(find.text('S4 · S5')).dy, 30),
+      );
+    },
+  );
 
   test('Every gate points at a real chapter', () {
     for (final g in Gateways.all) {
@@ -788,10 +803,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.text('SOUNDBOARD'), findsOneWidget);
-    expect(find.text('Hawkins Theme'), findsOneWidget);
-    expect(find.text('The D20'), findsOneWidget);
-    expect(find.text('Eleven\'s Power'), findsOneWidget);
-    expect(find.text('Vecna\'s Clock'), findsOneWidget);
+    expect(find.text('Main Title'), findsOneWidget);
+    expect(find.text('Running Up That Hill'), findsOneWidget);
+    expect(find.text('The D20'), findsNothing);
   });
 
   testWidgets('Timeline runs from 1959 to the epilogue', (tester) async {

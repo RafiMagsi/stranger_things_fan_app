@@ -10,7 +10,6 @@ import '../core/media/poster_image.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
 import '../core/theme/world_palette.dart';
-import '../core/widgets/monster_fx.dart';
 import '../core/widgets/particles.dart';
 import '../core/widgets/neon_card.dart';
 import '../core/widgets/st_effects.dart';
@@ -47,15 +46,10 @@ class _MonsterCard extends ConsumerStatefulWidget {
 
   final Monster m;
 
-  // What each thing sounds like when you get too close.
-  static const _cries = {
-    'demogorgon': 'audio/screech.wav',
-    'demodog': 'audio/squelch.wav',
-    'mind_flayer': 'audio/heartbeat.wav',
-    'vecna': 'audio/clock.wav',
-    'demo_bat': 'audio/screech.wav',
-    'the_flayed': 'audio/vines.wav',
-  };
+  // What each thing sounds like when you get too close - only ever the
+  // show's own sound, so far just Vecna's voice (none of the fan edits has
+  // a creature's cry clean).
+  static const _cries = {'vecna': 'audio/captures/vecna_voice.m4a'};
 
   @override
   ConsumerState<_MonsterCard> createState() => _MonsterCardState();
@@ -84,7 +78,7 @@ class _MonsterCardState extends ConsumerState<_MonsterCard>
       glow: m.accent,
       onTap: () {
         final cry = _MonsterCard._cries[m.id];
-        if (cry != null) Sfx.cue(ref, cry, volume: 0.6);
+        if (cry != null) Sfx.cue(ref, cry, volume: 1);
         if (!MediaQuery.disableAnimationsOf(context)) {
           _scare.forward(from: 0);
         }
@@ -137,15 +131,6 @@ class _MonsterCardState extends ConsumerState<_MonsterCard>
                                   accent: m.accent,
                                   icon: m.icon,
                                 ),
-                        ),
-                      ),
-                      // The creature, alive: its signature animation layered
-                      // over the art (maw breathing, shadow churning, ...).
-                      Positioned.fill(
-                        child: MonsterFx(
-                          monsterId: m.id,
-                          accent: m.accent,
-                          intensity: 0.9,
                         ),
                       ),
                       DecoratedBox(

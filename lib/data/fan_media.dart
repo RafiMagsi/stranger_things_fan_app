@@ -334,7 +334,7 @@ abstract final class FanMedia {
     'char_jonathan': ['adventure'],
     'monster_demogorgon': ['william'],
     'monster_mind_flayer': ['mind_flayer'],
-    'monster_vecna': ['undying_king', 'volume_2'],
+    'monster_vecna': ['creel_house', 'volume_2'],
     'loc_creel_house': ['aesthetic_4'],
     'loc_upside_down': ['aesthetic_1'],
     'hero_finale': ['finale'],

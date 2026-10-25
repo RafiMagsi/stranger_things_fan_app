@@ -65,9 +65,8 @@ class CreditsScreen extends StatelessWidget {
                 _Line(
                   icon: Icons.graphic_eq,
                   text:
-                      'The score and sound effects are original synth cues generated '
-                      'for this app (tool/generate_audio.py). The soundboard\'s captures '
-                      'come from the fan-media pack below.',
+                      'Every sound - the music, the world switch, Vecna\'s voice, the '
+                      'soundboard - is cut from the fan-media pack below.',
                 ),
                 _Line(
                   icon: Icons.brush,

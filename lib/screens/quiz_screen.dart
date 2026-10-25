@@ -50,10 +50,6 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
   void initState() {
     super.initState();
     _questions = [...Quiz.bank]..shuffle(math.Random(2016));
-    // Dice hit the table: the campaign begins.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Sfx.cue(ref, 'audio/dice.wav', volume: 0.5);
-    });
   }
 
   @override
@@ -97,7 +93,8 @@ class _QuizScreenState extends ConsumerState<QuizScreen>
     try {
       await _player.stop();
       await _player.play(
-        AssetSource(correct ? 'audio/chime.wav' : 'audio/static.wav'),
+        // The world switch's pair: the main title's hit, or Vecna's clock.
+        AssetSource(correct ? Sfx.intoHawkins : Sfx.intoUpsideDown),
       );
     } catch (_) {
       // Audio is a garnish; never let it break the game.

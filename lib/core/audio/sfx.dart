@@ -16,20 +16,30 @@ void _log(String message) {
 }
 
 /// One-shot sound cues for the app's moments: crossing worlds, a creature
-/// answering, dice hitting the table. Uses the original synth WAVs in
-/// assets/audio. A garnish: any audio failure is swallowed so it can never
+/// answering, a trivia answer landing. Every one is the show's own sound,
+/// cut from the fan edits (assets/audio/captures). A garnish: any audio failure is swallowed so it can never
 /// break the moment it decorates.
 class Sfx {
   Sfx._();
 
+  /// Crossing worlds, in the show's own sound (cut from the fan edits):
+  /// Vecna's clock strikes as you go under; the main title's first synth
+  /// hit brings you home.
+  static const intoUpsideDown = 'audio/captures/world_upside_down.m4a';
+  static const intoHawkins = 'audio/captures/world_hawkins.m4a';
+
+  /// The crossing sound for the way you're going.
+  static String crossing({required bool intoUpsideDown}) =>
+      intoUpsideDown ? Sfx.intoUpsideDown : intoHawkins;
+
   static AudioPlayer? _player;
 
   /// Plays [asset] if the fan has sound effects on.
-  static void cue(WidgetRef ref, String asset, {double volume = 0.55}) {
+  static void cue(WidgetRef ref, String asset, {double volume = 0.99}) {
     if (ref.read(settingsProvider).soundEffects) play(asset, volume: volume);
   }
 
-  static Future<void> play(String asset, {double volume = 0.55}) async {
+  static Future<void> play(String asset, {double volume = 1}) async {
     if (isFlutterTest) return;
     try {
       // play() swaps the source itself; a stop first would also switch
@@ -75,7 +85,7 @@ class Soundtrack {
   static const hill = 'audio/captures/hill.m4a';
   static const hillUpsideDown = 'audio/captures/hill_upside_down.m4a';
 
-  static const _ambientVolume = 0.32;
+  static const _ambientVolume = 0.99;
 
   static String? _ambient;
   static final List<SoundtrackClaim> _claims = [];
@@ -180,39 +190,71 @@ class Soundtrack {
   }
 
   // ---- The player side: crossfades between whatever [wanted] says. ----
+  //
+  // One pass at a time walks the player there; a change that lands mid-pass
+  // cuts its fade short and the pass starts over, so two passes never drive
+  // the player at once (overlapping stop/load calls could leave it silent).
 
   static AudioPlayer? _player;
   static StreamSubscription<void>? _done;
   static String? _loaded;
+  static bool _loadedLoops = false;
   static bool _audible = false;
   static int _generation = 0;
+  static bool _busy = false;
+  static Duration _fadeOut = const Duration(milliseconds: 700);
 
   static Future<void> _apply({
     Duration fadeOut = const Duration(milliseconds: 700),
   }) async {
     if (isFlutterTest) return;
-    final gen = ++_generation;
+    _fadeOut = fadeOut;
+    _generation++;
+    if (_busy) return;
+    _busy = true;
+    try {
+      var gen = -1;
+      while (gen != _generation) {
+        gen = _generation;
+        await _sync(gen);
+      }
+    } finally {
+      _busy = false;
+    }
+  }
+
+  static Future<void> _sync(int gen) async {
     final want = wanted;
     _log('soundtrack -> ${want?.asset ?? 'silence'} (was ${_loaded ?? '-'})');
     try {
       final p = _player ??= AudioPlayer();
+      if (kAudioLog && _done == null) {
+        var last = -1;
+        p.onPositionChanged.listen((d) {
+          if (d.inSeconds ~/ 10 == last) return;
+          last = d.inSeconds ~/ 10;
+          _log('soundtrack at ${d.inSeconds}s of $_loaded');
+        });
+      }
       _done ??= p.onPlayerComplete.listen((_) => _finished());
       if (want == null) {
-        if (_audible) await _fade(p, p.volume, 0, fadeOut, gen);
+        if (_audible) await _fade(p, p.volume, 0, _fadeOut, gen);
         if (gen != _generation) return;
         _audible = false;
         await p.pause();
         return;
       }
       if (_loaded != want.asset) {
-        if (_audible) await _fade(p, p.volume, 0, fadeOut, gen);
+        if (_audible) await _fade(p, p.volume, 0, _fadeOut, gen);
         if (gen != _generation) return;
+        _audible = false;
         await p.stop();
         await p.setReleaseMode(want.loop ? ReleaseMode.loop : ReleaseMode.stop);
         await p.setVolume(0);
         await p.setSource(AssetSource(want.asset));
-        if (gen != _generation) return;
         _loaded = want.asset;
+        _loadedLoops = want.loop;
+        if (gen != _generation) return;
       }
       await p.resume();
       _audible = true;
@@ -224,13 +266,18 @@ class Soundtrack {
         gen,
       );
     } catch (e) {
-      // Silent where audio isn't available.
+      // Silent where audio isn't available; load afresh next time.
+      _loaded = null;
       _log('soundtrack failed: $e');
     }
   }
 
   /// A one-shot track ended: its claim lets go.
   static void _finished() {
+    // iOS reports the end of every pass of a looping track too - it loops
+    // by itself, so there's nothing to do (reloading it here restarted
+    // Running Up That Hill every time round).
+    if (_loadedLoops) return;
     final playing = _loaded;
     _loaded = null;
     _audible = false;
@@ -261,7 +308,7 @@ mixin SoundtrackClaimMixin<T extends StatefulWidget> on State<T> {
 
   /// What this screen plays instead of the music; null for silence.
   String? get soundtrackAsset => null;
-  double get soundtrackVolume => 0.55;
+  double get soundtrackVolume => 1;
 
   @override
   void initState() {

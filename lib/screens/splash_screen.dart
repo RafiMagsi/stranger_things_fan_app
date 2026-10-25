@@ -46,7 +46,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     // over. (A beat late, once saved settings have loaded, so muted music
     // stays muted.)
     _scoreTimer = Timer(const Duration(milliseconds: 150), () {
-      if (mounted) Soundtrack.claim(Soundtrack.title, volume: 0.7, loop: false);
+      if (mounted) Soundtrack.claim(Soundtrack.title, volume: 1, loop: false);
     });
   }
 

@@ -17,8 +17,9 @@ import '../data/seasons.dart';
 import 'trailer_player_screen.dart';
 
 /// Transmissions from Hawkins: every official trailer (streamed from
-/// Netflix's own YouTube channels) and a bank of original synth "radio
-/// signals" with an animated title card and waveform that work offline.
+/// Netflix's own YouTube channels) and a bank of "radio signals" - the
+/// show's own sounds from the fan edits - with an animated title card and
+/// waveform that work offline.
 class TransmissionsScreen extends ConsumerStatefulWidget {
   const TransmissionsScreen({super.key});
 
@@ -47,37 +48,37 @@ const _transmissions = <_Transmission>[
   _Transmission(
     title: 'Main Title',
     subtitle: 'The synth that started it all.',
-    asset: 'audio/theme.wav',
+    asset: 'audio/captures/main_title.m4a',
     accent: AppColors.stRed,
     icon: Icons.graphic_eq,
   ),
   _Transmission(
-    title: 'The Portal',
-    subtitle: 'Something breathes beneath the lab.',
-    asset: 'audio/portal.wav',
-    accent: AppColors.udVine,
-    icon: Icons.blur_on,
-  ),
-  _Transmission(
-    title: 'Eleven\'s Power',
-    subtitle: 'The hum before the nosebleed.',
-    asset: 'audio/power.wav',
+    title: 'Running Up That Hill',
+    subtitle: 'Max\'s song. Keep it playing.',
+    asset: 'audio/captures/hill.m4a',
     accent: Color(0xFFF09CB8),
-    icon: Icons.bolt,
+    icon: Icons.album,
   ),
   _Transmission(
-    title: 'The Shriek',
-    subtitle: 'Petals open. Do not answer.',
-    asset: 'audio/screech.wav',
-    accent: Color(0xFFEF5350),
-    icon: Icons.pets,
+    title: 'The Four Chimes',
+    subtitle: 'Vecna\'s clock. If you hear it, run.',
+    asset: 'audio/captures/vecna_chimes.m4a',
+    accent: Color(0xFF8E4585),
+    icon: Icons.notifications_active,
   ),
   _Transmission(
-    title: 'Radio Silence',
-    subtitle: 'Channel one, and nobody home.',
-    asset: 'audio/static.wav',
-    accent: Color(0xFF78909C),
-    icon: Icons.wifi_tethering,
+    title: 'Vecna: "Max."',
+    subtitle: 'A voice from the other side.',
+    asset: 'audio/captures/vecna_voice.m4a',
+    accent: Color(0xFFB71C1C),
+    icon: Icons.record_voice_over,
+  ),
+  _Transmission(
+    title: 'It\'s Almost Time',
+    subtitle: 'The grandfather clock, winding down.',
+    asset: 'audio/captures/almost_time.m4a',
+    accent: Color(0xFF4FC3F7),
+    icon: Icons.hourglass_bottom,
   ),
 ];
 
@@ -96,10 +97,6 @@ class _TransmissionsScreenState extends ConsumerState<TransmissionsScreen>
   @override
   void initState() {
     super.initState();
-    // Tuning in: a burst of static as the receiver warms up.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) Sfx.cue(ref, 'audio/static.wav', volume: 0.3);
-    });
     _posSub = _player.onPositionChanged.listen((p) {
       if (mounted) setState(() => _position = p);
     });
@@ -241,8 +238,8 @@ class _TransmissionsScreenState extends ConsumerState<TransmissionsScreen>
                 Expanded(
                   child: Text(
                     'Trailers stream from Netflix\'s official YouTube channels. '
-                    'Radio signals are original synth homages generated for this '
-                    'app (tool/generate_audio.py) - no recordings from the show.',
+                    'Radio signals are the show\'s own sound, cut from the fan '
+                    'edits credited in the app\'s credits.',
                     style: AppText.body(world.muted, size: 12),
                   ),
                 ),

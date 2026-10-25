@@ -113,7 +113,7 @@ lib/
 │   │                         VineOverlay, AlphabetWall)
 │   │             rift_route (Gate transition, lightning storm) · world_toggle · particles
 │   │             world_scenery (the Hawkins / Upside Down town behind every screen)
-│   │             monster_fx · gate_wind
+│   │             gate_wind · glow (GlowBatch, steppedValue)
 │   └── media/    asset_media · poster_image · decode_size · app_video (ClipLoop, ClipPlayer)
 │                 youtube_embed (app identity for the player, failure messages)
 │                 art (CharacterArt, SeasonArt, LocationArt, EventArt)
@@ -124,7 +124,7 @@ lib/
                   story · seasons · season_detail · trailer_player · cast · character_detail ·
                   timeline · locations · bestiary · moments · quotes · quiz · soundboard ·
                   transmissions · reel · gallery · gate · credits · settings_sheet
-tool/             build_fan_media.py (the fan-media pack from docs/) · generate_audio.py
+tool/             build_fan_media.py (the fan-media pack from docs/ - images, video and all audio)
 ```
 
 ---
@@ -222,20 +222,27 @@ episode summaries.
 
 ---
 
-## 5. Audio — original, procedurally synthesized
+## 5. Audio — the show's own sounds only
 
-The sound effects are original: `tool/generate_audio.py` synthesizes the WAV cues
-(theme, screech, static, dice, squelch, portal, chime, coin, power, clock,
-heartbeat, vines). Re-run it to regenerate or extend.
+Every sound in the app is cut from the fan edits (§10, assets/audio/captures):
+the main title, Running Up That Hill (and its drowned Upside Down mix), the
+Story theme, Vecna's voice, his clock's chimes and ticking, "It's almost
+time", and the two world-switch hits. The synth effects (and
+`tool/generate_audio.py`, which made them) are gone.
 
 - **Soundtrack** — from the fan-media pack (§10): the main title on the
   landing page, Running Up That Hill under the app (slowed and drowned in
   the Upside Down), the theme in Story mode; silenced by anything with its
   own sound (`Soundtrack.claim` / `release`).
-- **Cues in context** — crossing worlds (portal + chime), opening a villain's
-  dossier (Vecna's clock, the Demogorgon's screech, the Mind Flayer's
-  heartbeat), tapping a creature, rolling the dice to start Trivia, tuning
-  into Transmissions. All gated by the Sound effects setting.
+- **Cues in context** — crossing worlds (Vecna's clock striking on the way
+  under, the main title's first synth hit on the way home - from the toggle,
+  the Gate and the Upside Down tab), the same pair for a right or wrong
+  Trivia answer, and Vecna's voice ("Max.") opening his dossier or Bestiary
+  card. Creatures the footage has no clean cry for stay silent. All gated by
+  the Sound effects setting.
+- **Soundboard / Transmissions** — the captures: Main Title, Running Up That
+  Hill (and from below), Vecna's "Max.", the Four Chimes, the Ticking, It's
+  Almost Time.
 
 ---
 
@@ -311,7 +318,7 @@ All important, twisting and ironic moments of the series are in the
 
 ```bash
 flutter analyze   # No issues found
-flutter test      # 61/61 pass (widgets, tabs, worlds, soundtrack, fan media on disk, story mode, data)
+flutter test      # 54/54 pass (widgets, tabs, worlds, soundtrack, fan media on disk, story mode, data)
 flutter build web --release
 flutter build ios --debug --no-codesign
 ```
@@ -459,3 +466,50 @@ Check theme folder in docs and try making the app better, if you find something 
     spores.
   - Tabs fade up into place when you switch.
 
+## 14. Creatures - round 3 (Oct 24)
+
+- **Demogorgon** - the synth "screech" that opened its dossier and Bestiary
+  card didn't sound like the show, and no edit has a real Demogorgon roar
+  (every shot is set to music; an OCR sweep of all 42 edits found sound
+  captions only in #26, the chimes and ticking), so those two stay silent
+  until there's a real one. The drawn "flower" animation over its footage
+  is gone too.
+- **Vecna** - the clock animation is gone from his dossier and his Bestiary
+  card, and his file now opens on his own voice: "Max.", from #26, which
+  carries the show's audio with subtitles burned in. The line was found by
+  reading those subtitles off the frames (OCR) - it's too deep for speech
+  recognition, which only found song lyrics in the other edits. The same
+  subtitles mark the real [chimes] and [ticking continues], which replace
+  the earlier guesses. His Bestiary still is a brighter frame (the Creel
+  house), so the card no longer reads as an empty panel.
+- **All creatures** - every procedural creature overlay (`MonsterFx`: the
+  Demogorgon's maw, the Mind Flayer's storm, Vecna's motes and clock, the
+  demodogs, demobats and the Flayed) and Vecna's drawn room are removed:
+  the creatures with footage show the footage, the rest their art, and
+  ~1,100 lines of per-frame drawing are gone.
+
+## 15. Show sounds only, music fixed - round 4 (Oct 24)
+
+- **Only the show's own sound** - the synth effects were deleted from
+  assets/audio, so every cue now uses a capture or is gone: the world switch
+  (Vecna's clock strike under, the main title's synth hit home) also marks
+  Trivia answers; the dice, static, portal, power and creature cries are
+  removed; the soundboard and Transmissions play the captures;
+  `tool/generate_audio.py` is deleted. Only Vecna has a voice - none of the
+  42 edits has a clean creature cry (an OCR sweep found sound captions only
+  in #26).
+- **World switch** - Vecna's clock (#26's first [chimes]) going under, the
+  main title's first synth chord (#22) coming home, cut with a 20 ms attack
+  so they land on the flip (`Sfx.crossing`).
+- **Background music** - iOS reports "finished" at the end of every pass of
+  a looping track; the soundtrack took that as the end and reloaded Running
+  Up That Hill every 55 s. Loops are now left to loop, and changes are
+  applied one at a time (a fast double flip could overlap two loads and
+  leave the player silent). Checked on the simulator: the hill loops past
+  60 s untouched, and three flips in 0.6 s settle on the right track.
+  `--dart-define=AUDIO_LOG=true` also logs the music's position every 10 s.
+- **Flip crash** - flipping back before the drifting ash/embers had faded
+  out put two layers with one key in the switcher (a red-screen assert in
+  debug); each crossing now gets its own key.
+- **Test** - "every sound is bundled" scans lib/ for every audio path and
+  checks it's a capture on disk, so a missing or synth file fails the tests.

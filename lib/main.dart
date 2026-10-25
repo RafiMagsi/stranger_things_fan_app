@@ -77,6 +77,11 @@ class _WorldStackState extends ConsumerState<_WorldStack>
   bool _switched = false;
   int _strikes = 0;
 
+  // Counts world changes, so the drifting embers/ash get a fresh key each
+  // time: flipping back before the old layer has faded out would otherwise
+  // put two layers with the same key in the switcher.
+  int _crossings = 0;
+
   @override
   void initState() {
     super.initState();
@@ -130,7 +135,7 @@ class _WorldStackState extends ConsumerState<_WorldStack>
     final intoUpsideDown = !ref.read(worldModeProvider);
     notifier.toggle();
     if (ref.read(settingsProvider).soundEffects) {
-      Sfx.play(intoUpsideDown ? 'audio/portal.wav' : 'audio/chime.wav');
+      Sfx.play(Sfx.crossing(intoUpsideDown: intoUpsideDown), volume: 0.99);
     }
     if (strike) {
       setState(() => _strikes++);
@@ -142,6 +147,7 @@ class _WorldStackState extends ConsumerState<_WorldStack>
   Widget build(BuildContext context) {
     Soundtrack.setEnabled(ref.watch(settingsProvider.select((s) => s.music)));
     final upsideDown = ref.watch(worldModeProvider);
+    ref.listen(worldModeProvider, (_, _) => _crossings++);
     final settings = ref.watch(settingsProvider);
     final media = MediaQuery.of(context);
     final reduce = media.disableAnimations || settings.reduceEffects;
@@ -218,8 +224,8 @@ class _WorldStackState extends ConsumerState<_WorldStack>
                   child: reduce
                       ? const SizedBox.shrink()
                       : upsideDown
-                      ? const ParticleField(
-                          key: ValueKey('ash'),
+                      ? ParticleField(
+                          key: ValueKey(('ash', _crossings)),
                           color: AppColors.udSpore,
                           glowColor: AppColors.udGlow,
                           // The town behind already drifts with spores.
@@ -228,8 +234,8 @@ class _WorldStackState extends ConsumerState<_WorldStack>
                           speed: 0.6,
                           opacity: 0.75,
                         )
-                      : const ParticleField(
-                          key: ValueKey('embers'),
+                      : ParticleField(
+                          key: ValueKey(('embers', _crossings)),
                           color: AppColors.stRedGlow,
                           glowColor: AppColors.hawkinsGold,
                           count: 16,

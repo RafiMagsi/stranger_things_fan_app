@@ -8,7 +8,6 @@ import '../core/state/app_state.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
 import '../core/theme/world_palette.dart';
-import '../core/widgets/monster_fx.dart';
 import '../core/widgets/neon_card.dart';
 import '../core/widgets/rift_route.dart';
 import '../core/widgets/st_effects.dart';
@@ -876,16 +875,6 @@ class _MiniCharacterCard extends StatelessWidget {
               radius: 18,
               child: CharacterArt(character: c, iconSize: 110),
             ),
-            // The things from the other side move: each creature gets its
-            // signature animation over the art.
-            if (creature)
-              Positioned.fill(
-                child: MonsterFx(
-                  monsterId: c.id,
-                  accent: c.accent,
-                  intensity: 0.8,
-                ),
-              ),
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(

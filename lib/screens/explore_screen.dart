@@ -185,7 +185,7 @@ final List<_File> _files = [
   ),
   (
     title: 'Soundboard',
-    subtitle: 'Synth cues, clocks & captures',
+    subtitle: 'The show\'s own sounds',
     icon: Icons.graphic_eq,
     route: '/soundboard',
     shelf: FileShelf.play,

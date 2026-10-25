@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../core/audio/sfx.dart';
 import '../core/media/app_video.dart';
 import '../core/media/poster_image.dart';
 import '../core/state/app_state.dart';
@@ -35,7 +36,9 @@ class UpsideDownScreen extends ConsumerWidget {
     if (shell != null) {
       shell.onFlip();
     } else {
+      final intoUpsideDown = !ref.read(worldModeProvider);
       ref.read(worldModeProvider.notifier).toggle();
+      Sfx.cue(ref, Sfx.crossing(intoUpsideDown: intoUpsideDown), volume: 1);
     }
   }
 

@@ -45,7 +45,10 @@ class _IntroScreenState extends ConsumerState<IntroScreen>
   @override
   void initState() {
     super.initState();
-    _fade = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+    _fade = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
     if (_sequence) return;
     // A beat for saved settings to load, so "off" stays off.
     _start = Timer(const Duration(milliseconds: 150), () {

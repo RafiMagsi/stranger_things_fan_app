@@ -11,7 +11,6 @@ import '../core/state/app_state.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
 import '../core/theme/world_palette.dart';
-import '../core/widgets/monster_fx.dart';
 import '../core/widgets/neon_card.dart';
 import '../core/widgets/particles.dart';
 import '../core/widgets/st_effects.dart';
@@ -49,12 +48,9 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
     duration: const Duration(milliseconds: 1400),
   )..forward();
 
-  // Some files announce themselves: Vecna's clock, a creature's cry.
-  static const _openingCue = {
-    'vecna': 'audio/clock.wav',
-    'demogorgon': 'audio/screech.wav',
-    'mind_flayer': 'audio/heartbeat.wav',
-  };
+  // Vecna's file announces itself in his own voice: "Max.", from the show
+  // (see tool/build_fan_media.py).
+  static const _openingCue = {'vecna': 'audio/captures/vecna_voice.m4a'};
 
   // The night each season's tape starts rolling.
   static final _tapeStart = {
@@ -71,7 +67,7 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
     final cue = _openingCue[widget.character.id];
     if (cue != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) Sfx.cue(ref, cue, volume: 0.6);
+        if (mounted) Sfx.cue(ref, cue, volume: 1);
       });
     }
   }
@@ -89,21 +85,11 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
     final upsideDown = ref.watch(worldModeProvider);
     final photo = MediaCredits.castPhoto(c.id);
     final credit = photo == null ? null : MediaCredits.forAsset(photo);
-    // The portrait — or the captured footage of them, when a clip of this
+    // The portrait - or the captured footage of them, when a clip of this
     // character is bundled (it loops silently under the dossier chrome).
-    // Vecna's room (clock, rain, gold light) is what you see until his
-    // footage is up - painted over it, it would hide the video.
     final art = ClipLoop(
       videoKey: 'char_${c.id}',
-      placeholder: c.id == 'vecna'
-          ? Stack(
-              fit: StackFit.expand,
-              children: [
-                CharacterArt(character: c, iconSize: 220),
-                VecnaScene(accent: c.accent, story: false),
-              ],
-            )
-          : CharacterArt(character: c, iconSize: 220),
+      placeholder: CharacterArt(character: c, iconSize: 220),
     );
     final reel = FanMedia.clip(FanMedia.characterReel[c.id] ?? '');
     // The character's colour, as it looks in the current world.
@@ -155,16 +141,6 @@ class _CharacterDetailScreenState extends ConsumerState<CharacterDetailScreen>
                           ),
                         ),
                       ),
-                      // The dossier's subject, observed: creatures animate
-                      // in both worlds (the file always shows it alive).
-                      if (c.isCreature)
-                        Positioned.fill(
-                          child: MonsterFx(
-                            monsterId: c.id,
-                            accent: c.accent,
-                            intensity: 1.1,
-                          ),
-                        ),
                       if (c.isCreature && upsideDown)
                         ParticleField(
                           color: c.accent,

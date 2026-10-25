@@ -88,7 +88,7 @@ class _StoryScreenState extends ConsumerState<StoryScreen> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    _theme = Soundtrack.claim(Soundtrack.storyTheme, volume: 0.5);
+    _theme = Soundtrack.claim(Soundtrack.storyTheme, volume: 1);
   }
 
   @override

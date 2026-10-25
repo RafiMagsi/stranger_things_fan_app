@@ -65,6 +65,7 @@ SRC = {
     21: 'Stranger fam…happy 1 year',
     25: 'The clock is ticking',
     26: 'Ticking clocks are going',
+    26: 'Ticking clocks are going',
     28: 'Vecna knew he was cooked',
     29: 'W series',
     30: 'WILL. BYERS.',
@@ -162,7 +163,7 @@ FRAMES = {
     'char_max': (29, 9.8, ('portrait', 0.53)),
     'char_hopper': (7, 9.6, ('portrait', 0.56)),
     'char_nancy': (20, 20.1, ('portrait', 0.64)),
-    'char_vecna': (12, 5.7, ('portrait', 0.50)),
+    'char_vecna': (12, 6.3, ('portrait', 0.42)),
     'char_demogorgon': (33, 16.1, ('portrait', 0.60)),
     'char_mind_flayer': (37, 1.6, ('portrait', 0.50)),
     'char_joyce': (35, 18.4, ('portrait', 0.62)),
@@ -174,7 +175,7 @@ FRAMES = {
     'char_jonathan': (35, 15.3, ('portrait', 0.18)),
     'monster_demogorgon': (33, 9.9, ('full', None)),
     'monster_mind_flayer': (13, 8.7, ('full', None)),
-    'monster_vecna': (38, 6.3, ('full', None)),
+    'monster_vecna': (40, 13.5, ('full', None)),
     'loc_creel_house': (4, 4.9, ('full', None)),
     'loc_upside_down': (1, 3.7, ('full', None)),
     'st_clock': (42, 3.5, ('full', None)),
@@ -222,11 +223,12 @@ FAN_KEYS = {
 INTRO = (22, 0.0, 49.0)
 
 # Sound cut from the edits: key -> (source, start, end, extra filters).
-# Identified by analysis, not by ear: the main title is the Cmaj7 arpeggio
-# at ~84 BPM (#22 and #41 carry the same recording); Running Up That Hill is
-# the Ab-Bb-Cm progression at the record's own 108 BPM (#32; the vinyl clip
-# #5 is a sped-up copy); the pumpkin clock edit (#25) ticks at ~0.45 s, then
-# chimes with long decays.
+# The main title is the Cmaj7 arpeggio at ~84 BPM (#22 and #41 carry the
+# same recording); Running Up That Hill is the Ab-Bb-Cm progression at the
+# record's own 108 BPM (#32; the vinyl clip #5 is a sped-up copy). #26 is
+# the show's own audio with its subtitles burned in - [chimes] at 0.0 s,
+# [ticking continues] at 9.0 s, and Vecna's "Max." at 56.5 s (read off the
+# frames with OCR; the voice is too deep for speech recognition).
 UPSIDE_DOWN = ('aresample=44100,asetrate=44100*0.84,aresample=44100,lowpass=f=1700,'
                'aecho=0.8:0.86:280|620:0.38|0.24')
 AUDIO = {
@@ -234,10 +236,20 @@ AUDIO = {
     'story_theme': (22, 2.9, 46.0, None),
     'hill': (32, 1.0, 55.5, None),
     'hill_upside_down': (32, 1.0, 55.5, UPSIDE_DOWN),
-    'vecna_chimes': (25, 12.3, 21.4, None),
-    'clock_ticking': (25, 0.0, 7.6, None),
+    'vecna_voice': (26, 56.2, 60.0, None),
+    'vecna_chimes': (26, 0.0, 6.5, None),
+    'clock_ticking': (26, 9.0, 16.0, None),
     'almost_time': (42, 0.0, 7.0, None),
+    # The world switch: Vecna's clock strikes as you cross into the Upside
+    # Down (#26's first [chimes] - the quietest floor under it); the main
+    # title's first synth hit (#22 at 2.7 s) brings you home to Hawkins.
+    'world_upside_down': (26, 0.15, 3.0, None),
+    'world_hawkins': (22, 2.62, 5.4, None),
 }
+
+# Cues that must hit at once: no fade-in (the soft one is for music), a
+# shorter tail.
+SHARP = {'vecna_voice', 'world_upside_down', 'world_hawkins'}
 
 # Files earlier passes left behind that this pack replaces.
 OBSOLETE = [
@@ -448,6 +460,7 @@ def build_fan_art():
 
 def build_audio(key, spec):
     i, a, b, extra = spec
+    sharp = key in SHARP
     out = os.path.join(OUT_AUDIO, f'{key}.m4a')
     d = b - a
     # Slowing stretches the cut; fade against its real length.
@@ -455,8 +468,8 @@ def build_audio(key, spec):
     chain = ','.join(f for f in [
         extra,
         'loudnorm=I=-16:TP=-1.5:LRA=11',
-        'afade=t=in:d=0.6',
-        f'afade=t=out:st={max(0, length - 1.6):.2f}:d=1.6',
+        'afade=t=in:d=0.02' if sharp else 'afade=t=in:d=0.6',
+        f'afade=t=out:st={max(0, length - (0.8 if sharp else 1.6)):.2f}:d={0.8 if sharp else 1.6}',
     ] if f)
     run(['ffmpeg', '-v', 'error', '-y', '-ss', f'{a}', '-t', f'{d}', '-i', src_path(i), '-vn',
          '-af', chain, '-c:a', 'aac', '-b:a', '128k', '-ac', '2', '-ar', '44100',

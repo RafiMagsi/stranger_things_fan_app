@@ -54,7 +54,7 @@ class MoreScreen extends StatelessWidget {
       key: 'sounds',
       icon: Icons.graphic_eq,
       title: 'Sounds & Music',
-      body: 'Synth cues, clocks and captures',
+      body: 'The show\'s own sounds, from the clips',
       color: Color(0xFF66BB6A),
     ),
     (

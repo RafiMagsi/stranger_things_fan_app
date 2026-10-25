@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../core/media/art.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/text_styles.dart';
-import '../core/widgets/monster_fx.dart';
 import '../core/widgets/neon_card.dart';
 import '../core/widgets/rift_route.dart';
 import '../core/widgets/st_scaffold.dart';
@@ -88,15 +87,6 @@ class _DossierCard extends StatelessWidget {
             radius: 18,
             child: CharacterArt(character: c, iconSize: 110),
           ),
-          // Creatures never sit still in their file.
-          if (c.isCreature)
-            Positioned.fill(
-              child: MonsterFx(
-                monsterId: c.id,
-                accent: c.accent,
-                intensity: 0.8,
-              ),
-            ),
           const DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
